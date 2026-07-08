@@ -1,12 +1,19 @@
+import { BrowserRouter, Route, Routes } from 'react-router'
 import './App.css'
+import AppLayout from './layouts/AppLayout'
+import Home from './pages/Home'
 
 function App() {
 
   return (
-    <>
-      <h1 className='text-2xl font-bold font-nunito text-custom-azul-oscuro'>App CFL404</h1>
-      <p className='text-custom-gris-claro font-nunito'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Delectus natus ullam perspiciatis laborum, doloremque cumque minus temporibus labore saepe rerum? Quam, quidem. Eaque, maxime? Eaque doloremque eos voluptatem voluptas voluptates.</p>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<AppLayout />}>
+          <Route index element={<Home />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+
   )
 }
 
