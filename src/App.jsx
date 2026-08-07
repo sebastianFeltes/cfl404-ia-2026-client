@@ -1,13 +1,43 @@
-import './App.css'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
+import './App.css';
 
-function App() {
-
-  return (
-    <>
-      <h1 className='text-2xl font-bold font-nunito text-custom-azul-oscuro'>App CFL404</h1>
-      <p className='text-custom-gris-claro font-nunito'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Delectus natus ullam perspiciatis laborum, doloremque cumque minus temporibus labore saepe rerum? Quam, quidem. Eaque, maxime? Eaque doloremque eos voluptatem voluptas voluptates.</p>
-    </>
-  )
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
-export default App
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/perfil"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+
+export default App;
