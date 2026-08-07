@@ -27,25 +27,25 @@ const navItems = [
   {
     label: 'Profesores',
     icon: Users,
-    path: '/instructores',
+    path: '/admin/instructores',
     title: 'Gestión de docentes e instructores',
   },
   {
     label: 'Cursos',
     icon: Book,
-    path: '/cursos',
+    path: '/admin/cursos-admin',
     title: 'Gestión de ofertas formativas',
   },
   {
     label: 'Alumnos',
     icon: GraduationCap,
-    path: '/alumnos',
+    path: '/admin/alumnos',
     title: 'Matrícula y nómina de estudiantes',
   },
   {
     label: 'Reportes',
     icon: BarChart2,
-    path: '/reportes',
+    path: '/admin/reportes',
     title: 'Estadísticas y reportes de gestión',
   },
 ]
