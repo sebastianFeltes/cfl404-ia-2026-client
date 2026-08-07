@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react'
-import { Outlet, NavLink } from 'react-router'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router'
 import { Menu, X, Home, Building2, GraduationCap, Users, Mail, LogIn } from 'lucide-react'
 import Footer from '../components/Footer'
 
 /**
  * AppLayout — layout público del sitio institucional del CFL 404.
- * Navbar transparente en el top, opaco al hacer scroll.
- * Footer persistente en todas las páginas públicas.
+ * - Navbar: transparente en la Home sin scroll; azul oscuro al scrollear o en otras rutas.
+ * - Logo navbar: oculto en Home sin scroll (para no duplicar el hero logo); visible al scrollear o en otras rutas.
+ * - Links inteligentes: autoscroll a secciones de Home (Cursos, Contacto) o navegación entre páginas.
+ * - Footer persistente en todas las páginas públicas.
  */
 function AppLayout() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
 
-    // Detectar scroll para cambiar navbar de transparente → opaco
+    const location = useLocation()
+    const navigate = useNavigate()
+    const isHome = location.pathname === '/'
+
+    // Detectar scroll en la Home
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20)
         window.addEventListener('scroll', handleScroll, { passive: true })
@@ -22,29 +28,81 @@ function AppLayout() {
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
     const closeMenu = () => setIsMenuOpen(false)
 
+    // Helper para autoscroll suave a IDs de la Home
+    const scrollToId = (id) => {
+        const el = document.getElementById(id)
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' })
+        }
+    }
+
+    // Manejador de clics en la navegación
+    const handleNavClick = (e, item) => {
+        closeMenu()
+        if (item.key === 'inicio') {
+            if (isHome) {
+                e.preventDefault()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+        } else if (item.key === 'cursos') {
+            e.preventDefault()
+            if (isHome) {
+                scrollToId('cursos')
+            } else {
+                navigate('/')
+                setTimeout(() => scrollToId('cursos'), 120)
+            }
+        } else if (item.key === 'contactos') {
+            e.preventDefault()
+            if (isHome) {
+                scrollToId('contacto')
+            } else {
+                navigate('/')
+                setTimeout(() => scrollToId('contacto'), 120)
+            }
+        }
+    }
+
+    // Manejador de clic en el logo del Navbar
+    const handleLogoClick = (e) => {
+        closeMenu()
+        if (isHome) {
+            e.preventDefault()
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+    }
+
     const navItems = [
-        { path: '/',              label: 'Inicio',        icon: Home,          tooltip: 'Ir a Inicio',               end: true  },
-        { path: '/institucional', label: 'Institucional', icon: Building2,     tooltip: 'Ver sección Institucional',  end: false },
-        { path: '/cursos',        label: 'Cursos',        icon: GraduationCap, tooltip: 'Ver oferta de Cursos',       end: false },
-        { path: '/cooperadora',   label: 'Cooperadora',   icon: Users,         tooltip: 'Ir a la Cooperadora',        end: false },
-        { path: '/contactos',     label: 'Contactos',     icon: Mail,          tooltip: 'Ver datos de Contacto',      end: false },
+        { key: 'inicio',        path: '/',              label: 'Inicio',        icon: Home,          end: true  },
+        { key: 'institucional', path: '/institucional', label: 'Institucional', icon: Building2,     end: false },
+        { key: 'cursos',        path: '/#cursos',       label: 'Cursos',        icon: GraduationCap, end: false },
+        { key: 'cooperadora',   path: '/cooperadora',   label: 'Cooperadora',   icon: Users,         end: false },
+        { key: 'contactos',    path: '/#contacto',     label: 'Contactos',     icon: Mail,          end: false },
     ]
+
+    // Visibilidad del logo en el navbar: oculto en Home sin scroll, visible al scrollear o en otras páginas
+    const showLogo = !isHome || scrolled
+
+    // Fondo del navbar: transparente en Home sin scroll; azul oscuro al scrollear o en otras rutas
+    const headerBgClass = isHome
+        ? (scrolled ? 'bg-custom-azul-oscuro/95 backdrop-blur-md shadow-lg' : 'bg-transparent')
+        : 'bg-custom-azul-oscuro shadow-md'
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 font-roboto text-custom-gris-oscuro">
 
             {/* ── Navbar ── */}
-            <header
-                className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-                    scrolled
-                        ? 'bg-custom-azul-oscuro/95 backdrop-blur-md shadow-lg'
-                        : 'bg-transparent'
-                }`}
-            >
+            <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${headerBgClass}`}>
                 <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
 
-                    {/* Logo */}
-                    <NavLink to="/" className="flex items-center active:scale-95 transition-transform" onClick={closeMenu}>
+                    {/* Logo (Fades in cuando showLogo es true) */}
+                    <NavLink
+                        to="/"
+                        onClick={handleLogoClick}
+                        className={`flex items-center active:scale-95 transition-all duration-300 ${
+                            showLogo ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                        }`}
+                    >
                         <img
                             src="/logo_texto_hero.svg"
                             alt="Centro de Formación Laboral Nº 404 / Berisso"
@@ -56,16 +114,19 @@ function AppLayout() {
                     <nav className="hidden md:flex items-center gap-1">
                         {navItems.map((item) => (
                             <NavLink
-                                key={item.path}
+                                key={item.key}
                                 to={item.path}
                                 end={item.end}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-2 font-nunito font-semibold text-sm transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-white/15 ${
-                                        isActive
+                                onClick={(e) => handleNavClick(e, item)}
+                                className={({ isActive }) => {
+                                    // Para 'cursos' y 'contactos', marcamos activo si estamos en Home y en esa sección
+                                    const active = item.key === 'cursos' || item.key === 'contactos' ? false : isActive
+                                    return `flex items-center gap-2 font-nunito font-semibold text-sm transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-white/15 ${
+                                        active
                                             ? 'text-custom-amarillo bg-white/10'
                                             : 'text-white/85 hover:text-white'
                                     }`
-                                }
+                                }}
                             >
                                 <item.icon className="w-4 h-4" />
                                 {item.label}
@@ -76,6 +137,7 @@ function AppLayout() {
                         <div className="w-px h-5 bg-white/25 mx-2" />
                         <NavLink
                             to="/login"
+                            onClick={closeMenu}
                             className={({ isActive }) =>
                                 `flex items-center gap-2 font-nunito font-bold text-sm transition-all duration-200 py-1.5 px-4 rounded-lg border ${
                                     isActive
@@ -136,17 +198,18 @@ function AppLayout() {
                     <nav className="flex flex-col gap-2">
                         {navItems.map((item) => (
                             <NavLink
-                                key={item.path}
+                                key={item.key}
                                 to={item.path}
                                 end={item.end}
-                                onClick={closeMenu}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
-                                        isActive
+                                onClick={(e) => handleNavClick(e, item)}
+                                className={({ isActive }) => {
+                                    const active = item.key === 'cursos' || item.key === 'contactos' ? false : isActive
+                                    return `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
+                                        active
                                             ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
                                             : 'hover:bg-white/10 text-white'
                                     }`
-                                }
+                                }}
                             >
                                 <item.icon className="w-5 h-5 flex-shrink-0" />
                                 {item.label}
@@ -181,7 +244,6 @@ function AppLayout() {
             </div>
 
             {/* ── Contenido de página ── */}
-            {/* pt-16 compensa el navbar fixed (64px). El Hero de Home lo sobreescribe con min-h-dvh */}
             <main className="flex-grow flex flex-col pt-16">
                 <Outlet />
             </main>
