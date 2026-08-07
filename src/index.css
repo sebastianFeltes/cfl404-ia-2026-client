@@ -35,7 +35,11 @@
     display: none !important;
   }
 
-  body, html, main, #root, .flex, .flex-col {
+  /* Resetear límites de scroll y altura en contenedores estructurales */
+  html, body, #root,
+  .h-screen,
+  .overflow-hidden,
+  main {
     background: white !important;
     color: #0f172a !important;
     overflow: visible !important;
@@ -52,6 +56,7 @@
     padding: 0.5in !important;
   }
 
+  /* Evitar que se rompa el fondo de la tabla o las tarjetas */
   .bg-white, .dark\:bg-slate-900 {
     background: white !important;
     border: none !important;
