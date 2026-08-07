@@ -17,22 +17,61 @@
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
     font-family: 'Nunito', sans-serif;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* ── Scrollbar estilizado ── */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #1D1E1C;
+}
+::-webkit-scrollbar-thumb {
+    background: #166193;
+    border-radius: 5px;
+    border: 2px solid #1D1E1C;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #37ACDE;
 }
 
-.animate-fadeIn {
-    animation: fadeIn 0.25s ease-out forwards;
+/* ── Animaciones generales ── */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn,
+.animate-fade-in {
+    animation: fadeIn 0.35s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* ── Animaciones del Hero (indicador de scroll) ── */
+@keyframes scrollWheel {
+    0%   { opacity: 1; transform: translateY(0); }
+    50%  { opacity: 0.8; transform: translateY(8px); }
+    100% { opacity: 0; transform: translateY(14px); }
+}
+.animate-scroll-wheel {
+    animation: scrollWheel 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes bounceDown {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50%       { transform: translateY(6px); opacity: 1; }
+}
+.animate-bounce-down {
+    animation: bounceDown 1.5s ease-in-out infinite;
 }
 
 /* Clases auxiliares para impresión */
