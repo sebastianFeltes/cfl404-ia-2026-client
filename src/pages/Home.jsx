@@ -1,20 +1,15 @@
 import { useState, useMemo } from 'react';
-import NavbarPublic from '../components/NavbarPublic';
 import Hero from '../components/Hero';
 import FAQ from '../components/FAQ';
-import Footer from '../components/Footer';
 import CourseFilters from '../components/CourseFilters';
 import CourseCard from '../components/CourseCard';
 import CourseDetailModal from '../components/CourseDetailModal';
 import EnrollmentModal from '../components/EnrollmentModal';
-import DeviceSimulatorBar from '../components/DeviceSimulatorBar';
 import { coursesData as initialCourses } from '../data/coursesData';
 import { CheckCircle2, AlertCircle, Download } from 'lucide-react';
 
 export default function Home() {
   const [courses, setCourses] = useState(initialCourses);
-  const [selectedRole, setSelectedRole] = useState('aspirante');
-  const [deviceMode, setDeviceMode] = useState('desktop');
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,11 +71,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100/70 text-[#1D1E1C] font-['Nunito'] flex flex-col selection:bg-[#37ACDE] selection:text-white">
+    <div className="flex flex-col">
 
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-20 right-4 z-50 animate-bounce">
+        <div className="fixed top-20 right-4 z-50">
           <div className={`p-4 rounded-2xl shadow-2xl border flex items-center gap-3 text-sm font-semibold max-w-md ${
             toast.type === 'success'
               ? 'bg-emerald-800 text-white border-emerald-600'
@@ -95,14 +90,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* Navbar público con selector de rol */}
-      <NavbarPublic selectedRole={selectedRole} setSelectedRole={setSelectedRole} />
-
       {/* Hero section con imagen de fondo y CTAs */}
       <Hero />
 
       {/* Catálogo de Cursos */}
-      <main id="cursos" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <section id="cursos" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Filter Toolbar */}
         <CourseFilters
@@ -118,7 +110,7 @@ export default function Home() {
         {/* Banner de etapa activa */}
         <div className="mb-8 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+            <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping flex-shrink-0"></span>
             <div>
               <h3 className="font-extrabold text-lg text-[#1D1E1C] font-['Roboto_Flex']">
                 {selectedStage === 'segunda' && 'Segunda Etapa (Julio - Diciembre 2026)'}
@@ -132,7 +124,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <span className="text-xs font-bold text-[#166193] bg-[#166193]/10 px-3 py-1.5 rounded-lg border border-[#166193]/20">
+          <span className="text-xs font-bold text-[#166193] bg-[#166193]/10 px-3 py-1.5 rounded-lg border border-[#166193]/20 whitespace-nowrap">
             Actualmente en: Julio 2026
           </span>
         </div>
@@ -157,31 +149,21 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          <div className={`grid gap-6 ${
-            deviceMode === 'mobile'
-              ? 'grid-cols-1 max-w-md mx-auto'
-              : deviceMode === 'tablet'
-              ? 'grid-cols-1 md:grid-cols-2'
-              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-          }`}>
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {filteredCourses.map((course) => (
               <CourseCard
                 key={course.id}
                 course={course}
                 onSelectCourse={(c) => setDetailCourse(c)}
                 onEnrollCourse={(c) => setEnrollCourse(c)}
-                forceMobileMode={deviceMode === 'mobile'}
               />
             ))}
           </div>
         )}
-      </main>
+      </section>
 
       {/* FAQ */}
       <FAQ />
-
-      {/* Footer institucional con mapa, redes y contacto */}
-      <Footer />
 
       {/* Modales */}
       {detailCourse && (
@@ -199,9 +181,6 @@ export default function Home() {
           onSuccessSubmit={handleEnrollSuccess}
         />
       )}
-
-      {/* Device Simulator */}
-      <DeviceSimulatorBar deviceMode={deviceMode} setDeviceMode={setDeviceMode} />
     </div>
   );
 }

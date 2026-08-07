@@ -4,7 +4,7 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="relative min-h-dvh flex items-center justify-center overflow-hidden"
+      className="relative min-h-dvh flex items-center justify-center overflow-hidden -mt-16"
       aria-label="Sección principal"
     >
       {/* ── Fondo de color base ── */}
