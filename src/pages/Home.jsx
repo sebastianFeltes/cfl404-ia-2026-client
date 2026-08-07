@@ -1,10 +1,15 @@
+import Hero from "../components/Hero"
+import Navbar from "../components/Navbar"
+import FAQ from "../components/FAQ"
+
 function Home() {
 
     return (
-        <div>
-            Home
-        </div>
+        <>
+            <Hero />
+            <FAQ />
+        </>
     )
 }
 
-export default Home
+export default Home
