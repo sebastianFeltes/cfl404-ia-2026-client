@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --color-custom-azul-oscuro: #166193;
     --color-custom-gris-oscuro: #1D1E1C;
@@ -11,4 +13,56 @@
 
     --font-roboto: "Roboto Flex", sans-serif;
     --font-nunito: "Nunito", sans-serif;
+}
+
+/* Clases auxiliares para impresión */
+.print-only {
+  display: none;
+}
+
+/* Estilos de Impresión / PDF */
+@media print {
+  .print-only {
+    display: block !important;
+  }
+
+  aside,
+  header,
+  .no-print,
+  button,
+  select,
+  input {
+    display: none !important;
+  }
+
+  body, html, main, #root, .flex, .flex-col {
+    background: white !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    position: relative !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main {
+    padding: 0.5in !important;
+  }
+
+  .bg-white, .dark\:bg-slate-900 {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Ajustes específicos para bordes de tabla en impresión */
+  .border-b {
+    border-bottom-color: #e2e8f0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
