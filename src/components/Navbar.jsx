@@ -1,127 +1,136 @@
-import React, { useState } from 'react';
-import { GraduationCap, Menu, X, BookOpen, Calendar, Award } from 'lucide-react';
+import React from 'react'
+import { Menu } from 'lucide-react'
+import Tooltip from './Tooltip'
 
-export default function Navbar({ selectedRole, setSelectedRole }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+/**
+ * Metadatos de rol: color de borde, insignia y avatar simulado de Google OAuth.
+ */
+const ROLE_META = {
+  director: {
+    label: 'Director',
+    username: 'godmode',
+    borderColor: 'ring-red-500',
+    badgeBg: 'bg-red-600 text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+  },
+  secretaria: {
+    label: 'Secretaría',
+    username: 'sec.admin',
+    borderColor: 'ring-custom-celeste',
+    badgeBg: 'bg-custom-celeste text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
+  },
+  docente: {
+    label: 'Docente',
+    username: 'docente01',
+    borderColor: 'ring-custom-gris-claro',
+    badgeBg: 'bg-custom-gris-oscuro text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80'
+  }
+}
 
-  const roles = [
-    { id: 'aspirante', label: 'Futuro Estudiante' },
-    { id: 'alumno', label: 'Alumno / Cursante' },
-    { id: 'docente', label: 'Docente / Instructor' },
-    { id: 'empresa', label: 'Empresa / Institución' },
-  ];
+/**
+ * Navbar — barra superior del dashboard.
+ * Muestra:
+ *   • Botón para colapsar/expandir el Sidebar
+ *   • Selector de rol (simulador de permisos RBAC)
+ *   • Foto de perfil del usuario (proveniente de Google OAuth), con el bordado de color de rol,
+ *     el indicador de estado (punto verde) y la insignia del rol integrada sobre la foto de perfil.
+ */
+function Navbar({ sidebarOpen, setSidebarOpen, userRole, setUserRole }) {
+  const meta = ROLE_META[userRole] || ROLE_META.director
 
   return (
-    <header className="sticky top-0 z-40 bg-[#166193] text-white shadow-lg transition-all duration-300">
-      {/* Top Banner / Role Switcher */}
-      <div className="bg-[#1D1E1C] text-gray-300 text-xs py-1.5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex items-center gap-2 font-medium">
-            <span className="inline-block w-2 h-2 rounded-full bg-[#FDEA14] animate-pulse"></span>
-            <span>Módulo de Cursos — Inscripciones Abiertas Segunda Etapa (Julio - Diciembre)</span>
-          </div>
+    <header
+      className="h-16 bg-white border-b border-custom-gris-claro/10 flex items-center justify-between px-6 sticky top-0 z-20 font-roboto shadow-xs shrink-0"
+      role="banner"
+    >
+      {/* ── Izquierda: toggle sidebar & título ── */}
+      <div className="flex items-center gap-3">
+        <Tooltip text={sidebarOpen ? 'Colapsar menú' : 'Expandir menú'} position="bottom">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 text-custom-gris-oscuro hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+            aria-label={sidebarOpen ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </Tooltip>
 
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 hidden md:inline">Vista de Perfil:</span>
-            <div className="flex bg-[#585856]/40 p-0.5 rounded-md">
-              {roles.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedRole(r.id)}
-                  className={`px-2.5 py-0.5 rounded text-[11px] font-medium transition-all ${
-                    selectedRole === r.id
-                      ? 'bg-[#37ACDE] text-white font-bold shadow-sm'
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <span className="text-xs font-bold text-custom-gris-claro/70 uppercase tracking-widest hidden md:block select-none">
+          Panel Administrativo · CFL N°404
+        </span>
       </div>
 
-      {/* Main Navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          
-          {/* Brand / Logo */}
-          <a href="#hero" className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#FDEA14] rounded-lg p-1">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#166193] shadow-md group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-8 h-8" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl tracking-tight font-['Roboto_Flex'] text-white">
-                  CFP <span className="text-[#FDEA14]">Nº 404</span>
-                </span>
-                <span className="text-[10px] bg-[#37ACDE] text-white font-semibold px-1.5 py-0.5 rounded uppercase">
-                  Cursos
-                </span>
+      {/* ── Derecha: selector de rol + avatar de perfil ── */}
+      <div className="flex items-center gap-5">
+
+        {/* Selector de rol (simulador RBAC) */}
+        <Tooltip text="Cambiar rol simulado" position="bottom">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="role-selector"
+              className="text-[10px] font-extrabold text-custom-gris-claro uppercase tracking-widest cursor-pointer hidden sm:block"
+            >
+              Simular Rol:
+            </label>
+            <select
+              id="role-selector"
+              value={userRole}
+              onChange={(e) => setUserRole(e.target.value)}
+              className="py-1.5 pl-2.5 pr-6 border border-custom-gris-claro/20 rounded-xl text-xs bg-gray-50 text-custom-gris-oscuro font-bold focus:outline-none focus:border-custom-azul-oscuro cursor-pointer"
+            >
+              <option value="director">Director</option>
+              <option value="secretaria">Secretaría</option>
+              <option value="docente">Docente</option>
+            </select>
+          </div>
+        </Tooltip>
+
+        {/* Separador */}
+        <div className="w-px h-8 bg-custom-gris-claro/15" />
+
+        {/* Avatar de Google OAuth con Rol integrado en la foto y Punto de Estado */}
+        <Tooltip
+          text={`Cuenta Google: ${meta.username}@cfl404.edu.ar · Rol: ${meta.label} · Estado: En línea`}
+          position="bottom"
+        >
+          <div className="flex items-center gap-3 cursor-pointer group">
+            {/* Foto de perfil con bordado de rol y badge */}
+            <div className="relative">
+              {/* Foto de perfil con ring bordado */}
+              <div className={`h-10 w-10 rounded-full ring-2 ring-offset-2 ${meta.borderColor} overflow-hidden shadow-sm transition-transform duration-200 group-hover:scale-105`}>
+                <img
+                  src={meta.photoUrl}
+                  alt={`Foto de Google de ${meta.username}`}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <span className="text-xs text-gray-200 font-['Nunito'] font-medium">
-                Módulo de Oferta Educativa
+
+              {/* Punto de estado en línea (verde) sobre la foto */}
+              <span
+                className={`absolute bottom-0 right-0 w-3 h-3 ${meta.dotColor} rounded-full border-2 border-white shadow-xs`}
+                title="Estado: En línea"
+              />
+            </div>
+
+            {/* Datos de usuario y badge de Rol pegado a la foto */}
+            <div className="hidden sm:flex flex-col items-start leading-tight">
+              <span className="text-xs font-extrabold text-custom-gris-oscuro font-nunito truncate max-w-[120px]">
+                {meta.username}
+              </span>
+              <span className={`text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded-full mt-0.5 ${meta.badgeBg}`}>
+                {meta.label}
               </span>
             </div>
-          </a>
-
-          {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-8 font-['Nunito'] text-sm font-semibold">
-            <a href="#hero" className="hover:text-[#FDEA14] transition-colors py-1 border-b-2 border-transparent hover:border-[#FDEA14]">
-              Inicio
-            </a>
-            <a href="#cursos" className="hover:text-[#FDEA14] transition-colors py-1 border-b-2 border-transparent hover:border-[#FDEA14] flex items-center gap-1 text-[#FDEA14]">
-              <BookOpen className="w-4 h-4 text-[#FDEA14]" />
-              Catálogo de Cursos
-            </a>
-          </nav>
-
-          {/* Action CTA Button */}
-          <div className="hidden lg:flex items-center gap-3">
-            <a
-              href="#cursos"
-              className="bg-[#FDEA14] hover:bg-yellow-300 text-[#1D1E1C] font-bold px-4 py-2.5 rounded-lg text-sm transition-all transform hover:-translate-y-0.5 shadow-md flex items-center gap-2 focus:ring-2 focus:ring-white"
-            >
-              <BookOpen className="w-4 h-4" />
-              Ver Oferta Educativa
-            </a>
           </div>
-
-          {/* Mobile Hamburger Button */}
-          <div className="flex md:hidden">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Abrir Menú"
-              aria-expanded={mobileMenuOpen}
-              className="p-2 rounded-lg text-gray-100 hover:text-white hover:bg-[#37ACDE]/30 focus:outline-none"
-            >
-              {mobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
-            </button>
-          </div>
-
-        </div>
+        </Tooltip>
       </div>
-
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-[#166193] border-t border-white/10 px-4 pt-3 pb-6 space-y-3 font-['Nunito'] animate-fadeIn">
-          <a
-            href="#hero"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-semibold hover:bg-white/10"
-          >
-            Inicio
-          </a>
-          <a
-            href="#cursos"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-semibold hover:bg-white/10 text-[#FDEA14]"
-          >
-            Oferta Educativa / Cursos (15 Cursos)
-          </a>
-        </div>
-      )}
     </header>
-  );
+  )
 }
+
+export default Navbar

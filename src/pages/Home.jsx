@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import Navbar from '../components/Navbar';
+import NavbarPublic from '../components/NavbarPublic';
 import HeroSection from '../components/HeroSection';
 import CourseFilters from '../components/CourseFilters';
 import CourseCard from '../components/CourseCard';
@@ -107,7 +107,7 @@ export default function Home() {
       )}
 
       {/* Institutional Top Navbar */}
-      <Navbar selectedRole={selectedRole} setSelectedRole={setSelectedRole} />
+      <NavbarPublic selectedRole={selectedRole} setSelectedRole={setSelectedRole} />
 
       {/* Hero Section */}
       <HeroSection />

@@ -44,6 +44,7 @@ export default function DashboardLayout() {
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-nunito transition-colors duration-200">
-      <Sidebar />
+      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Header */}
