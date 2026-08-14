@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router';
-import { Mail, Lock, Eye, EyeOff, LogIn, Award, BookOpen, UserCheck, ShieldCheck } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router';
+import { Mail, Lock, Eye, EyeOff, LogIn, UserCheck } from 'lucide-react';
+import { POST } from '../services/api';
 import fotoSoldando from '../assets/hombre_soldando.PNG';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, token } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -15,7 +16,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  if (token) {
+    return <Navigate to="/perfil" replace />;
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setErrorMsg('Por favor completa todos los campos para ingresar.');
@@ -25,11 +30,20 @@ export default function LoginPage() {
     setErrorMsg('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      login(email, password);
-      setIsLoading(false);
+    try {
+      const data = await POST('/auth/login', { email, password });
+      const jwt = data.token ?? data.accessToken;
+      if (!jwt) {
+        throw new Error('El servidor no devolvió un token de sesión.');
+      }
+
+      login(jwt, data.user ?? data, { remember: rememberMe });
       navigate('/perfil');
-    }, 600);
+    } catch (err) {
+      setErrorMsg(err.message || 'No se pudo iniciar sesión. Verificá tus credenciales.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFillDemo = () => {
