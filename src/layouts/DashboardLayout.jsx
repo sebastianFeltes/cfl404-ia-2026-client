@@ -76,10 +76,10 @@ export default function DashboardLayout() {
   const IconoRol = rolActivo.icon;
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-nunito transition-colors duration-200">
+    <div className="flex h-screen w-screen max-w-full bg-slate-50 dark:bg-slate-950 overflow-hidden font-nunito transition-colors duration-200">
       <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
 
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-w-0 max-w-full h-full overflow-hidden relative">
         {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-end px-8 shrink-0 z-20 transition-colors duration-200">
           <div className="flex items-center gap-4">
@@ -187,8 +187,8 @@ export default function DashboardLayout() {
         </header>
 
         {/* Canvas */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <Outlet context={{ rolActivo, puedeEditar: rolActivo?.id === "director" }} />
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8">
+          <Outlet context={{ rolActivo, userRole: rolActivo?.id, puedeEditar: rolActivo?.id === "director" }} />
         </main>
       </div>
     </div>

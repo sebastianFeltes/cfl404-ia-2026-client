@@ -65,7 +65,6 @@ function AppRoutes() {
           <div className="p-2"><h1 className="text-2xl font-semibold text-slate-900 font-roboto">Reportes</h1><p className="text-sm text-slate-500 mt-1">Módulo en desarrollo...</p></div>
         } />
       </Route>
-
     </Routes>
   )
 }
