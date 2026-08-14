@@ -88,10 +88,10 @@ export default function Footer() {
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-12 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 lg:gap-12">
 
-            {/* ═══ Columna 1 — Logo + Dirección ═══ */}
-            <div className="flex flex-col items-start gap-5">
+            {/* ═══ Columna 1 — Logo + Institución ═══ */}
+            <div className="flex flex-col items-start gap-4">
               {/* Logo */}
-              <a href="#" className="block group w-full flex justify-center" aria-label="Inicio">
+              <a href="#" className="block group" aria-label="Inicio">
                 <img
                   src="/logo_texto_hero.svg"
                   alt="CFL 404 Logo"
@@ -101,42 +101,12 @@ export default function Footer() {
                   }}
                 />
               </a>
-
-              {/* Dirección */}
-              <div className="relative group/tooltip flex flex-col items-start w-full">
-                <div className="flex items-start gap-3 text-left">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-5 h-5 mt-0.5 text-[#37A6DE] shrink-0"
-                    aria-hidden="true"
-                  >
-                    <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <p
-                      className="text-white/90 text-sm font-medium leading-relaxed"
-                      style={{ fontFamily: '"Nunito", sans-serif' }}
-                    >
-                      Calle La Portada N.º 4120 (Acceso 4 al Puerto)
-                    </p>
-                    <p
-                      className="text-white/60 text-sm leading-relaxed"
-                      style={{ fontFamily: '"Nunito", sans-serif' }}
-                    >
-                      Berisso, Buenos Aires, Argentina
-                    </p>
-                  </div>
-                </div>
-                {/* Tooltip */}
-                <span className="absolute bottom-full mb-1 hidden group-hover/tooltip:flex flex-col items-center z-30 pointer-events-none">
-                  <span className="bg-[#1D1E1C] text-[#37A6DE] text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-xl border border-white/15 whitespace-nowrap">
-                    Sede Central CFL 404
-                  </span>
-                  <span className="w-2 h-2 bg-[#1D1E1C] border-r border-b border-white/15 rotate-45 -mt-1" />
-                </span>
-              </div>
+              <p
+                className="text-white/70 text-xs leading-relaxed max-w-xs"
+                style={{ fontFamily: '"Nunito", sans-serif' }}
+              >
+                Centro de Formación Laboral N.º 404 de Berisso. Cursos gratuitos con certificación oficial.
+              </p>
             </div>
 
             {/* ═══ Columna 2 — Contacto + Redes ═══ */}
@@ -216,13 +186,40 @@ export default function Footer() {
             </div>
 
             {/* ═══ Columna 3 — Ubicación / Mapa ═══ */}
-            <div className="flex flex-col items-start gap-4 w-full">
+            <div className="flex flex-col items-start gap-3.5 w-full">
               <h3
                 className="text-white font-bold text-lg tracking-wide"
                 style={{ fontFamily: '"Roboto Flex", sans-serif' }}
               >
                 Ubicación
               </h3>
+
+              {/* Dirección */}
+              <div className="flex items-start gap-2.5 text-left">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-4.5 h-4.5 mt-0.5 text-[#37A6DE] shrink-0"
+                  aria-hidden="true"
+                >
+                  <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <p
+                    className="text-white/90 text-xs font-medium leading-snug"
+                    style={{ fontFamily: '"Nunito", sans-serif' }}
+                  >
+                    Calle La Portada N.º 4120 (Acceso 4 al Puerto)
+                  </p>
+                  <p
+                    className="text-white/60 text-xs leading-snug"
+                    style={{ fontFamily: '"Nunito", sans-serif' }}
+                  >
+                    Berisso, Buenos Aires, Argentina
+                  </p>
+                </div>
+              </div>
 
               {/* Mapa embebido */}
               <div className="relative group/tooltip w-full">
@@ -231,7 +228,7 @@ export default function Footer() {
                     title="Ubicación CFL 404 Berisso"
                     src="https://maps.google.com/maps?q=Calle%20La%20Portada%204120%20Berisso&t=&z=15&ie=UTF8&iwloc=&output=embed"
                     width="100%"
-                    height="190"
+                    height="180"
                     style={{
                       border: 0,
                       filter: 'grayscale(0.3) contrast(1.1) brightness(0.85)',
