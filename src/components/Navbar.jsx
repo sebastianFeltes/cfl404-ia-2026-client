@@ -1,131 +1,136 @@
-import { useState, useEffect } from 'react'
+import React from 'react'
+import { Menu } from 'lucide-react'
+import Tooltip from './Tooltip'
 
-const navLinks = [
-  { label: 'Inicio', href: '#' },
-  { label: 'Institucional', href: '#institucional' },
-  { label: 'Contacto', href: '#contacto' },
-  { label: 'Cooperadora', href: '#cooperadora' },
-]
+/**
+ * Metadatos de rol: color de borde, insignia y avatar simulado de Google OAuth.
+ */
+const ROLE_META = {
+  director: {
+    label: 'Director',
+    username: 'godmode',
+    borderColor: 'ring-red-500',
+    badgeBg: 'bg-red-600 text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+  },
+  secretaria: {
+    label: 'Secretaría',
+    username: 'sec.admin',
+    borderColor: 'ring-custom-celeste',
+    badgeBg: 'bg-custom-celeste text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
+  },
+  docente: {
+    label: 'Docente',
+    username: 'docente01',
+    borderColor: 'ring-custom-gris-claro',
+    badgeBg: 'bg-custom-gris-oscuro text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80'
+  }
+}
 
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 60)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+/**
+ * Navbar — barra superior del dashboard.
+ * Muestra:
+ *   • Botón para colapsar/expandir el Sidebar
+ *   • Selector de rol (simulador de permisos RBAC)
+ *   • Foto de perfil del usuario (proveniente de Google OAuth), con el bordado de color de rol,
+ *     el indicador de estado (punto verde) y la insignia del rol integrada sobre la foto de perfil.
+ */
+function Navbar({ sidebarOpen, setSidebarOpen, userRole, setUserRole }) {
+  const meta = ROLE_META[userRole] || ROLE_META.director
 
   return (
     <header
-      id="navbar"
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${scrolled || menuOpen
-        ? 'bg-[#166193]/85 backdrop-blur-md shadow-lg shadow-[#166193]/30'
-        : 'bg-transparent'
-        }`}
-      style={{ transition: 'background-color 0.4s ease, box-shadow 0.4s ease' }}
+      className="h-16 bg-white border-b border-custom-gris-claro/10 flex items-center justify-between px-6 sticky top-0 z-20 font-roboto shadow-xs shrink-0"
+      role="banner"
     >
-      <nav className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 flex items-center justify-between h-16 md:h-20">
-
-        {/* Nav links - desktop (Perfectly Centered) */}
-        <ul className="hidden md:flex items-center justify-center gap-4 absolute left-1/2 -translate-x-1/2">
-          {navLinks.map((link) => (
-            <li key={link.label}>
-              <a
-                href={link.href}
-                className="relative px-4 py-2 font-nunito text-[15px] font-medium text-white/90 hover:text-white transition-colors duration-200 group"
-                style={{ fontFamily: '"Nunito", sans-serif' }}
-              >
-                {link.label}
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-[#FDEA14] rounded-full transition-all duration-300 group-hover:w-4/5" />
-              </a>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex-1 md:hidden" />
-
-        {/* CTA Button */}
-        <div className="hidden md:flex items-center gap-3 ml-auto">
-          <a
-            href="#registro"
-            id="btn-registrate"
-            className="relative px-5 py-2.5 rounded-xl border-2 border-[#FDEA14] text-[#FDEA14] font-nunito font-semibold text-base tracking-wide overflow-hidden group transition-all duration-250 hover:text-[#1D1E1C] hover:shadow-lg hover:shadow-[#FDEA14]/25 active:scale-[0.97]"
-            style={{
-              fontFamily: '"Nunito", sans-serif',
-              color: 'rgba(255,255,255,0.85)',
-              background: 'rgba(255,255,255,0.06)',
-              backdropFilter: 'blur(12px)',
-              border: '1.5px solid rgba(253,234,20,0.25)',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
-            }}
+      {/* ── Izquierda: toggle sidebar & título ── */}
+      <div className="flex items-center gap-3">
+        <Tooltip text={sidebarOpen ? 'Colapsar menú' : 'Expandir menú'} position="bottom">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 text-custom-gris-oscuro hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+            aria-label={sidebarOpen ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
           >
-            <span className="relative z-10 group-hover:text-[#1D1E1C]">Regístrate</span>
-            <span className="absolute inset-0 bg-[#FDEA14] translate-y-full group-hover:translate-y-0 transition-transform duration-250 rounded-[10px]" />
-          </a>
-        </div>
+            <Menu className="h-5 w-5" />
+          </button>
+        </Tooltip>
 
-        {/* Hamburger - mobile */}
-        <button
-          id="btn-menu-mobile"
-          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((v) => !v)}
-          className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5 cursor-pointer"
-        >
-          <span
-            className={`block w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-2' : ''
-              }`}
-          />
-          <span
-            className={`block w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${menuOpen ? 'opacity-0' : ''
-              }`}
-          />
-          <span
-            className={`block w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-2' : ''
-              }`}
-          />
-        </button>
-      </nav>
+        <span className="text-xs font-bold text-custom-gris-claro/70 uppercase tracking-widest hidden md:block select-none">
+          Panel Administrativo · CFL N°404
+        </span>
+      </div>
 
-      {/* Mobile menu */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-400 ${menuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        style={{
-          background: 'rgba(22, 97, 147, 0.97)',
-          backdropFilter: 'blur(16px)',
-        }}
-      >
-        <ul className="flex flex-col px-6 pb-6 pt-2 gap-1">
-          {navLinks.map((link) => (
-            <li key={link.label}>
-              <a
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="block py-3 font-nunito text-base font-medium text-white/90 hover:text-[#FDEA14] border-b border-white/10 transition-colors duration-200"
-                style={{ fontFamily: '"Nunito", sans-serif' }}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-          <li className="pt-4 flex justify-center">
-            <a
-              href="#registro"
-              onClick={() => setMenuOpen(false)}
-              className="group relative inline-block text-center px-8 py-2.5 rounded-xl border-2 border-[#FDEA14] text-[#FDEA14] font-nunito font-semibold text-base overflow-hidden transition-all duration-250 active:scale-[0.97]"
-              style={{ fontFamily: '"Nunito", sans-serif' }}
+      {/* ── Derecha: selector de rol + avatar de perfil ── */}
+      <div className="flex items-center gap-5">
+
+        {/* Selector de rol (simulador RBAC) */}
+        <Tooltip text="Cambiar rol simulado" position="bottom">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="role-selector"
+              className="text-[10px] font-extrabold text-custom-gris-claro uppercase tracking-widest cursor-pointer hidden sm:block"
             >
-              <span className="relative z-10 group-hover:text-[#1D1E1C] transition-colors duration-250">Regístrate</span>
-              <span className="absolute inset-0 bg-[#FDEA14] translate-y-full group-hover:translate-y-0 transition-transform duration-250 rounded-[10px]" />
-            </a>
-          </li>
-        </ul>
+              Simular Rol:
+            </label>
+            <select
+              id="role-selector"
+              value={userRole}
+              onChange={(e) => setUserRole(e.target.value)}
+              className="py-1.5 pl-2.5 pr-6 border border-custom-gris-claro/20 rounded-xl text-xs bg-gray-50 text-custom-gris-oscuro font-bold focus:outline-none focus:border-custom-azul-oscuro cursor-pointer"
+            >
+              <option value="director">Director</option>
+              <option value="secretaria">Secretaría</option>
+              <option value="docente">Docente</option>
+            </select>
+          </div>
+        </Tooltip>
+
+        {/* Separador */}
+        <div className="w-px h-8 bg-custom-gris-claro/15" />
+
+        {/* Avatar de Google OAuth con Rol integrado en la foto y Punto de Estado */}
+        <Tooltip
+          text={`Cuenta Google: ${meta.username}@cfl404.edu.ar · Rol: ${meta.label} · Estado: En línea`}
+          position="bottom"
+        >
+          <div className="flex items-center gap-3 cursor-pointer group">
+            {/* Foto de perfil con bordado de rol y badge */}
+            <div className="relative">
+              {/* Foto de perfil con ring bordado */}
+              <div className={`h-10 w-10 rounded-full ring-2 ring-offset-2 ${meta.borderColor} overflow-hidden shadow-sm transition-transform duration-200 group-hover:scale-105`}>
+                <img
+                  src={meta.photoUrl}
+                  alt={`Foto de Google de ${meta.username}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Punto de estado en línea (verde) sobre la foto */}
+              <span
+                className={`absolute bottom-0 right-0 w-3 h-3 ${meta.dotColor} rounded-full border-2 border-white shadow-xs`}
+                title="Estado: En línea"
+              />
+            </div>
+
+            {/* Datos de usuario y badge de Rol pegado a la foto */}
+            <div className="hidden sm:flex flex-col items-start leading-tight">
+              <span className="text-xs font-extrabold text-custom-gris-oscuro font-nunito truncate max-w-[120px]">
+                {meta.username}
+              </span>
+              <span className={`text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded-full mt-0.5 ${meta.badgeBg}`}>
+                {meta.label}
+              </span>
+            </div>
+          </div>
+        </Tooltip>
       </div>
     </header>
   )
 }
+
+export default Navbar

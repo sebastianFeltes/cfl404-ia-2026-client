@@ -1,10 +1,11 @@
+import { Link } from 'react-router'
 import hombre from '../assets/hombre_soldando.PNG'
 
 export default function Hero() {
   return (
     <section
       id="hero"
-      className="relative min-h-dvh flex items-center justify-center overflow-hidden"
+      className="relative min-h-dvh flex items-center justify-center overflow-hidden -mt-16"
       aria-label="Sección principal"
     >
       {/* ── Fondo de color base ── */}
@@ -33,7 +34,7 @@ export default function Hero() {
           src={hombre}
           alt="Hombre soldando"
           aria-hidden="true"
-          className="h-full w-full object-cover object-[60%_25%] md:object-[75%_center] opacity-85 md:opacity-100"
+          className="h-full w-full lg:object-fit object-cover  object-[60%_25%] md:object-[75%_center] opacity-85 md:opacity-100"
           loading="eager"
         />
         {/* Overlay graduado: suave en mobile para resaltar al soldador, lateral en desktop */}
@@ -158,8 +159,8 @@ export default function Hero() {
             </a>
 
             {/* Secundario — glassmorphism con borde amarillo suave */}
-            <a
-              href="#institucional"
+            <Link
+              to="/institucional"
               id="btn-hero-institucional"
               className="group relative inline-flex items-center justify-center px-6 py-3.5 rounded-2xl font-nunito font-semibold text-base tracking-wide whitespace-nowrap transition-all duration-250 hover:-translate-y-0.5 active:scale-[0.97]"
               style={{
@@ -182,7 +183,7 @@ export default function Hero() {
               }}
             >
               Conocenos
-            </a>
+            </Link>
 
           </div>
         </div>

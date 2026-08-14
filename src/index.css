@@ -1,11 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --color-custom-azul-oscuro: #166193;
     --color-custom-gris-oscuro: #1D1E1C;
     --color-custom-gris-claro: #585856;
-    --color-custom-celeste: #37A6DE;
+    --color-custom-celeste: #37ACDE;
     --color-custom-amarillo: #FDEA14;
     --color-custom-blanco: #FFFFFF;
 
@@ -13,47 +15,13 @@
     --font-nunito: "Nunito", sans-serif;
 }
 
-@keyframes scrollWheel {
-    0% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    50% {
-        opacity: 0.8;
-        transform: translateY(8px);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(14px);
-    }
-}
-
-@keyframes bounceDown {
-    0%, 100% {
-        transform: translateY(0);
-        opacity: 0.6;
-    }
-    50% {
-        transform: translateY(6px);
-        opacity: 1;
-    }
-}
-
-.animate-scroll-wheel {
-    animation: scrollWheel 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-
-.animate-bounce-down {
-    animation: bounceDown 1.5s ease-in-out infinite;
-}
-
-/* Scroll fluido moderno */
 html {
     scroll-behavior: smooth;
     scroll-padding-top: 5rem;
+    font-family: 'Nunito', sans-serif;
 }
 
-/* Scrollbar moderno estilizado */
+/* ── Scrollbar estilizado ── */
 ::-webkit-scrollbar {
     width: 10px;
 }
@@ -69,5 +37,140 @@ html {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #37A6DE;
+    background: #37ACDE;
+}
+
+/* ── Animaciones generales ── */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeIn,
+.animate-fade-in {
+    animation: fadeIn 0.35s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* ── Animaciones del Hero (indicador de scroll) ── */
+@keyframes scrollWheel {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: translateY(8px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+}
+
+.animate-scroll-wheel {
+    animation: scrollWheel 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes bounceDown {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: translateY(6px);
+        opacity: 1;
+    }
+}
+
+.animate-bounce-down {
+    animation: bounceDown 1.5s ease-in-out infinite;
+}
+
+/* Clases auxiliares para impresión */
+.print-only {
+    display: none;
+}
+
+/* Estilos de Impresión / PDF */
+@media print {
+    .print-only {
+        display: block !important;
+    }
+
+    aside,
+    header,
+    .no-print,
+    button,
+    select,
+    input {
+        display: none !important;
+    }
+
+    /* Resetear límites de scroll y altura en contenedores estructurales */
+    html,
+    body,
+    #root,
+    .h-screen,
+    .overflow-hidden,
+    main {
+        background: white !important;
+        color: #0f172a !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        position: relative !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    main {
+        padding: 0.5in !important;
+    }
+
+    /* Evitar que se rompa el fondo de la tabla o las tarjetas */
+    .bg-white,
+    .dark\:bg-slate-900 {
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Ajustes específicos para bordes de tabla en impresión */
+    .border-b {
+        border-bottom-color: #e2e8f0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
 }
