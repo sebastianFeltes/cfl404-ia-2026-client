@@ -22,14 +22,15 @@ import ProfilePage from './pages/ProfilePage'
 import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 
-/** Ruta protegida — redirige a /login si no hay sesión activa */
+/** Ruta protegida — redirige a /login si no hay JWT en el contexto */
 function PrivateRoute({ children }) {
-  const { isAuthenticated } = useAuth()
-  return isAuthenticated ? children : <Navigate to="/login" replace />
+  const { token } = useAuth()
+  return token ? children : <Navigate to="/login" replace />
 }
 
 function AppRoutes() {
-  return (
+  
+    return (
     <Routes>
 
       {/* ── Sitio público institucional — bajo AppLayout ── */}
@@ -54,7 +55,11 @@ function AppRoutes() {
       } />
 
       {/* ── Panel administrativo — bajo DashboardLayout ── */}
-      <Route path='/admin' element={<DashboardLayout />}>
+      <Route path='/admin' element={
+        <PrivateRoute>
+          <DashboardLayout />
+        </PrivateRoute>
+      }>
         <Route index element={<Navigate to="/admin/instructores" replace />} />
         <Route path='instructores' element={<Instructores />} />
         <Route path='alumnos' element={<Alumnos />} />
@@ -71,6 +76,7 @@ function AppRoutes() {
 }
 
 function App() {
+
   return (
     <AuthProvider>
       <BrowserRouter>
