@@ -1,105 +1,136 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Bell, ChevronDown, Menu, X, LogOut, User, BookOpen, GraduationCap, Settings, HelpCircle } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import React from 'react'
+import { Menu } from 'lucide-react'
+import Tooltip from './Tooltip'
 
-export default function Navbar({ onToggleMobileMenu, isMobileMenuOpen }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [showDropdown, setShowDropdown] = useState(false);
+/**
+ * Metadatos de rol: color de borde, insignia y avatar simulado de Google OAuth.
+ */
+const ROLE_META = {
+  director: {
+    label: 'Director',
+    username: 'godmode',
+    borderColor: 'ring-red-500',
+    badgeBg: 'bg-red-600 text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+  },
+  secretaria: {
+    label: 'Secretaría',
+    username: 'sec.admin',
+    borderColor: 'ring-custom-celeste',
+    badgeBg: 'bg-custom-celeste text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
+  },
+  docente: {
+    label: 'Docente',
+    username: 'docente01',
+    borderColor: 'ring-custom-gris-claro',
+    badgeBg: 'bg-custom-gris-oscuro text-white',
+    dotColor: 'bg-green-500',
+    photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80'
+  }
+}
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+/**
+ * Navbar — barra superior del dashboard.
+ * Muestra:
+ *   • Botón para colapsar/expandir el Sidebar
+ *   • Selector de rol (simulador de permisos RBAC)
+ *   • Foto de perfil del usuario (proveniente de Google OAuth), con el bordado de color de rol,
+ *     el indicador de estado (punto verde) y la insignia del rol integrada sobre la foto de perfil.
+ */
+function Navbar({ sidebarOpen, setSidebarOpen, userRole, setUserRole }) {
+  const meta = ROLE_META[userRole] || ROLE_META.director
 
   return (
-    <header className="bg-custom-azul-oscuro text-white shadow-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Left: Brand logo & title */}
-        <div className="flex items-center gap-3">
+    <header
+      className="h-16 bg-white border-b border-custom-gris-claro/10 flex items-center justify-between px-6 sticky top-0 z-20 font-roboto shadow-xs shrink-0"
+      role="banner"
+    >
+      {/* ── Izquierda: toggle sidebar & título ── */}
+      <div className="flex items-center gap-3">
+        <Tooltip text={sidebarOpen ? 'Colapsar menú' : 'Expandir menú'} position="bottom">
           <button
-            onClick={onToggleMobileMenu}
-            title="Abrir menú"
-            className="md:hidden p-2 rounded-lg hover:bg-white/10 text-white transition-colors cursor-pointer"
-            aria-label="Abrir menú"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 text-custom-gris-oscuro hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+            aria-label={sidebarOpen ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Menu className="h-5 w-5" />
           </button>
+        </Tooltip>
 
-          <div className="flex items-center cursor-pointer group relative" onClick={() => navigate('/perfil')}>
-            <img src="/logo_texto_hero.svg" alt="CFL N°404" className="h-14 w-auto object-contain" />
-            <div className="absolute top-full mt-2 left-0 hidden group-hover:block bg-custom-gris-oscuro text-white text-[11px] font-medium py-1 px-2.5 rounded-lg whitespace-nowrap shadow-lg pointer-events-none z-50">
-              Ir a Inicio / Mi Perfil
-            </div>
-          </div>
-        </div>
+        <span className="text-xs font-bold text-custom-gris-claro/70 uppercase tracking-widest hidden md:block select-none">
+          Panel Administrativo · CFL N°404
+        </span>
+      </div>
 
-        {/* Right: Notifications & User profile */}
-        <div className="flex items-center gap-4">
-          <div className="relative group">
-            <button
-              title="Notificaciones"
-              className="relative p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer text-blue-100 hover:text-white"
-              aria-label="Notificaciones"
+      {/* ── Derecha: selector de rol + avatar de perfil ── */}
+      <div className="flex items-center gap-5">
+
+        {/* Selector de rol (simulador RBAC) */}
+        <Tooltip text="Cambiar rol simulado" position="bottom">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="role-selector"
+              className="text-[10px] font-extrabold text-custom-gris-claro uppercase tracking-widest cursor-pointer hidden sm:block"
             >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-custom-amarillo rounded-full animate-ping"></span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-custom-amarillo rounded-full"></span>
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-custom-gris-oscuro text-white text-[11px] font-medium py-1 px-2.5 rounded-lg whitespace-nowrap shadow-lg pointer-events-none z-50">
-              Ver notificaciones
-            </div>
-          </div>
-
-          {/* User profile dropdown button */}
-          <div className="relative group">
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer text-left"
+              Simular Rol:
+            </label>
+            <select
+              id="role-selector"
+              value={userRole}
+              onChange={(e) => setUserRole(e.target.value)}
+              className="py-1.5 pl-2.5 pr-6 border border-custom-gris-claro/20 rounded-xl text-xs bg-gray-50 text-custom-gris-oscuro font-bold focus:outline-none focus:border-custom-azul-oscuro cursor-pointer"
             >
-              <img
-                src={user?.fotoUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80'}
-                alt={user?.nombres}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-white/40 shadow-sm"
+              <option value="director">Director</option>
+              <option value="secretaria">Secretaría</option>
+              <option value="docente">Docente</option>
+            </select>
+          </div>
+        </Tooltip>
+
+        {/* Separador */}
+        <div className="w-px h-8 bg-custom-gris-claro/15" />
+
+        {/* Avatar de Google OAuth con Rol integrado en la foto y Punto de Estado */}
+        <Tooltip
+          text={`Cuenta Google: ${meta.username}@cfl404.edu.ar · Rol: ${meta.label} · Estado: En línea`}
+          position="bottom"
+        >
+          <div className="flex items-center gap-3 cursor-pointer group">
+            {/* Foto de perfil con bordado de rol y badge */}
+            <div className="relative">
+              {/* Foto de perfil con ring bordado */}
+              <div className={`h-10 w-10 rounded-full ring-2 ring-offset-2 ${meta.borderColor} overflow-hidden shadow-sm transition-transform duration-200 group-hover:scale-105`}>
+                <img
+                  src={meta.photoUrl}
+                  alt={`Foto de Google de ${meta.username}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Punto de estado en línea (verde) sobre la foto */}
+              <span
+                className={`absolute bottom-0 right-0 w-3 h-3 ${meta.dotColor} rounded-full border-2 border-white shadow-xs`}
+                title="Estado: En línea"
               />
-              <div className="hidden sm:block leading-tight text-xs">
-                <p className="font-bold tracking-wide uppercase text-white font-nunito">{user?.nombres} {user?.apellidos}</p>
-                <p className="text-blue-200 text-[11px] font-roboto font-light">{user?.nombres} {user?.apellidos}</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-blue-200" />
-            </button>
-            <div className="absolute top-full mt-2 right-0 hidden group-hover:block bg-custom-gris-oscuro text-white text-[11px] font-medium py-1 px-2.5 rounded-lg whitespace-nowrap shadow-lg pointer-events-none z-50">
-              Menú de usuario
             </div>
 
-            {/* Dropdown Menu */}
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 text-custom-gris-oscuro border border-gray-100 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-4 py-2 border-b border-gray-100 bg-slate-50/50">
-                  <p className="text-xs font-semibold text-custom-gris-claro">Sesión iniciada como</p>
-                  <p className="text-sm font-bold text-custom-azul-oscuro truncate">{user?.correo}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowDropdown(false);
-                    navigate('/perfil');
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-100 font-nunito transition-colors cursor-pointer"
-                >
-                  <User className="w-4 h-4 text-custom-celeste" /> Mi Perfil
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-red-600 hover:bg-red-50 font-nunito transition-colors cursor-pointer border-t border-gray-100 mt-1"
-                >
-                  <LogOut className="w-4 h-4" /> Cerrar Sesión
-                </button>
-              </div>
-            )}
+            {/* Datos de usuario y badge de Rol pegado a la foto */}
+            <div className="hidden sm:flex flex-col items-start leading-tight">
+              <span className="text-xs font-extrabold text-custom-gris-oscuro font-nunito truncate max-w-[120px]">
+                {meta.username}
+              </span>
+              <span className={`text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded-full mt-0.5 ${meta.badgeBg}`}>
+                {meta.label}
+              </span>
+            </div>
           </div>
-        </div>
+        </Tooltip>
       </div>
     </header>
-  );
+  )
 }
+
+export default Navbar

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
+import NavbarPublic from '../components/NavbarPublic';
 import NotificationToast from '../components/NotificationToast';
 import {
   User,
@@ -131,10 +131,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-slate-100 font-nunito flex flex-col">
       {/* Top Header Navigation */}
-      <Navbar
-        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        isMobileMenuOpen={isMobileMenuOpen}
-      />
+      <NavbarPublic />
 
       <ToastNotification toast={toast} setToast={setToast} />
 

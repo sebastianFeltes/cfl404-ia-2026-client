@@ -1,44 +1,83 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  clearAuthToken,
+  getAuthToken,
+  isRememberedSession,
+  persistUser,
+  readStoredUser,
+  setAuthToken,
+  setOnUnauthorized,
+} from '../services/api';
 
 const AuthContext = createContext(null);
 
-export const initialUserData = {
-  nombres: 'Martina',
-  apellidos: 'García',
-  correo: 'm.garcia.404@email.com',
-  dni: '38.456.789',
-  rol: 'Estudiante, regular',
-  estado: 'Alumno Regular',
-  institucion: "CFL N°404 'Berisso'",
-  fotoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-};
+function normalizeUser(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+
+  return {
+    id: payload.id ?? null,
+    nombres: payload.nombres || payload.firstName || '',
+    apellidos: payload.apellidos || payload.lastName || '',
+    correo: payload.correo || payload.email || '',
+    dni: payload.dni || '',
+    rol: payload.rol || payload.role?.name || payload.role || '',
+    estado: payload.estado || payload.status || '',
+    institucion: payload.institucion || "CFL N°404 'Berisso'",
+    fotoUrl: payload.fotoUrl || payload.profilePhotoUrl || '',
+  };
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(initialUserData);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [token, setToken] = useState(() => getAuthToken());
+  const [user, setUser] = useState(() => normalizeUser(readStoredUser()));
+  const [remember, setRemember] = useState(() => isRememberedSession());
 
-  const login = (email, password) => {
-    setIsAuthenticated(true);
-    setUser((prev) => ({
-      ...prev,
-      correo: email || prev.correo,
-    }));
+  const isAuthenticated = Boolean(token);
+
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      setToken(null);
+      setUser(null);
+    });
+
+    return () => setOnUnauthorized(null);
+  }, []);
+
+  const login = useCallback((jwt, userPayload, { remember: rememberSession = true } = {}) => {
+    if (!jwt) {
+      throw new Error('No se recibió un token JWT del servidor');
+    }
+
+    const nextUser = normalizeUser(userPayload);
+    setAuthToken(jwt, { remember: rememberSession });
+    persistUser(nextUser, { remember: rememberSession });
+    setRemember(rememberSession);
+    setToken(jwt);
+    setUser(nextUser);
     return true;
-  };
+  }, []);
 
-  const logout = () => {
-    setIsAuthenticated(false);
-  };
+  const logout = useCallback(() => {
+    clearAuthToken();
+    setToken(null);
+    setUser(null);
+  }, []);
 
-  const updateUser = (updatedFields) => {
-    setUser((prev) => ({
-      ...prev,
-      ...updatedFields,
-    }));
-  };
+  const updateUser = useCallback((updatedFields) => {
+    setUser((prev) => {
+      const next = normalizeUser({ ...prev, ...updatedFields });
+      persistUser(next, { remember });
+      return next;
+    });
+  }, [remember]);
+
+  const value = useMemo(
+    () => ({ token, user, isAuthenticated, login, logout, updateUser }),
+    [token, user, isAuthenticated, login, logout, updateUser],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
