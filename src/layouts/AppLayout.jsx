@@ -73,11 +73,11 @@ function AppLayout() {
     }
 
     const navItems = [
-        { key: 'inicio', path: '/', label: 'Inicio', icon: Home, end: true },
-        { key: 'institucional', path: '/institucional', label: 'Institucional', icon: Building2, end: false },
-        { key: 'cursos', path: '/#cursos', label: 'Cursos', icon: GraduationCap, end: false },
-        { key: 'cooperadora', path: '/cooperadora', label: 'Cooperadora', icon: Users, end: false },
-        { key: 'contactos', path: '/#contacto', label: 'Contactos', icon: Mail, end: false },
+        { key: 'inicio',        path: '/',              label: 'Inicio',        icon: Home,          end: true  },
+        { key: 'institucional', path: '/institucional', label: 'Institucional', icon: Building2,     end: false },
+        { key: 'cursos',        path: '/#cursos',       label: 'Cursos',        icon: GraduationCap, end: false },
+        { key: 'cooperadora',   path: '/cooperadora',   label: 'Cooperadora',   icon: Users,         end: false },
+        { key: 'contactos',    path: '/#contacto',     label: 'Contactos',     icon: Mail,          end: false },
     ]
 
     // Visibilidad del logo en el navbar: oculto en Home sin scroll, visible al scrollear o en otras páginas
@@ -99,8 +99,9 @@ function AppLayout() {
                     <NavLink
                         to="/"
                         onClick={handleLogoClick}
-                        className={`flex items-center active:scale-95 transition-all duration-300 ${showLogo ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                            }`}
+                        className={`flex items-center active:scale-95 transition-all duration-300 ${
+                            showLogo ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                        }`}
                     >
                         <img
                             src="/logo_texto_hero.svg"
@@ -120,10 +121,11 @@ function AppLayout() {
                                 className={({ isActive }) => {
                                     // Para 'cursos' y 'contactos', marcamos activo si estamos en Home y en esa sección
                                     const active = item.key === 'cursos' || item.key === 'contactos' ? false : isActive
-                                    return `flex items-center gap-2 font-nunito font-semibold text-sm transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-white/15 ${active
+                                    return `flex items-center gap-2 font-nunito font-semibold text-sm transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-white/15 ${
+                                        active
                                             ? 'text-custom-amarillo bg-white/10'
                                             : 'text-white/85 hover:text-white'
-                                        }`
+                                    }`
                                 }}
                             >
                                 <item.icon className="w-4 h-4" />
@@ -137,9 +139,10 @@ function AppLayout() {
                             to="/login"
                             onClick={closeMenu}
                             className={({ isActive }) =>
-                                `flex items-center gap-2 font-nunito font-bold text-sm transition-all duration-200 py-1.5 px-4 rounded-lg border ${isActive
-                                    ? 'bg-custom-amarillo text-custom-gris-oscuro border-custom-amarillo'
-                                    : 'text-white border-white/30 hover:bg-white/15 hover:border-white/50'
+                                `flex items-center gap-2 font-nunito font-bold text-sm transition-all duration-200 py-1.5 px-4 rounded-lg border ${
+                                    isActive
+                                        ? 'bg-custom-amarillo text-custom-gris-oscuro border-custom-amarillo'
+                                        : 'text-white border-white/30 hover:bg-white/15 hover:border-white/50'
                                 }`
                             }
                         >
@@ -162,8 +165,9 @@ function AppLayout() {
 
             {/* ── Mobile Drawer ── */}
             <div
-                className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${isMenuOpen ? 'visible opacity-100' : 'invisible opacity-0 pointer-events-none'
-                    }`}
+                className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+                    isMenuOpen ? 'visible opacity-100' : 'invisible opacity-0 pointer-events-none'
+                }`}
             >
                 {/* Backdrop */}
                 <div
@@ -173,10 +177,11 @@ function AppLayout() {
 
                 {/* Drawer panel */}
                 <div
-                    className={`absolute right-4 top-4 w-72 max-w-[85vw] bg-custom-azul-oscuro text-white rounded-2xl shadow-2xl p-6 border border-white/10 flex flex-col transition-all duration-300 transform ${isMenuOpen
+                    className={`absolute right-4 top-4 w-72 max-w-[85vw] bg-custom-azul-oscuro text-white rounded-2xl shadow-2xl p-6 border border-white/10 flex flex-col transition-all duration-300 transform ${
+                        isMenuOpen
                             ? 'translate-x-0 translate-y-0 scale-100 opacity-100'
                             : 'translate-x-10 -translate-y-10 scale-90 opacity-0'
-                        }`}
+                    }`}
                 >
                     {/* Close */}
                     <div className="flex justify-end mb-5">
@@ -199,10 +204,11 @@ function AppLayout() {
                                 onClick={(e) => handleNavClick(e, item)}
                                 className={({ isActive }) => {
                                     const active = item.key === 'cursos' || item.key === 'contactos' ? false : isActive
-                                    return `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${active
+                                    return `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
+                                        active
                                             ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
                                             : 'hover:bg-white/10 text-white'
-                                        }`
+                                    }`
                                 }}
                             >
                                 <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -216,9 +222,10 @@ function AppLayout() {
                                 to="/login"
                                 onClick={closeMenu}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${isActive
-                                        ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
-                                        : 'bg-white/10 hover:bg-white/20 text-white'
+                                    `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
+                                        isActive
+                                            ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
+                                            : 'bg-white/10 hover:bg-white/20 text-white'
                                     }`
                                 }
                             >
