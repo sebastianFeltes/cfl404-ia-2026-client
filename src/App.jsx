@@ -78,7 +78,6 @@ function AppRoutes() {
 }
 
 function App() {
-
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -88,4 +87,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
