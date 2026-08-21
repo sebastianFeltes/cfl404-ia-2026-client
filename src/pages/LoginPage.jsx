@@ -53,11 +53,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center font-nunito p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px] border border-gray-100">
-        
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center font-nunito p-4 sm:p-6">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 border border-gray-100 my-auto">
+
         {/* Left Side: Institutional Hero Branding */}
-        <div className="lg:col-span-6 relative bg-custom-azul-oscuro text-white p-8 lg:p-12 flex flex-col justify-between overflow-hidden group">
+        <div className="lg:col-span-6 relative bg-custom-azul-oscuro text-white p-8 lg:p-10 flex flex-col items-center justify-center overflow-hidden group min-h-[280px] lg:min-h-full">
           {/* Background Image with Dark Blue Overlay */}
           <div className="absolute inset-0 z-0">
             <img
@@ -68,29 +68,21 @@ export default function LoginPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-custom-azul-oscuro via-custom-azul-oscuro/90 to-custom-azul-oscuro/70" />
           </div>
 
-          {/* Group Logo and Middle Content to flow together and avoid empty gaps */}
-          <div className="relative z-10 w-full pt-48">
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-white leading-tight font-roboto mb-4 text-center">
-              Potenciá tu futuro profesional con capacitación laboral oficial.
+          {/* Institutional Logo & Title */}
+          <div className="relative z-10 w-full flex flex-col items-center justify-center text-center py-4 lg:py-6">
+            <img src="/logo_texto_hero.svg" alt="CFL N°404" className="h-28 sm:h-32 lg:h-36 w-auto object-contain mb-5 drop-shadow-md" />
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight font-roboto max-w-sm">
+              Educación para el presente, trabajo para el futuro
             </h1>
-            <p className="text-blue-100 text-sm lg:text-base font-light leading-relaxed text-center">
-              Accedé a tu perfil de estudiante, consultá tus calificaciones, estado de regularidad y contenidos de tus cursos.
-            </p>
-            <img src="/logo_texto_hero.svg" alt="CFL N°404" className="absolute top-0 left-1/2 -translate-x-1/2 h-[180px] w-auto object-contain" />
-          </div>
-
-          {/* Bottom Footer Text */}
-          <div className="relative z-10 text-xs text-blue-200/80 pt-4 border-t border-white/10 mt-8">
-            © 2026 CFL N°404 Berisso. Todos los derechos reservados.
           </div>
         </div>
 
         {/* Right Side: Login Form */}
-        <div className="lg:col-span-6 p-8 lg:p-12 flex flex-col justify-center bg-white">
+        <div className="lg:col-span-6 p-6 sm:p-8 lg:p-10 flex flex-col justify-center bg-white">
           <div className="max-w-md mx-auto w-full">
-            
-            <div className="mb-8">
-              <h2 className="text-2xl lg:text-3xl font-extrabold text-custom-gris-oscuro font-roboto mb-2">
+
+            <div className="mb-5">
+              <h2 className="text-2xl lg:text-3xl font-extrabold text-custom-gris-oscuro font-roboto mb-1">
                 ¡Bienvenido/a de nuevo!
               </h2>
               <p className="text-custom-gris-claro text-sm">
@@ -99,15 +91,15 @@ export default function LoginPage() {
             </div>
 
             {errorMsg && (
-              <div className="mb-6 p-3.5 bg-rose-50 border-l-4 border-rose-500 rounded-r-xl text-rose-700 text-sm font-medium animate-pulse">
+              <div className="mb-4 p-3 bg-rose-50 border-l-4 border-rose-500 rounded-r-xl text-rose-700 text-sm font-medium animate-pulse">
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email / DNI Field */}
               <div>
-                <label className="block text-xs font-bold text-custom-gris-oscuro uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-custom-gris-oscuro uppercase tracking-wider mb-1.5">
                   Correo Electrónico o DNI
                 </label>
                 <div className="relative">
@@ -119,14 +111,14 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="m.garcia.404@email.com o DNI"
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-custom-gris-oscuro placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-custom-celeste focus:bg-white transition-all text-sm font-medium"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-custom-gris-oscuro placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-custom-celeste focus:bg-white transition-all text-sm font-medium"
                   />
                 </div>
               </div>
 
               {/* Password Field */}
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-xs font-bold text-custom-gris-oscuro uppercase tracking-wider">
                     Contraseña
                   </label>
@@ -150,7 +142,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-custom-gris-oscuro placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-custom-celeste focus:bg-white transition-all text-sm font-medium"
+                    className="w-full pl-11 pr-11 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-custom-gris-oscuro placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-custom-celeste focus:bg-white transition-all text-sm font-medium"
                   />
                   <button title="Mostrar u ocultar contraseña"
                     type="button"
@@ -179,7 +171,7 @@ export default function LoginPage() {
               <button title="Iniciar sesión"
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 px-4 bg-custom-celeste hover:bg-custom-azul-oscuro text-white font-bold rounded-xl shadow-lg shadow-custom-celeste/20 hover:shadow-custom-azul-oscuro/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-sm tracking-wide disabled:opacity-70"
+                className="w-full py-3 px-4 bg-custom-celeste hover:bg-custom-azul-oscuro text-white font-bold rounded-xl shadow-lg shadow-custom-celeste/20 hover:shadow-custom-azul-oscuro/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-sm tracking-wide disabled:opacity-70"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -192,8 +184,8 @@ export default function LoginPage() {
               </button>
 
               {/* Quick Fill Demo Pill */}
-              <div className="pt-4 border-t border-slate-100 text-center">
-                <p className="text-xs text-slate-500 mb-2 font-normal">
+              <div className="pt-3 border-t border-slate-100 text-center">
+                <p className="text-xs text-slate-500 mb-1.5 font-normal">
                   ¿Querés probar rápidamente la demo?
                 </p>
                 <button
