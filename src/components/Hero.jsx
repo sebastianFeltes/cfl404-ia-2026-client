@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import hombre from '../assets/hombre_soldando.PNG'
+import hombre from '../assets/hombre_soldando.webp'
 
 export default function Hero() {
   return (

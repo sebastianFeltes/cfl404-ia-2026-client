@@ -13,10 +13,10 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const roles = [
-    { id: 'aspirante', label: 'Futuro Estudiante' },
-    { id: 'alumno', label: 'Alumno / Cursante' },
-    { id: 'docente', label: 'Docente / Instructor' },
-    { id: 'empresa', label: 'Empresa / Institución' },
+    { id: 'publico', label: 'Modo Público' },
+    { id: 'aspirante', label: 'Aspirantes' },
+    { id: 'alumno', label: 'Alumno' },
+    { id: 'docente', label: 'Docente' },
   ];
 
   return (

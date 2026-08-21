@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import Hero from '../components/Hero';
 import FAQ from '../components/FAQ';
 import CourseFilters from '../components/CourseFilters';
@@ -6,10 +7,14 @@ import CourseCard from '../components/CourseCard';
 import CourseDetailModal from '../components/CourseDetailModal';
 import EnrollmentModal from '../components/EnrollmentModal';
 import { coursesData as initialCourses } from '../data/coursesData';
-import { CheckCircle2, AlertCircle, Download } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Download, UserCheck, LogIn } from 'lucide-react';
 
 export default function Home() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState(initialCourses);
+
+  // Role / Visitor Mode State ('publico', 'aspirante', 'alumno', 'docente')
+  const [selectedRole, setSelectedRole] = useState('publico');
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,6 +49,18 @@ export default function Home() {
       return true;
     });
   }, [courses, selectedStage, selectedCategory, searchTerm]);
+
+  // Handler for enrolling (differentiates Public -> /login vs Aspirante -> Modal)
+  const handleEnrollClick = (course) => {
+    if (selectedRole === 'aspirante') {
+      setEnrollCourse(course);
+    } else {
+      showToast('En modo público la pre-inscripción requiere iniciar sesión. Redirigiendo a Login...', 'info');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1000);
+    }
+  };
 
   // Handle Enrollment Success
   const handleEnrollSuccess = ({ courseName, studentName }) => {
@@ -93,6 +110,42 @@ export default function Home() {
       {/* Hero section con imagen de fondo y CTAs */}
       <Hero />
 
+      {/* Selector de Modo / Perfil de Navegación */}
+      <div className="bg-[#1D1E1C] text-gray-200 text-xs py-2.5 px-4 border-b border-white/10 sticky top-16 z-30 shadow-md">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 font-nunito">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#FDEA14] animate-pulse"></span>
+            <span>Seleccione su perfil de acceso para la oferta educativa:</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-gray-800/80 p-1 rounded-lg border border-gray-700">
+            <button
+              onClick={() => setSelectedRole('publico')}
+              className={`px-3 py-1 rounded-md font-bold text-xs transition-all cursor-pointer flex items-center gap-1 ${
+                selectedRole === 'publico'
+                  ? 'bg-[#166193] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Modo Público (Redirige a Login)
+            </button>
+
+            <button
+              onClick={() => setSelectedRole('aspirante')}
+              className={`px-3 py-1 rounded-md font-bold text-xs transition-all cursor-pointer flex items-center gap-1 ${
+                selectedRole === 'aspirante'
+                  ? 'bg-[#37ACDE] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              Modo Aspirantes (Abre Modal)
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Catálogo de Cursos */}
       <section id="cursos" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
@@ -125,7 +178,7 @@ export default function Home() {
             </div>
           </div>
           <span className="text-xs font-bold text-[#166193] bg-[#166193]/10 px-3 py-1.5 rounded-lg border border-[#166193]/20 whitespace-nowrap">
-            Actualmente en: Julio 2026
+            Modo Activo: {selectedRole === 'aspirante' ? 'Aspirantes (Modal Activo)' : 'Público (Redirige a Login)'}
           </span>
         </div>
 
@@ -143,7 +196,7 @@ export default function Home() {
             </p>
             <button
               onClick={() => { setSearchTerm(''); setSelectedCategory('Todos'); setSelectedStage('segunda'); }}
-              className="bg-[#166193] text-white font-bold px-6 py-2.5 rounded-xl text-xs"
+              className="bg-[#166193] text-white font-bold px-6 py-2.5 rounded-xl text-xs cursor-pointer"
             >
               Restablecer Filtros
             </button>
@@ -155,7 +208,7 @@ export default function Home() {
                 key={course.id}
                 course={course}
                 onSelectCourse={(c) => setDetailCourse(c)}
-                onEnrollCourse={(c) => setEnrollCourse(c)}
+                onEnrollCourse={handleEnrollClick}
               />
             ))}
           </div>
@@ -170,7 +223,7 @@ export default function Home() {
         <CourseDetailModal
           course={detailCourse}
           onClose={() => setDetailCourse(null)}
-          onEnroll={(c) => setEnrollCourse(c)}
+          onEnroll={handleEnrollClick}
           onDownloadPlanilla={handleDownloadPlanilla}
         />
       )}
