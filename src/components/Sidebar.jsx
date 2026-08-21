@@ -33,7 +33,7 @@ const navItems = [
   {
     label: 'Cursos',
     icon: Book,
-    path: '/admin/cursos-admin',
+    path: '/admin/cursos',
     title: 'Gestión de ofertas formativas',
   },
   {

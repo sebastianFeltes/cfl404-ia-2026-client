@@ -28,19 +28,49 @@ function normalizeUser(payload) {
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => getAuthToken());
-  const [user, setUser] = useState(() => normalizeUser(readStoredUser()));
+  // =========================================================================
+  // COMENTADO PARA MODO DESARROLLO:
+  // Se comenta la verificación estricta del token JWT para permitir navegar
+  // en las rutas internas del sistema (/admin, /perfil, etc.) sin necesidad
+  // de iniciar sesión en el servidor durante la etapa de desarrollo.
+  // =========================================================================
+  
+  // VALIDACIÓN DE TOKEN ORIGINAL (Comentada para desarrollo):
+  // const [token, setToken] = useState(() => getAuthToken());
+
+  // TOKEN SIMULADO EN MODO DESARROLLO (Bypass de autenticación):
+  const [token, setToken] = useState(() => getAuthToken() || 'dev-token-bypass');
+
+  // USUARIO EN MODO DESARROLLO (Si no hay sesión almacenada, usa un usuario mock):
+  // const [user, setUser] = useState(() => normalizeUser(readStoredUser()));
+  const [user, setUser] = useState(() => normalizeUser(readStoredUser()) || {
+    id: 1,
+    nombres: 'Usuario',
+    apellidos: 'Desarrollo',
+    correo: 'dev@cfp404.edu.ar',
+    dni: '12345678',
+    rol: 'administrador',
+    estado: 'activo',
+    institucion: "CFL N°404 'Berisso'",
+    fotoUrl: ''
+  });
+
   const [remember, setRemember] = useState(() => isRememberedSession());
 
+  // Estado de autenticación (siempre evalúa a true con el token simulado)
   const isAuthenticated = Boolean(token);
 
   useEffect(() => {
-    setOnUnauthorized(() => {
-      setToken(null);
-      setUser(null);
-    });
-
-    return () => setOnUnauthorized(null);
+    // =========================================================================
+    // COMENTADO PARA MODO DESARROLLO:
+    // Se comenta el listener 'setOnUnauthorized' que limpia el token y desloguea
+    // al usuario cuando la API devuelve un código de estado 401 (No autorizado).
+    // =========================================================================
+    // setOnUnauthorized(() => {
+    //   setToken(null);
+    //   setUser(null);
+    // });
+    // return () => setOnUnauthorized(null);
   }, []);
 
   const login = useCallback((jwt, userPayload, { remember: rememberSession = true } = {}) => {

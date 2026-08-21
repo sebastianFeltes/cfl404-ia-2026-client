@@ -17,13 +17,15 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router": "^7.18.1",
-    "tailwindcss": "^4.3.2"
+    "tailwindcss": "^4.3.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "oxlint": "^1.69.0",
+    "sharp": "^0.35.3",
     "vite": "^8.1.0"
   }
 }
