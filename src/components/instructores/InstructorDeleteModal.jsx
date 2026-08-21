@@ -1,5 +1,6 @@
 import React from 'react'
 import { AlertTriangle, Trash2, X } from 'lucide-react'
+import Tooltip from '../Tooltip'
 
 function InstructorDeleteModal({ instructor, isOpen, onClose, onConfirm }) {
   if (!isOpen || !instructor) return null
@@ -20,13 +21,17 @@ function InstructorDeleteModal({ instructor, isOpen, onClose, onConfirm }) {
         aria-labelledby="modal-title"
       >
         {/* Header Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
-          aria-label="Cerrar confirmación"
-        >
-          <X className="h-4.5 w-4.5" />
-        </button>
+        <div className="absolute top-4 right-4">
+          <Tooltip text="Cerrar diálogo" position="left">
+            <button
+              onClick={onClose}
+              className="text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
+              aria-label="Cerrar confirmación"
+            >
+              <X className="h-4.5 w-4.5" />
+            </button>
+          </Tooltip>
+        </div>
 
         {/* Modal content body */}
         <div className="p-6">
@@ -62,20 +67,24 @@ function InstructorDeleteModal({ instructor, isOpen, onClose, onConfirm }) {
 
         {/* Modal Actions */}
         <div className="bg-gray-50 dark:bg-slate-950 px-6 py-4 flex items-center gap-3 justify-end border-t border-gray-100 dark:border-slate-800">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          >
-            Cancelar
-          </button>
+          <Tooltip text="Cancelar y mantener al docente" position="top">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </Tooltip>
           
-          <button
-            onClick={() => onConfirm(instructor.id)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
-          >
-            <Trash2 className="h-4 w-4" />
-            Confirmar Eliminación
-          </button>
+          <Tooltip text="Eliminar definitivamente del sistema" position="top">
+            <button
+              onClick={() => onConfirm(instructor.id)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4" />
+              Confirmar Eliminación
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

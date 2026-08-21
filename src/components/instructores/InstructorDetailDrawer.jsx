@@ -1,6 +1,7 @@
 import React from 'react'
 import { X, Calendar, Phone, Mail, MapPin, Award, BookOpen, Clock, Download, Printer, GraduationCap } from 'lucide-react'
 import BadgeStatus from '../BadgeStatus'
+import Tooltip from '../Tooltip'
 
 function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
   if (!instructor) return null
@@ -25,35 +26,40 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
       >
         {/* Header section with blue custom background */}
         <div className="p-6 bg-custom-azul-oscuro text-white relative shrink-0">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-            title="Cerrar panel de detalle"
-            aria-label="Cerrar panel de detalle"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="absolute top-4 right-4">
+            <Tooltip text="Cerrar panel" position="left">
+              <button
+                onClick={onClose}
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                aria-label="Cerrar panel de detalle"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </Tooltip>
+          </div>
           
           <div className="flex items-center gap-4 mt-2">
-            {instructor.profile_photo_url ? (
-              <img 
-                src={instructor.profile_photo_url} 
-                alt={`${instructor.first_name} ${instructor.last_name}`}
-                className={`h-16 w-16 rounded-full object-cover shadow-md ${
+            <Tooltip text={`Foto de perfil de ${instructor.first_name} ${instructor.last_name}`} position="bottom">
+              {instructor.profile_photo_url ? (
+                <img 
+                  src={instructor.profile_photo_url} 
+                  alt={`${instructor.first_name} ${instructor.last_name}`}
+                  className={`h-16 w-16 rounded-full object-cover shadow-md cursor-pointer ${
+                    instructor.status_id === 1 ? 'border-2 border-emerald-500 ring-2 ring-emerald-500/30' :
+                    instructor.status_id === 3 ? 'border-2 border-amber-500 ring-2 ring-amber-500/30' :
+                    'border-2 border-red-500 ring-2 ring-red-500/30'
+                  }`}
+                />
+              ) : (
+                <div className={`h-16 w-16 rounded-full bg-white text-custom-azul-oscuro flex items-center justify-center text-2xl font-extrabold font-nunito shadow-md cursor-pointer ${
                   instructor.status_id === 1 ? 'border-2 border-emerald-500 ring-2 ring-emerald-500/30' :
                   instructor.status_id === 3 ? 'border-2 border-amber-500 ring-2 ring-amber-500/30' :
                   'border-2 border-red-500 ring-2 ring-red-500/30'
-                }`}
-              />
-            ) : (
-              <div className={`h-16 w-16 rounded-full bg-white text-custom-azul-oscuro flex items-center justify-center text-2xl font-extrabold font-nunito shadow-md ${
-                instructor.status_id === 1 ? 'border-2 border-emerald-500 ring-2 ring-emerald-500/30' :
-                instructor.status_id === 3 ? 'border-2 border-amber-500 ring-2 ring-amber-500/30' :
-                'border-2 border-red-500 ring-2 ring-red-500/30'
-              }`}>
-                {instructor.first_name[0]}{instructor.last_name[0]}
-              </div>
-            )}
+                }`}>
+                  {instructor.first_name[0]}{instructor.last_name[0]}
+                </div>
+              )}
+            </Tooltip>
             <div>
               <h2 id="drawer-title" className="font-nunito font-extrabold text-xl leading-tight text-white">
                 {instructor.first_name} {instructor.last_name}
@@ -62,10 +68,14 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
                 ID Docente: #{instructor.id}
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <BadgeStatus status={instructor.status_id === 3 ? 'licencia' : instructor.status_id} />
-                <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded font-bold uppercase">
-                  {instructor.role_name}
-                </span>
+                <Tooltip text={`Estado actual: ${instructor.status_id === 1 ? 'Activo' : instructor.status_id === 3 ? 'En Licencia' : 'Inactivo'}`} position="bottom">
+                  <BadgeStatus status={instructor.status_id === 3 ? 'licencia' : instructor.status_id} />
+                </Tooltip>
+                <Tooltip text="Categoría en el cuerpo docente" position="bottom">
+                  <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded font-bold uppercase cursor-help">
+                    {instructor.role_name}
+                  </span>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -82,8 +92,8 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
             </h3>
             <div className="bg-gray-50 dark:bg-slate-950 p-4 rounded-xl space-y-3 border border-gray-100/50 dark:border-slate-800/80">
               <div>
-                <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Especialidad Principal</p>
-                <p className="text-sm font-extrabold text-custom-azul-oscuro dark:text-custom-celeste mt-0.5">{instructor.specialty || instructor.course_name || 'Docencia Técnica'}</p>
+                <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Área de Enseñanza</p>
+                <p className="text-sm font-extrabold text-custom-azul-oscuro dark:text-custom-celeste mt-0.5">{instructor.course_name || 'Docencia Técnica'}</p>
               </div>
               
               <div className="pt-2 border-t border-gray-100 dark:border-slate-800">
@@ -91,28 +101,28 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
                 <div className="flex flex-wrap gap-1.5">
                   {instructor.assigned_courses && instructor.assigned_courses.length > 0 ? (
                     instructor.assigned_courses.map((curso, idx) => (
-                      <span key={idx} className="text-xs font-bold bg-custom-celeste/10 dark:bg-custom-celeste/15 text-custom-azul-oscuro dark:text-custom-celeste px-2.5 py-1 rounded-md border border-custom-celeste/20 dark:border-custom-celeste/30 flex items-center gap-1">
-                        <BookOpen className="h-3 w-3 text-custom-celeste" />
-                        {curso}
-                      </span>
+                      <Tooltip key={idx} text={`Curso formativo: ${curso}`} position="top">
+                        <span className="text-xs font-bold bg-custom-celeste/10 dark:bg-custom-celeste/15 text-custom-azul-oscuro dark:text-custom-celeste px-2.5 py-1 rounded-md border border-custom-celeste/20 dark:border-custom-celeste/30 flex items-center gap-1 cursor-default">
+                          <BookOpen className="h-3 w-3 text-custom-celeste" />
+                          {curso}
+                        </span>
+                      </Tooltip>
                     ))
                   ) : (
-                    <span className="text-xs font-bold bg-custom-celeste/10 dark:bg-custom-celeste/15 text-custom-azul-oscuro dark:text-custom-celeste px-2.5 py-1 rounded-md border border-custom-celeste/20 dark:border-custom-celeste/30 flex items-center gap-1">
-                      <BookOpen className="h-3 w-3 text-custom-celeste" />
-                      {instructor.course_name || 'Sin cursos asignados'}
-                    </span>
+                    <Tooltip text={instructor.course_name ? `Curso formativo: ${instructor.course_name}` : 'Sin cursos asignados actualmente'} position="top">
+                      <span className="text-xs font-bold bg-custom-celeste/10 dark:bg-custom-celeste/15 text-custom-azul-oscuro dark:text-custom-celeste px-2.5 py-1 rounded-md border border-custom-celeste/20 dark:border-custom-celeste/30 flex items-center gap-1 cursor-default">
+                        <BookOpen className="h-3 w-3 text-custom-celeste" />
+                        {instructor.course_name || 'Sin cursos asignados'}
+                      </span>
+                    </Tooltip>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+              <div className="pt-2 border-t border-gray-100 dark:border-slate-800">
                 <div>
-                  <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Fecha de Ingreso</p>
-                  <p className="text-xs text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5">{instructor.hire_date || instructor.enrollment_date || 'No registrado'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Nivel Académico</p>
-                  <p className="text-xs text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5 capitalize">{instructor.academic_level || 'Universitario'}</p>
+                  <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Fecha de Registro</p>
+                  <p className="text-xs text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5">{instructor.created_at ? new Date(instructor.created_at).toLocaleDateString('es-AR') : 'No registrado'}</p>
                 </div>
               </div>
             </div>
@@ -136,14 +146,18 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
                 <Phone className="h-4 w-4 text-custom-gris-claro dark:text-slate-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-custom-gris-claro dark:text-slate-400">Teléfono de Contacto</p>
-                  <p className="text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5 font-mono">{instructor.phone || 'Sin registrar'}</p>
+                  <Tooltip text={`Llamar a ${instructor.phone}`} position="top">
+                    <p className="text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5 font-mono cursor-pointer hover:underline">{instructor.phone || 'Sin registrar'}</p>
+                  </Tooltip>
                 </div>
               </li>
               <li className="flex items-start gap-2.5">
                 <Mail className="h-4 w-4 text-custom-gris-claro dark:text-slate-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-custom-gris-claro dark:text-slate-400">Email Institucional</p>
-                  <p className="text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5">{instructor.email}</p>
+                  <Tooltip text={`Enviar correo a ${instructor.email}`} position="top">
+                    <p className="text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5 cursor-pointer hover:underline">{instructor.email}</p>
+                  </Tooltip>
                 </div>
               </li>
             </ul>
@@ -162,7 +176,9 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
               </div>
               <div className="text-right">
                 <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Estado de Legajo</p>
-                <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">Completo / Vigente</p>
+                <Tooltip text="Legajo verificado administrativamente" position="top">
+                  <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 cursor-help">Completo / Vigente</p>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -171,22 +187,25 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
 
         {/* Footer Actions */}
         <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => onExport && onExport(instructor.id)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-white dark:bg-slate-900 border border-custom-gris-claro/20 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
-          >
-            <Download className="h-4 w-4 text-custom-azul-oscuro dark:text-custom-celeste" />
-            Descargar Ficha PDF
-          </button>
+          <Tooltip text="Descargar legajo completo del docente en PDF" position="top">
+            <button
+              onClick={() => onExport && onExport(instructor.id)}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-white dark:bg-slate-900 border border-custom-gris-claro/20 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            >
+              <Download className="h-4 w-4 text-custom-azul-oscuro dark:text-custom-celeste" />
+              Descargar Ficha PDF
+            </button>
+          </Tooltip>
           
-          <button
-            onClick={() => window.print()}
-            className="p-2 border border-custom-gris-claro/20 dark:border-slate-700 text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-900"
-            title="Imprimir legajo"
-            aria-label="Imprimir legajo"
-          >
-            <Printer className="h-4 w-4" />
-          </button>
+          <Tooltip text="Imprimir ficha del docente" position="top">
+            <button
+              onClick={() => window.print()}
+              className="p-2 border border-custom-gris-claro/20 dark:border-slate-700 text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-900"
+              aria-label="Imprimir legajo"
+            >
+              <Printer className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
       </section>
     </>

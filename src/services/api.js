@@ -97,10 +97,11 @@ api.interceptors.response.use(
 )
 
 function extractError(error) {
-  return error.response?.data?.error
-    || error.response?.data?.message
-    || error.message
-    || 'Error de red'
+  const data = error.response?.data
+  if (typeof data?.message === 'string') return data.message
+  if (typeof data?.error === 'string') return data.error
+  if (typeof data?.error?.message === 'string') return data.error.message
+  return error.message || 'Error de red'
 }
 
 export async function GET(route) {

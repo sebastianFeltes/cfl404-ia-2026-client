@@ -1,5 +1,5 @@
-import React from 'react'
-import { Inbox, Plus, Eye, Pencil, Trash2, BookOpen } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Inbox, Plus, Eye, Pencil, Trash2, BookOpen, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import Tooltip from '../Tooltip'
 
 const getStatusBorder = (status) => {
@@ -29,15 +29,45 @@ function InstructoresDataTable({
   userRole
 }) {
   const tableHeaders = [
-    { label: 'Instructor', align: 'left', width: 'w-[30%]' },
-    { label: 'DNI', align: 'left', width: 'w-[14%]' },
-    { label: 'Email Institucional', align: 'left', width: 'w-[24%]' },
-    { label: 'Teléfono', align: 'left', width: 'w-[14%]' },
-    { label: 'Cursos Asignados', align: 'left', width: 'w-[10%]' },
-    { label: 'Acciones', align: 'center', width: 'w-[8%]' }
+    { label: 'Instructor', align: 'left', width: 'w-[24%]', title: 'Nombre completo, foto y especialidad' },
+    { label: 'DNI', align: 'left', width: 'w-[12%]', title: 'Documento Nacional de Identidad' },
+    { label: 'Email Institucional', align: 'left', width: 'w-[22%]', title: 'Correo electrónico oficial' },
+    { label: 'Teléfono', align: 'left', width: 'w-[14%]', title: 'Teléfono o móvil de contacto' },
+    { label: 'Cursos Asignados', align: 'left', width: 'w-[18%]', title: 'Oferta técnica y fecha de asignación' },
+    { label: 'Acciones', align: 'center', width: 'w-[10%]', title: 'Ver detalle, editar o eliminar' }
   ]
 
-  const skeletonRows = Array(5).fill(null)
+  // Pagination state (5, 15, 25)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
+
+  // Reset to page 1 whenever list changes (filter/search)
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [instructores.length])
+
+  const totalItems = instructores.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const validCurrentPage = Math.min(Math.max(currentPage, 1), totalPages)
+  const startIndex = (validCurrentPage - 1) * pageSize
+  const endIndex = Math.min(startIndex + pageSize, totalItems)
+  const paginatedInstructores = instructores.slice(startIndex, endIndex)
+
+  // Smart pagination range generator
+  const paginationRange = useMemo(() => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    if (validCurrentPage <= 3) {
+      return [1, 2, 3, 4, '...', totalPages]
+    }
+    if (validCurrentPage >= totalPages - 2) {
+      return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+    }
+    return [1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages]
+  }, [totalPages, validCurrentPage])
+
+  const skeletonRows = Array(pageSize).fill(null)
   const canEdit = userRole === 'director'
   const canDelete = userRole === 'director'
   const canCreate = userRole === 'director'
@@ -47,12 +77,13 @@ function InstructoresDataTable({
       <div className="w-full overflow-hidden">
         <table className="w-full table-fixed text-left" aria-label="Tabla de instructores">
           <thead>
-            <tr className="bg-custom-gris-oscuro dark:bg-slate-950 text-white text-xs font-bold uppercase tracking-wider">
+            <tr className="bg-slate-900 dark:bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-800">
               {tableHeaders.map((header, index) => (
                 <th 
                   key={index} 
                   scope="col"
-                  className={`p-4 ${header.width} border-b border-custom-gris-claro/20 dark:border-slate-800 ${
+                  title={header.title}
+                  className={`p-4 ${header.width} border-b border-custom-gris-claro/20 dark:border-slate-800 whitespace-nowrap ${
                     header.align === 'center' ? 'text-center' : 'text-left'
                   } ${header.label === 'Acciones' ? 'no-print' : ''}`}
                 >
@@ -88,76 +119,76 @@ function InstructoresDataTable({
             }
 
             {/* Data Success State */}
-            {!loading && instructores.length > 0 && 
-              instructores.map((instructor) => (
+            {!loading && paginatedInstructores.length > 0 && 
+              paginatedInstructores.map((instructor) => (
                 <tr 
                   key={instructor.id} 
                   className="hover:bg-custom-celeste/5 dark:hover:bg-slate-800/60 transition-colors duration-150 text-custom-gris-oscuro dark:text-slate-200"
                 >
                   {/* Photo and Name with Status Border */}
-                  <td className="p-4">
+                  <td className="p-4 overflow-hidden">
                     <div className="flex items-center gap-3 min-w-0">
-                      <Tooltip text={getStatusTooltip(instructor.status_id)} position="top">
+                      <Tooltip text={getStatusTooltip(instructor.status_id)} position="right">
                         {instructor.profile_photo_url ? (
                           <img 
                             src={instructor.profile_photo_url} 
                             alt={`Foto de ${instructor.first_name}`}
-                            className={`h-10 w-10 rounded-full object-cover shadow-xs shrink-0 ${getStatusBorder(instructor.status_id)}`}
+                            className={`h-10 w-10 rounded-full object-cover shadow-xs shrink-0 cursor-pointer ${getStatusBorder(instructor.status_id)}`}
                           />
                         ) : (
-                          <div className={`h-10 w-10 rounded-full bg-custom-azul-oscuro/10 dark:bg-custom-azul-oscuro/30 text-custom-azul-oscuro dark:text-custom-celeste flex items-center justify-center font-bold font-nunito shadow-xs shrink-0 ${getStatusBorder(instructor.status_id)}`}>
+                          <div className={`h-10 w-10 rounded-full bg-custom-azul-oscuro/10 dark:bg-custom-azul-oscuro/30 text-custom-azul-oscuro dark:text-custom-celeste flex items-center justify-center font-bold font-nunito shadow-xs shrink-0 cursor-pointer ${getStatusBorder(instructor.status_id)}`}>
                             {instructor.first_name[0]}{instructor.last_name[0]}
                           </div>
                         )}
                       </Tooltip>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 pr-2">
                         <div 
                           className="font-bold text-custom-gris-oscuro dark:text-slate-100 font-nunito hover:text-custom-azul-oscuro dark:hover:text-custom-celeste cursor-pointer transition-colors truncate"
                           onClick={() => onView && onView(instructor.id)}
-                          title={`${instructor.first_name} ${instructor.last_name}`}
+                          title={`Ver legajo de ${instructor.first_name} ${instructor.last_name}`}
                         >
                           {instructor.first_name} {instructor.last_name}
                         </div>
                         <div className="text-xs text-custom-gris-claro dark:text-slate-400 truncate">
-                          ID: #{instructor.id} {instructor.specialty ? `• ${instructor.specialty}` : ''}
+                          ID: #{instructor.id} {instructor.role_name ? `• ${instructor.role_name}` : ''}
                         </div>
                       </div>
                     </div>
                   </td>
 
                   {/* DNI */}
-                  <td className="p-4 text-custom-gris-oscuro dark:text-slate-300 font-mono text-xs truncate">
+                  <td className="p-4 text-custom-gris-oscuro dark:text-slate-300 font-mono text-xs truncate" title={`DNI: ${instructor.dni}`}>
                     {instructor.dni}
                   </td>
 
                   {/* Email */}
-                  <td className="p-4 text-custom-gris-claro dark:text-slate-400 text-xs truncate" title={instructor.email}>
+                  <td className="p-4 text-custom-gris-claro dark:text-slate-400 text-xs truncate" title={`Email: ${instructor.email}`}>
                     {instructor.email}
                   </td>
 
                   {/* Teléfono */}
-                  <td className="p-4 text-custom-gris-claro dark:text-slate-400 text-xs truncate font-mono">
+                  <td className="p-4 text-custom-gris-claro dark:text-slate-400 text-xs truncate font-mono" title={`Tel: ${instructor.phone || 'Sin registrar'}`}>
                     {instructor.phone || 'Sin registrar'}
                   </td>
 
                   {/* Cursos Asignados */}
-                  <td className="p-4">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-custom-azul-oscuro dark:text-custom-celeste text-xs flex items-center gap-1 truncate" title={instructor.course_name || 'Sin curso asignado'}>
+                  <td className="p-4 overflow-hidden" title={`Curso: ${instructor.course_name || 'Sin curso asignado'}`}>
+                    <div className="min-w-0 pr-2">
+                      <div className="font-semibold text-custom-azul-oscuro dark:text-custom-celeste text-xs flex items-center gap-1.5 truncate cursor-default">
                         <BookOpen className="h-3.5 w-3.5 text-custom-celeste shrink-0" />
                         <span className="truncate">{instructor.course_name || 'Sin curso asignado'}</span>
                       </div>
-                      <div className="text-[10px] text-custom-gris-claro dark:text-slate-400 truncate">
-                        Desde: {instructor.hire_date || instructor.enrollment_date || 'N/D'}
+                      <div className="text-[10px] text-custom-gris-claro dark:text-slate-400 truncate mt-0.5">
+                        Registrado: {instructor.created_at ? new Date(instructor.created_at).toLocaleDateString('es-AR') : 'N/D'}
                       </div>
                     </div>
                   </td>
 
                   {/* Acciones */}
-                  <td className="p-4 no-print text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <td className="p-4 no-print text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1.5">
                       {/* Ver */}
-                      <Tooltip text="Ver detalle" position="top">
+                      <Tooltip text="Ver legajo" position="top">
                         <button
                           onClick={() => onView && onView(instructor.id)}
                           className="p-1.5 text-custom-celeste hover:text-custom-azul-oscuro dark:hover:text-custom-celeste hover:bg-custom-celeste/10 rounded-lg transition-all duration-150 cursor-pointer"
@@ -169,7 +200,7 @@ function InstructoresDataTable({
 
                       {/* Editar (Solo Director) */}
                       {canEdit && (
-                        <Tooltip text="Editar" position="top">
+                        <Tooltip text="Editar datos" position="top">
                           <button
                             onClick={() => onEdit && onEdit(instructor.id)}
                             className="p-1.5 text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-150 cursor-pointer"
@@ -233,14 +264,88 @@ function InstructoresDataTable({
         </div>
       )}
 
-      {/* Footer Info */}
-      {!loading && instructores.length > 0 && (
-        <div className="bg-gray-50 dark:bg-slate-950 px-6 py-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs text-custom-gris-claro dark:text-slate-400 font-semibold">
-          <div>
-            Mostrando <span className="text-custom-gris-oscuro dark:text-slate-200 font-bold">{instructores.length}</span> docentes
+      {/* Elegant Pagination Footer */}
+      {!loading && totalItems > 0 && (
+        <div className="bg-gray-50 dark:bg-slate-950 px-6 py-4 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-500 dark:text-slate-400 no-print transition-colors">
+          
+          {/* Left: Row Size Selector & Summary */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Mostrar:</span>
+              <div className="relative">
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  aria-label="Cantidad de docentes por página"
+                  className="appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg pl-3 pr-7 py-1.5 shadow-2xs focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
+                >
+                  <option value={5}>5 por página</option>
+                  <option value={15}>15 por página</option>
+                  <option value={25}>25 por página</option>
+                </select>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <span className="hidden md:inline text-slate-300 dark:text-slate-700">|</span>
+
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Mostrando <span className="font-bold text-slate-800 dark:text-slate-100">{startIndex + 1} - {endIndex}</span> de <span className="font-bold text-slate-800 dark:text-slate-100">{totalItems}</span> docentes
+            </div>
           </div>
-          <div>
-            Centro de Formación Laboral N°404 — Berisso
+
+          {/* Right: Modern Page Navigation Controls */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={validCurrentPage === 1}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs cursor-pointer"
+              title="Página anterior"
+              aria-label="Página anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Anterior</span>
+            </button>
+
+            <div className="flex items-center gap-1 px-1">
+              {paginationRange.map((page, idx) => {
+                if (page === '...') {
+                  return (
+                    <span key={`dots-${idx}`} className="px-2 text-slate-400 font-bold select-none">
+                      ...
+                    </span>
+                  )
+                }
+                const isActive = page === validCurrentPage
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-8 min-w-[32px] px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+                      isActive
+                        ? 'bg-custom-azul-oscuro dark:bg-custom-azul-oscuro text-white shadow-xs font-extrabold'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={validCurrentPage === totalPages}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs cursor-pointer"
+              title="Página siguiente"
+              aria-label="Página siguiente"
+            >
+              <span className="hidden sm:inline">Siguiente</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}

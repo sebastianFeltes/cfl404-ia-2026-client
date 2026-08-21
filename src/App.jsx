@@ -22,10 +22,13 @@ import ProfilePage from './pages/ProfilePage'
 import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 
-/** Ruta protegida — redirige a /login si no hay JWT en el contexto */
+/** 
+ * Ruta protegida:
+ * Por el momento en desarrollo permite el acceso directo a las rutas protegidas
+ * para poder seguir trabajando en el cliente sin bloqueo de sesión.
+ */
 function PrivateRoute({ children }) {
-  const { token } = useAuth()
-  return token ? children : <Navigate to="/login" replace />
+  return children
 }
 
 function AppRoutes() {

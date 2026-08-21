@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Outlet } from "react-router";
 import { User, Bell, Sun, Moon, ChevronDown, Check, ShieldCheck, ClipboardList, GraduationCap } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import Tooltip from "../components/Tooltip";
 
 const ROLES_MOCK = [
   {
@@ -84,54 +85,57 @@ export default function DashboardLayout() {
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-end px-8 shrink-0 z-20 transition-colors duration-200">
           <div className="flex items-center gap-4">
             {/* Toggle Modo Oscuro */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
-              aria-label="Toggle tema"
-              className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-            >
-              {darkMode ? <Sun size={18} strokeWidth={2} /> : <Moon size={18} strokeWidth={2} />}
-            </button>
+            <Tooltip text={darkMode ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"} position="bottom">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                aria-label="Toggle tema"
+                className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                {darkMode ? <Sun size={18} strokeWidth={2} /> : <Moon size={18} strokeWidth={2} />}
+              </button>
+            </Tooltip>
 
             <div className="h-5 w-px bg-slate-200 dark:bg-slate-800"></div>
 
             {/* Notificaciones */}
-            <button
-              title="Notificaciones de la institución"
-              aria-label="Notificaciones"
-              className="relative text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer p-1"
-            >
-              <Bell size={18} strokeWidth={1.8} />
-              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-            </button>
+            <Tooltip text="Notificaciones y avisos del centro" position="bottom">
+              <button
+                aria-label="Notificaciones"
+                className="relative text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer p-1"
+              >
+                <Bell size={18} strokeWidth={1.8} />
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+              </button>
+            </Tooltip>
 
             <div className="h-5 w-px bg-slate-200 dark:bg-slate-800"></div>
 
             {/* Selector de Rol y Perfil */}
             <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                title="Cambiar rol activo"
-                className="flex items-center gap-3 p-1.5 pl-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-              >
-                <div className="flex flex-col text-right leading-tight min-w-[90px]">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 font-nunito">
-                    {rolActivo.usuario}
-                  </span>
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                    {rolActivo.label}
-                  </span>
-                </div>
+              <Tooltip text="Cambiar usuario o rol simulado" position="bottom">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="flex items-center gap-3 p-1.5 pl-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                >
+                  <div className="flex flex-col text-right leading-tight min-w-[90px]">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 font-nunito">
+                      {rolActivo.usuario}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                      {rolActivo.label}
+                    </span>
+                  </div>
 
-                <div className="w-8 h-8 rounded-lg bg-[#166193]/10 dark:bg-[#37A6DE]/10 flex items-center justify-center text-[#166193] dark:text-[#37A6DE] shrink-0">
-                  <IconoRol size={16} strokeWidth={2} />
-                </div>
+                  <div className="w-8 h-8 rounded-lg bg-[#166193]/10 dark:bg-[#37A6DE]/10 flex items-center justify-center text-[#166193] dark:text-[#37A6DE] shrink-0">
+                    <IconoRol size={16} strokeWidth={2} />
+                  </div>
 
-                <ChevronDown
-                  size={14}
-                  className={`text-slate-400 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+                  <ChevronDown
+                    size={14}
+                    className={`text-slate-400 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+              </Tooltip>
 
               {/* Menú Desplegable de Roles */}
               {menuOpen && (

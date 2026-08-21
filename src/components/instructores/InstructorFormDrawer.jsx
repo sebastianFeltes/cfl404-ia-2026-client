@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { X, Save, UserPlus, Pencil } from 'lucide-react'
+import Tooltip from '../Tooltip'
 
 const INITIAL_FORM_STATE = {
   first_name: '',
@@ -7,15 +8,12 @@ const INITIAL_FORM_STATE = {
   email: '',
   dni: '',
   status_id: 1, // Default Activo
-  role_name: 'Instructor Titular',
+  role_id: '',
   phone: '',
-  academic_level: 'Universitario',
-  specialty: '',
-  course_name: '',
-  hire_date: ''
+  address: '',
 }
 
-function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole }) {
+function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole, roles }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const isReadOnly = userRole === 'instructor' || userRole === 'secretaria'
 
@@ -29,18 +27,12 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole 
         email: instructor.email || '',
         dni: instructor.dni || '',
         status_id: Number(instructor.status_id) || 1,
-        role_name: instructor.role_name || 'Instructor Titular',
+        role_id: instructor.role_id || '',
         phone: instructor.phone || '',
-        academic_level: instructor.academic_level || 'Universitario',
-        specialty: instructor.specialty || '',
-        course_name: instructor.course_name || '',
-        hire_date: instructor.hire_date || instructor.enrollment_date || new Date().toLocaleDateString('es-AR')
+        address: instructor.address || '',
       })
     } else {
-      setFormData({
-        ...INITIAL_FORM_STATE,
-        hire_date: new Date().toLocaleDateString('es-AR')
-      })
+      setFormData({ ...INITIAL_FORM_STATE })
     }
   }, [instructor, isOpen])
 
@@ -48,7 +40,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole 
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'status_id' ? Number(value) : value
+      [name]: (name === 'status_id' || name === 'role_id') ? Number(value) : value
     }))
   }
 
@@ -77,15 +69,18 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole 
         aria-hidden={!isOpen}
       >
         {/* Header section with theme colors */}
-        <div className="p-6 bg-custom-gris-oscuro dark:bg-slate-950 text-white relative shrink-0 border-b border-white/5 dark:border-slate-800">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 text-white/85 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-            title="Cerrar formulario"
-            aria-label="Cerrar formulario"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <div className="p-6 bg-slate-900 dark:bg-slate-900 text-white relative shrink-0 border-b border-slate-800">
+          <div className="absolute top-4 right-4">
+            <Tooltip text="Cerrar formulario" position="left">
+              <button
+                onClick={onClose}
+                className="p-1.5 text-white/85 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                aria-label="Cerrar formulario"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </Tooltip>
+          </div>
           
           <div className="flex items-center gap-3 mt-2">
             <div className="p-2.5 bg-custom-azul-oscuro rounded-lg text-white shadow-md">
@@ -103,7 +98,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole 
         </div>
 
         {/* Scrollable Form Body */}
-        <form id="instructor-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+        <form id={`instructor-form-${instructor ? 'edit' : 'add'}`} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
           {/* First Name & Last Name */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -190,76 +185,40 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole 
             />
           </div>
 
-          {/* Specialty & Course */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="specialty" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                Especialidad
-              </label>
-              <input
-                type="text"
-                id="specialty"
-                name="specialty"
-                value={formData.specialty}
-                onChange={handleChange}
-                placeholder="Ej. Programación & IA"
-                className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-colors"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="course_name" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                Curso Principal
-              </label>
-              <input
-                type="text"
-                id="course_name"
-                name="course_name"
-                value={formData.course_name}
-                onChange={handleChange}
-                placeholder="Ej. Python para IA"
-                className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-colors"
-              />
-            </div>
+          {/* Address */}
+          <div>
+            <label htmlFor="address" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
+              Dirección
+            </label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Ej. Av. Montevideo 1240, Berisso"
+              className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-colors"
+            />
           </div>
 
-          {/* Role & Academic Level */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="role_name" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                Categoría Docente
-              </label>
-              <select
-                id="role_name"
-                name="role_name"
-                value={formData.role_name}
-                onChange={handleChange}
-                className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 transition-colors"
-              >
-                <option value="Instructor Titular">Instructor Titular</option>
-                <option value="Instructor Senior">Instructor Senior</option>
-                <option value="Instructor Principal">Instructor Principal</option>
-                <option value="Ayudante de Cátedra">Ayudante de Cátedra</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="academic_level" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                Nivel Académico
-              </label>
-              <select
-                id="academic_level"
-                name="academic_level"
-                value={formData.academic_level}
-                onChange={handleChange}
-                className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 transition-colors"
-              >
-                <option value="Secundario">Secundario</option>
-                <option value="Terciario">Terciario</option>
-                <option value="Universitario">Universitario</option>
-                <option value="Posgrado">Posgrado / Maestría</option>
-              </select>
-            </div>
+          {/* Rol */}
+          <div>
+            <label htmlFor="role_id" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
+              Rol <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="role_id"
+              name="role_id"
+              required
+              value={formData.role_id}
+              onChange={handleChange}
+              className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 transition-colors"
+            >
+              <option value="">Seleccionar Rol...</option>
+              {(roles || []).map((role) => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Status Selection */}
@@ -268,70 +227,80 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole 
               Estado del Docente
             </label>
             <div className="grid grid-cols-3 gap-2.5">
-              <label className={`flex items-center justify-center p-2.5 rounded-lg border text-center font-bold cursor-pointer transition-all ${
-                formData.status_id === 1 ? 'border-custom-celeste bg-custom-celeste/10 dark:bg-custom-celeste/20 text-custom-azul-oscuro dark:text-custom-celeste' : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-custom-gris-claro dark:text-slate-400'
-              }`}>
-                <input
-                  type="radio"
-                  name="status_id"
-                  value="1"
-                  checked={formData.status_id === 1}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                Activo
-              </label>
+              <Tooltip text="Docente activo en funciones" position="top">
+                <label className={`flex items-center justify-center p-2.5 rounded-lg border text-center font-bold cursor-pointer transition-all w-full ${
+                  formData.status_id === 1 ? 'border-custom-celeste bg-custom-celeste/10 dark:bg-custom-celeste/20 text-custom-azul-oscuro dark:text-custom-celeste' : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-custom-gris-claro dark:text-slate-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="status_id"
+                    value="1"
+                    checked={formData.status_id === 1}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  Activo
+                </label>
+              </Tooltip>
 
-              <label className={`flex items-center justify-center p-2.5 rounded-lg border text-center font-bold cursor-pointer transition-all ${
-                formData.status_id === 3 ? 'border-custom-amarillo bg-custom-amarillo/20 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-400' : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-custom-gris-claro dark:text-slate-400'
-              }`}>
-                <input
-                  type="radio"
-                  name="status_id"
-                  value="3"
-                  checked={formData.status_id === 3}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                Licencia
-              </label>
+              <Tooltip text="Docente con licencia justificada" position="top">
+                <label className={`flex items-center justify-center p-2.5 rounded-lg border text-center font-bold cursor-pointer transition-all w-full ${
+                  formData.status_id === 3 ? 'border-custom-amarillo bg-custom-amarillo/20 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-400' : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-custom-gris-claro dark:text-slate-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="status_id"
+                    value="3"
+                    checked={formData.status_id === 3}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  Licencia
+                </label>
+              </Tooltip>
 
-              <label className={`flex items-center justify-center p-2.5 rounded-lg border text-center font-bold cursor-pointer transition-all ${
-                formData.status_id === 2 ? 'border-custom-gris-claro bg-custom-gris-claro/10 dark:bg-slate-800 text-custom-gris-claro dark:text-slate-400' : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-custom-gris-claro dark:text-slate-400'
-              }`}>
-                <input
-                  type="radio"
-                  name="status_id"
-                  value="2"
-                  checked={formData.status_id === 2}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                Inactivo
-              </label>
+              <Tooltip text="Docente inactivo o dado de baja" position="top">
+                <label className={`flex items-center justify-center p-2.5 rounded-lg border text-center font-bold cursor-pointer transition-all w-full ${
+                  formData.status_id === 2 ? 'border-custom-gris-claro bg-custom-gris-claro/10 dark:bg-slate-800 text-custom-gris-claro dark:text-slate-400' : 'border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-custom-gris-claro dark:text-slate-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="status_id"
+                    value="2"
+                    checked={formData.status_id === 2}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  Inactivo
+                </label>
+              </Tooltip>
             </div>
           </div>
         </form>
 
         {/* Footer with Submit button */}
         <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          >
-            Cancelar
-          </button>
+          <Tooltip text="Cancelar y descartar cambios" position="top">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </Tooltip>
           
-          <button
-            type="submit"
-            form="instructor-form"
-            disabled={isReadOnly}
-            className="flex items-center gap-1.5 px-4 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className="h-4 w-4 text-custom-amarillo" />
-            {instructor ? 'Guardar Cambios' : 'Registrar Instructor'}
-          </button>
+          <Tooltip text={instructor ? "Guardar cambios en el legajo" : "Dar de alta al nuevo instructor"} position="top">
+            <button
+              type="submit"
+              form={`instructor-form-${instructor ? 'edit' : 'add'}`}
+              disabled={isReadOnly}
+              className="flex items-center gap-1.5 px-4 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="h-4 w-4 text-custom-amarillo" />
+              {instructor ? 'Guardar Cambios' : 'Registrar Instructor'}
+            </button>
+          </Tooltip>
         </div>
       </section>
     </>

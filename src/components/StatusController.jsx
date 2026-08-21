@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Settings2, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
 
 function StatusController({ currentState, onChangeState }) {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-roboto">

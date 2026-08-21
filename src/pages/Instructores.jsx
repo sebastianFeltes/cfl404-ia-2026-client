@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useOutletContext } from 'react-router'
 import { 
   Users, 
@@ -15,116 +15,33 @@ import {
 } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import InstructoresDataTable from '../components/instructores/InstructoresDataTable'
-import StatusController from '../components/StatusController'
 import Tooltip from '../components/Tooltip'
 
 import InstructorDetailDrawer from '../components/instructores/InstructorDetailDrawer'
 import InstructorFormDrawer from '../components/instructores/InstructorFormDrawer'
 import InstructorDeleteModal from '../components/instructores/InstructorDeleteModal'
 
-const INITIAL_MOCK_INSTRUCTORS = [
-  {
-    id: 201,
-    first_name: 'Valentina',
-    last_name: 'Rivadeneira',
-    email: 'v.rivadeneira@cfl404.edu.ar',
-    dni: '28.741.562',
-    status_id: 1, // Activo
-    role_name: 'Instructora Senior',
-    phone: '+54 11 4523-8871',
-    academic_level: 'Universitario',
-    specialty: 'Diseño & Frontend',
-    course_name: 'HTML & CSS Avanzado',
-    assigned_courses: ['HTML & CSS Avanzado', 'React con Vite', 'Diseño UI/UX'],
-    hire_date: '15/03/2021',
-    address: 'Av. Corrientes 3421, CABA',
-    profile_photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: 202,
-    first_name: 'Martín',
-    last_name: 'Echevarría',
-    email: 'm.echevarria@cfl404.edu.ar',
-    dni: '31.098.441',
-    status_id: 1, // Activo
-    role_name: 'Instructor Principal',
-    phone: '+54 11 3318-5590',
-    academic_level: 'Universitario',
-    specialty: 'Programación & IA',
-    course_name: 'Python para IA',
-    assigned_courses: ['Python para IA', 'Data Science & Machine Learning'],
-    hire_date: '01/08/2020',
-    address: 'Laprida 908, Córdoba Capital',
-    profile_photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: 203,
-    first_name: 'Camila',
-    last_name: 'Bustamante',
-    email: 'c.bustamante@cfl404.edu.ar',
-    dni: '35.227.109',
-    status_id: 1, // Activo
-    role_name: 'Instructora Titular',
-    phone: '+54 351 422-6643',
-    academic_level: 'Terciario',
-    specialty: 'Bases de Datos & Backend',
-    course_name: 'SQL & APIs REST',
-    assigned_courses: ['SQL Avanzado', 'APIs REST & Node.js'],
-    hire_date: '10/01/2022',
-    address: 'Belgrano 550, Rosario',
-    profile_photo_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: 204,
-    first_name: 'Rodrigo',
-    last_name: 'Salcedo',
-    email: 'r.salcedo@cfl404.edu.ar',
-    dni: '26.553.874',
-    status_id: 3, // Licencia
-    role_name: 'Instructor Senior',
-    phone: '+54 11 2244-7731',
-    academic_level: 'Posgrado',
-    specialty: 'Cloud & DevOps',
-    course_name: 'Docker & Kubernetes',
-    assigned_courses: ['Docker & Kubernetes', 'AWS Cloud Solutions'],
-    hire_date: '20/05/2019',
-    address: 'San Martín 1200, Mendoza',
-    profile_photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150'
-  },
-  {
-    id: 205,
-    first_name: 'Luciana',
-    last_name: 'Petrovitch',
-    email: 'l.petrovitch@cfl404.edu.ar',
-    dni: '38.441.227',
-    status_id: 2, // Inactivo
-    role_name: 'Instructora',
-    phone: '+54 11 5567-2298',
-    academic_level: 'Terciario',
-    specialty: 'Diseño UX/UI',
-    course_name: 'Figma & Design Systems',
-    assigned_courses: ['Figma Avanzado', 'Design Systems & Accesibilidad'],
-    hire_date: '28/02/2023',
-    address: 'Hipólito Yrigoyen 780, La Plata',
-    profile_photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150&h=150'
-  }
-]
+import { GET, POST, PUT } from '../services/api'
+
+const API_INSTRUCTORES = '/api/v1/instructores'
+const API_ROLES = '/api/v1/roles'
 
 function Instructores() {
   // Access shared role metadata from layout context
   const { userRole } = useOutletContext()
 
-  // Main CRUD Instructors State List
-  const [instructors, setInstructors] = useState(INITIAL_MOCK_INSTRUCTORS)
+  // Main CRUD Instructors State List (now from API)
+  const [instructors, setInstructors] = useState([])
+  const [roles, setRoles] = useState([])
 
-  // Demo state controller ('success', 'loading', 'empty')
-  const [demoState, setDemoState] = useState('success')
+  // Loading and error states
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('')
   const [filterEstado, setFilterEstado] = useState('') 
   const [filterRol, setFilterRol] = useState('')
-  const [filterEspecialidad, setFilterEspecialidad] = useState('')
 
   // Modals & Sliding Drawer triggers
   const [viewInstructor, setViewInstructor] = useState(null)
@@ -140,19 +57,47 @@ function Instructores() {
     setTimeout(() => setToastMessage(null), 4000)
   }
 
+  // ── Fetch instructores from API ──────────────────────────
+  const fetchInstructors = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await GET(API_INSTRUCTORES)
+      setInstructors(response.data || [])
+    } catch (err) {
+      setError(err.message || 'Error al obtener los instructores')
+      console.error('Error fetching instructores:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // ── Fetch roles from API (for the form select) ──────────
+  const fetchRoles = useCallback(async () => {
+    try {
+      const response = await GET(API_ROLES)
+      setRoles(response.data || [])
+    } catch (err) {
+      console.error('Error fetching roles:', err)
+    }
+  }, [])
+
+  // Initial data load
+  useEffect(() => {
+    fetchInstructors()
+    fetchRoles()
+  }, [fetchInstructors, fetchRoles])
+
   // Handle resets
   const handleResetFilters = () => {
     setSearchTerm('')
     setFilterEstado('')
     setFilterRol('')
-    setFilterEspecialidad('')
     showToast('Filtros restablecidos correctamente.')
   }
 
   // Filter Logic based on interactive select/search values
   const filteredInstructors = useMemo(() => {
-    if (demoState === 'empty') return []
-    
     return instructors.filter((instructor) => {
       const searchLower = searchTerm.toLowerCase().trim()
       const matchesSearch = searchLower === '' || 
@@ -163,11 +108,10 @@ function Instructores() {
 
       const matchesEstado = filterEstado === '' || instructor.status_id === Number(filterEstado)
       const matchesRol = filterRol === '' || instructor.role_name === filterRol
-      const matchesEspecialidad = filterEspecialidad === '' || instructor.specialty === filterEspecialidad
 
-      return matchesSearch && matchesEstado && matchesRol && matchesEspecialidad
+      return matchesSearch && matchesEstado && matchesRol
     })
-  }, [instructors, demoState, searchTerm, filterEstado, filterRol, filterEspecialidad])
+  }, [instructors, searchTerm, filterEstado, filterRol])
 
   // Count overall KPIs dynamically based on current state list
   const kpis = useMemo(() => {
@@ -177,6 +121,12 @@ function Instructores() {
     const licencia = instructors.filter(i => i.status_id === 3).length
 
     return { total, activos, inactivos, licencia }
+  }, [instructors])
+
+  // Unique role names for the filter dropdown (derived from real data)
+  const uniqueRoles = useMemo(() => {
+    const roleNames = [...new Set(instructors.map(i => i.role_name).filter(Boolean))]
+    return roleNames.sort()
   }, [instructors])
 
   // CRUD event callbacks
@@ -195,33 +145,42 @@ function Instructores() {
     setDeleteInstructor(instructor)
   }
 
-  // Submitting changes (Add or Edit)
-  const handleFormSubmit = (data) => {
-    if (data.id) {
-      // Edit operation
-      setInstructors(prev => prev.map(i => i.id === data.id ? { ...i, ...data } : i))
-      showToast(`Docente "${data.first_name} ${data.last_name}" actualizado en el listado.`)
-      setEditInstructor(null)
-    } else {
-      // Add operation
-      const nextId = instructors.length > 0 ? Math.max(...instructors.map(i => i.id)) + 1 : 201
-      const newInstructor = {
-        ...data,
-        id: nextId,
-        assigned_courses: [data.course_name].filter(Boolean)
+  // Submitting changes (Add or Edit) — connected to API
+  const handleFormSubmit = async (data) => {
+    try {
+      if (data.id) {
+        // Edit operation
+        const response = await PUT(API_INSTRUCTORES, data, data.id)
+        // Update the local state with the API response
+        setInstructors(prev => prev.map(i => i.id === data.id ? response.data : i))
+        showToast(`Docente "${response.data.first_name} ${response.data.last_name}" actualizado en el listado.`)
+        setEditInstructor(null)
+      } else {
+        // Add operation
+        const response = await POST(API_INSTRUCTORES, data)
+        // Prepend the new instructor from API response
+        setInstructors(prev => [response.data, ...prev])
+        showToast(`Nuevo instructor "${response.data.first_name} ${response.data.last_name}" agregado con éxito.`)
+        setIsAddOpen(false)
       }
-      setInstructors(prev => [newInstructor, ...prev])
-      showToast(`Nuevo instructor "${newInstructor.first_name} ${newInstructor.last_name}" agregado con éxito.`)
-      setIsAddOpen(false)
+    } catch (err) {
+      showToast(`Error: ${err.message}`)
+      console.error('Error submitting form:', err)
     }
   }
 
-  // Confirm deletion
-  const handleDeleteConfirm = (id) => {
-    const inst = instructors.find(i => i.id === id)
-    setInstructors(prev => prev.filter(i => i.id !== id))
-    showToast(`Se ha dado de baja el registro de "${inst.first_name} ${inst.last_name}".`)
-    setDeleteInstructor(null)
+  // Confirm "deletion" (soft delete: status_id -> 2 Inactivo)
+  const handleDeleteConfirm = async (id) => {
+    try {
+      const response = await PUT(API_INSTRUCTORES, { status_id: 2 }, id)
+      setInstructors(prev => prev.map(i => i.id === id ? response.data : i))
+      const inst = response.data
+      showToast(`Se ha dado de baja el registro de "${inst.first_name} ${inst.last_name}".`)
+      setDeleteInstructor(null)
+    } catch (err) {
+      showToast(`Error al dar de baja: ${err.message}`)
+      console.error('Error deactivating instructor:', err)
+    }
   }
 
   // File simulations
@@ -234,11 +193,11 @@ function Instructores() {
     showToast(`Generando Ficha de Docente PDF para: ${inst.first_name} ${inst.last_name}...`)
   }
 
-  const isAnyFilterActive = searchTerm !== '' || filterEstado !== '' || filterRol !== '' || filterEspecialidad !== ''
+  const isAnyFilterActive = searchTerm !== '' || filterEstado !== '' || filterRol !== ''
   const canCreate = userRole === 'director'
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-roboto relative">
+    <div className="space-y-6 max-w-7xl mx-auto pb-28 font-roboto relative">
       {/* Toast Alert popup banner */}
       {toastMessage && (
         <div className="fixed top-20 right-6 z-50 bg-custom-gris-oscuro text-white border border-custom-celeste px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-sm">
@@ -250,6 +209,19 @@ function Instructores() {
             aria-label="Cerrar notificación"
           >
             <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between">
+          <span>⚠️ {error}</span>
+          <button 
+            onClick={fetchInstructors} 
+            className="text-xs font-bold bg-red-100 dark:bg-red-900/60 hover:bg-red-200 dark:hover:bg-red-800/80 px-3 py-1 rounded-lg transition-colors cursor-pointer"
+          >
+            Reintentar
           </button>
         </div>
       )}
@@ -267,7 +239,7 @@ function Instructores() {
         
         {/* Main Action buttons */}
         <div className="flex items-center gap-3 no-print">
-          <Tooltip text="Imprimir o exportar listado a PDF" position="left">
+          <Tooltip text="Imprimir o exportar listado a PDF" position="bottom">
             <button
               onClick={() => window.print()}
               className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
@@ -278,7 +250,7 @@ function Instructores() {
             </button>
           </Tooltip>
 
-          <Tooltip text="Descargar listado en CSV" position="left">
+          <Tooltip text="Descargar listado en CSV" position="bottom">
             <button
               onClick={handleExportList}
               className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
@@ -290,7 +262,7 @@ function Instructores() {
           </Tooltip>
           
           {canCreate && (
-            <Tooltip text="Registrar un nuevo instructor en la institución" position="left">
+            <Tooltip text="Registrar un nuevo instructor en la institución" position="bottom">
               <button
                 onClick={() => setIsAddOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer"
@@ -308,43 +280,47 @@ function Instructores() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Instructores"
-          value={demoState === 'empty' ? 0 : kpis.total}
+          value={kpis.total}
           icon={Users}
           trend="+5%"
           trendType="up"
           colorClass="border-custom-azul-oscuro"
           iconColorClass="text-custom-azul-oscuro bg-custom-azul-oscuro/10"
           description="registrados en la institución"
+          tooltip="Total de instructores registrados en la institución"
         />
         <StatCard 
           title="Docentes Activos"
-          value={demoState === 'empty' ? 0 : kpis.activos}
+          value={kpis.activos}
           icon={UserCheck}
           trend="+10%"
           trendType="up"
           colorClass="border-custom-celeste"
           iconColorClass="text-custom-celeste bg-custom-celeste/10"
           description="dictando cursos actualmente"
+          tooltip="Docentes activos dictando cursos formativos actualmente"
         />
         <StatCard 
           title="En Licencia"
-          value={demoState === 'empty' ? 0 : kpis.licencia}
+          value={kpis.licencia}
           icon={AlertTriangle}
           trend="0%"
           trendType="neutral"
           colorClass="border-custom-amarillo"
           iconColorClass="text-yellow-600 bg-custom-amarillo/10"
           description="ausencias justificadas"
+          tooltip="Docentes en uso de licencia justificada o médica"
         />
         <StatCard 
           title="Docentes Inactivos"
-          value={demoState === 'empty' ? 0 : kpis.inactivos}
+          value={kpis.inactivos}
           icon={UserX}
           trend="-1%"
           trendType="down"
           colorClass="border-custom-gris-claro"
           iconColorClass="text-custom-gris-claro bg-custom-gris-claro/10"
           description="dados de baja / sin cursos"
+          tooltip="Docentes dados de baja o sin carga horaria activa"
         />
       </div>
 
@@ -366,7 +342,8 @@ function Instructores() {
             {searchTerm && (
               <button 
                 onClick={() => setSearchTerm('')} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-custom-gris-claro dark:text-slate-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 cursor-pointer"
+                title="Limpiar búsqueda"
                 aria-label="Limpiar búsqueda"
               >
                 <X className="h-3.5 w-3.5" />
@@ -379,6 +356,7 @@ function Instructores() {
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
+              title="Filtrar docentes por estado laboral"
               className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
               aria-label="Filtrar por Estado"
             >
@@ -389,30 +367,31 @@ function Instructores() {
             </select>
 
             <select
-              value={filterEspecialidad}
-              onChange={(e) => setFilterEspecialidad(e.target.value)}
+              value={filterRol}
+              onChange={(e) => setFilterRol(e.target.value)}
+              title="Filtrar docentes por rol"
               className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
-              aria-label="Filtrar por Especialidad"
+              aria-label="Filtrar por Rol"
             >
-              <option value="">Especialidad: Todas</option>
-              <option value="Diseño & Frontend">Diseño & Frontend</option>
-              <option value="Programación & IA">Programación & IA</option>
-              <option value="Bases de Datos & Backend">Bases de Datos & Backend</option>
-              <option value="Cloud & DevOps">Cloud & DevOps</option>
-              <option value="Diseño UX/UI">Diseño UX/UI</option>
+              <option value="">Rol: Todos</option>
+              {uniqueRoles.map((roleName) => (
+                <option key={roleName} value={roleName}>{roleName}</option>
+              ))}
             </select>
           </div>
 
           {/* Clear Filters indicator */}
           {isAnyFilterActive && (
-            <button
-              onClick={handleResetFilters}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold border border-red-200 dark:border-red-800/60 transition-colors w-full lg:w-auto justify-center cursor-pointer"
-              aria-label="Limpiar todos los filtros"
-            >
-              <FilterX className="h-3.5 w-3.5" />
-              Limpiar
-            </button>
+            <Tooltip text="Restablecer todos los filtros" position="bottom">
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold border border-red-200 dark:border-red-800/60 transition-colors w-full lg:w-auto justify-center cursor-pointer"
+                aria-label="Limpiar todos los filtros"
+              >
+                <FilterX className="h-3.5 w-3.5" />
+                Limpiar
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -420,19 +399,13 @@ function Instructores() {
       {/* Main Instructors Data Table */}
       <InstructoresDataTable 
         instructores={filteredInstructors}
-        loading={demoState === 'loading'}
+        loading={loading}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDeleteTrigger}
         onResetFilters={handleResetFilters}
         onAddInstructor={() => setIsAddOpen(true)}
         userRole={userRole}
-      />
-
-      {/* Floating simulator control */}
-      <StatusController 
-        currentState={demoState}
-        onChangeState={setDemoState}
       />
 
       {/* Drawer: Detailed view panel */}
@@ -450,6 +423,7 @@ function Instructores() {
         onClose={() => setIsAddOpen(false)}
         onSubmit={handleFormSubmit}
         userRole={userRole}
+        roles={roles}
       />
 
       {/* Drawer: Form to Edit an Existing Instructor */}
@@ -459,6 +433,7 @@ function Instructores() {
         onClose={() => setEditInstructor(null)}
         onSubmit={handleFormSubmit}
         userRole={userRole}
+        roles={roles}
       />
 
       {/* Modal: Delete Confirmation Dialog */}
