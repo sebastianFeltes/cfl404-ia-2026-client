@@ -57,39 +57,11 @@ export default function Footer() {
   return (
     <footer
       id="contacto"
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden shadow-lg border-t border-white/10"
       aria-label="Pie de página – Contacto"
     >
-      {/* ── Separador superior decorativo ── */}
-      <div
-        className="h-[3px] w-full"
-        style={{
-          background: 'linear-gradient(90deg, #166193 0%, #37A6DE 35%, #FDEA14 65%, #166193 100%)',
-        }}
-      />
-
-      {/* ── Fondo con gradiente ── */}
-      <div
-        className="relative"
-        style={{
-          background: 'linear-gradient(180deg, #166193 0%, #0f4d76 40%, #1D1E1C 100%)',
-        }}
-      >
-        {/* Blur decorativo sutil */}
-        <div
-          className="absolute top-12 left-[10%] w-72 h-72 rounded-full pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(55,166,222,0.08) 0%, transparent 70%)',
-            filter: 'blur(40px)',
-          }}
-        />
-        <div
-          className="absolute bottom-20 right-[5%] w-56 h-56 rounded-full pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(253,234,20,0.04) 0%, transparent 70%)',
-            filter: 'blur(32px)',
-          }}
-        />
+      {/* ── Fondo sólido azul ── */}
+      <div className="relative bg-custom-azul-oscuro">
 
         {/* ── Contenido principal ── */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-12 pb-8">

@@ -9,7 +9,7 @@ import React from 'react'
  *   position — 'top' | 'bottom' | 'left' | 'right' (default: 'top')
  *   children — elemento sobre el que se dispara el tooltip
  */
-function Tooltip({ text, position = 'top', children }) {
+function Tooltip({ text, position = 'top', className = '', children }) {
   const positionClasses = {
     top:    'bottom-full left-1/2 -translate-x-1/2 mb-2',
     bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
@@ -25,7 +25,7 @@ function Tooltip({ text, position = 'top', children }) {
   }
 
   return (
-    <div className="relative group/tooltip inline-flex">
+    <div className={`relative group/tooltip inline-flex justify-center ${className}`}>
       {children}
       {/* Tooltip bubble */}
       <div

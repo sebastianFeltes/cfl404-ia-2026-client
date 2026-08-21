@@ -13,6 +13,9 @@ import DashboardLayout from './layouts/DashboardLayout'
 import Home from './pages/Home'
 import Institucional from './pages/Institucional'
 import Cooperadora from './pages/Cooperadora'
+import Cookies from './pages/Cookies'
+import Privacidad from './pages/Privacidad'
+import TerminosCondiciones from './pages/TerminosCondiciones'
 
 // Auth
 import LoginPage from './pages/LoginPage'
@@ -39,6 +42,9 @@ function AppRoutes() {
         <Route path='institucional' element={<Institucional />} />
         <Route path='cooperadora' element={<Cooperadora />} />
         <Route path='cursos' element={<Home />} />
+        <Route path='cookies' element={<Cookies />} />
+        <Route path='privacidad' element={<Privacidad />} />
+        <Route path='terminos-condiciones' element={<TerminosCondiciones />} />
         <Route path='contactos' element={
           <div className="flex-grow flex items-center justify-center p-12 text-custom-gris-claro font-nunito text-center">
             <p>Sección Contactos en desarrollo...</p>

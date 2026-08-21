@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router'
 import { Menu, X, Home, Building2, GraduationCap, Users, Mail, LogIn } from 'lucide-react'
 import Footer from '../components/Footer'
+import CookieBanner from '../components/CookieBanner'
 
 /**
  * AppLayout — layout público del sitio institucional del CFL 404.
@@ -250,6 +251,9 @@ function AppLayout() {
 
             {/* ── Footer persistente ── */}
             <Footer />
+
+            {/* ── Banner de Cookies ── */}
+            <CookieBanner />
         </div>
     )
 }
