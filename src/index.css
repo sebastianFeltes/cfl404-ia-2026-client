@@ -21,20 +21,26 @@ html {
     font-family: 'Nunito', sans-serif;
 }
 
-/* ── Scrollbar estilizado ── */
+/* ── Scrollbar sutil y moderno ── */
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 6px;
+    height: 6px;
 }
 ::-webkit-scrollbar-track {
-    background: #1D1E1C;
+    background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: #166193;
-    border-radius: 5px;
-    border: 2px solid #1D1E1C;
+    background: rgba(100, 116, 139, 0.2);
+    border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #37ACDE;
+    background: rgba(22, 97, 147, 0.5);
+}
+
+/* Ocultar barra de desplazamiento horizontal innecesaria en el contenedor principal */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
 }
 
 /* ── Animaciones generales ── */

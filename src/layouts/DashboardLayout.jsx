@@ -44,8 +44,19 @@ export default function DashboardLayout() {
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem("sidebarOpen");
+    return saved !== null ? saved === "true" : true;
+  });
   const menuRef = useRef(null);
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebarOpen", String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (darkMode) {
@@ -77,7 +88,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-nunito transition-colors duration-200">
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
+      <Sidebar isOpen={sidebarOpen} onToggle={handleToggleSidebar} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Header */}
@@ -187,7 +198,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Canvas */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8">
           <Outlet context={{ rolActivo, puedeEditar: rolActivo?.id === "director" }} />
         </main>
       </div>

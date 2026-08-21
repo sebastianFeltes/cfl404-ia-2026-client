@@ -16,7 +16,7 @@ const INITIAL_FORM_STATE = {
 
 function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
-  const isReadOnly = userRole === 'docente'
+  const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
 
   // Update form data when student prop changes (Edit vs Add)
   useEffect(() => {
@@ -106,8 +106,8 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole }) {
             
             {/* Display message if read-only */}
             {isReadOnly && (
-              <div className="bg-red-50 text-red-700 text-xs border border-red-200 rounded-lg p-3 font-semibold">
-                * Tu rol actual (Docente) es de sólo lectura. No tienes permisos para modificar o crear registros.
+              <div className="bg-amber-50 text-amber-800 text-xs border border-amber-200 rounded-lg p-3 font-semibold">
+                * Tu rol actual no tiene permisos para crear o modificar registros (Modo solo lectura).
               </div>
             )}
 
