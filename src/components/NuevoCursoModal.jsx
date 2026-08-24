@@ -78,7 +78,7 @@ export default function NuevoCursoModal({ isOpen, onClose, onSubmit, initialData
 
     if (!validationResult.success) {
       const formattedErrors = {}
-      validationResult.error.errors.forEach(err => {
+      validationResult.error.issues.forEach(err => {
         const fieldName = err.path[0]
         formattedErrors[fieldName] = err.message
       })
