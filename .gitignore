@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Variables de entorno (se versiona solo .env.example)
+.env
+.env.*
+!.env.example
+
+# Credenciales OAuth descargadas de Google Cloud Console
+client_secret*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

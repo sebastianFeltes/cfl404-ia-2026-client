@@ -3,6 +3,8 @@ import axios from 'axios'
 const DEV_URL = 'http://localhost:4000'
 const PROD_URL = 'https://clf404.ar'
 
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? PROD_URL : DEV_URL)
+
 const TOKEN_KEY = 'cfl404_token'
 const USER_KEY = 'cfl404_user'
 
@@ -70,7 +72,7 @@ export function isRememberedSession() {
 }
 
 const api = axios.create({
-  baseURL: import.meta.env.PROD ? PROD_URL : DEV_URL,
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -84,10 +86,16 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Un 401 en los endpoints de inicio de sesión significa "credencial rechazada",
+// no "sesión vencida": no debe disparar el cierre de sesión global.
+const LOGIN_ENDPOINTS = ['/api/auth/google', '/api/auth/dev-login']
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isLoginRequest = error.config?.url?.includes('/auth/login')
+    const url = error.config?.url || ''
+    const isLoginRequest = LOGIN_ENDPOINTS.some((endpoint) => url.includes(endpoint))
+
     if (error.response?.status === 401 && !isLoginRequest) {
       clearAuthToken()
       onUnauthorized?.()
@@ -125,6 +133,15 @@ export async function POST(route, data) {
 export async function PUT(route, data, id) {
   try {
     const res = await api.put(`${route}/${id}`, data)
+    return res.data
+  } catch (error) {
+    throw new Error(extractError(error))
+  }
+}
+
+export async function PATCH(route, data) {
+  try {
+    const res = await api.patch(route, data)
     return res.data
   } catch (error) {
     throw new Error(extractError(error))

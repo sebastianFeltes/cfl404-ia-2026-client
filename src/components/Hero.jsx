@@ -34,7 +34,7 @@ export default function Hero() {
           src={hombre}
           alt="Hombre soldando"
           aria-hidden="true"
-          className="h-full w-full lg:object-fit object-cover  object-[60%_25%] md:object-[75%_center] opacity-85 md:opacity-100"
+          className="h-full w-screen lg:object-right object-cover  object-[60%_25%] md:object-[75%_center] opacity-85 md:opacity-100"
           loading="eager"
         />
         {/* Overlay graduado: suave en mobile para resaltar al soldador, lateral en desktop */}
@@ -191,7 +191,7 @@ export default function Hero() {
 
       {/* ── Scroll indicator (Más compacto) ── */}
       <a
-        href="#faq"
+        href="#cursos"
         className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 group text-white/50 hover:text-white transition-colors duration-300 cursor-pointer"
         aria-label="Desplazarse hacia abajo"
       >

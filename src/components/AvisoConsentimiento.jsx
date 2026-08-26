@@ -5,13 +5,16 @@ import { X } from 'lucide-react'
 const STORAGE_KEY = 'cfl404_cookies_consent'
 
 /**
- * CookieBanner — Banner de consentimiento de cookies fijo en la parte inferior de la pantalla.
+ * AvisoConsentimiento — Aviso de consentimiento fijo en la parte inferior de la pantalla.
  * - Se muestra solo si el usuario no ha tomado una decisión previa (guardada en localStorage).
- * - "Aceptar cookies" guarda consent=true y oculta el banner.
- * - "Rechazar cookies" guarda consent=false y oculta el banner.
+ * - "Aceptar" guarda consent=true y oculta el aviso.
+ * - "Rechazar" guarda consent=false y oculta el aviso.
  * - Animación slide-up al aparecer.
+ *
+ * Nota: el nombre evita las palabras "Cookie"/"Banner" en el archivo porque los
+ * bloqueadores de anuncios cortan esas URLs (net::ERR_BLOCKED_BY_CLIENT).
  */
-function CookieBanner() {
+function AvisoConsentimiento() {
     const [visible, setVisible] = useState(false)
     const [hiding, setHiding] = useState(false)
 
@@ -47,7 +50,7 @@ function CookieBanner() {
                 animation: !hiding ? 'slideUpBanner 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : undefined,
             }}
         >
-            {/* Contenido del banner */}
+            {/* Contenido del aviso */}
             <div className="bg-custom-azul-oscuro px-4 py-4 sm:py-3 shadow-2xl">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
 
@@ -104,4 +107,4 @@ function CookieBanner() {
     )
 }
 
-export default CookieBanner
+export default AvisoConsentimiento

@@ -28,7 +28,7 @@ const API_ROLES = '/api/v1/roles'
 
 function Instructores() {
   // Access shared role metadata from layout context
-  const { userRole } = useOutletContext()
+  const { userRole } = useOutletContext() || {}
 
   // Main CRUD Instructors State List (now from API)
   const [instructors, setInstructors] = useState([])

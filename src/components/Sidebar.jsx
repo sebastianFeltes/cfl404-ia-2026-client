@@ -8,6 +8,7 @@ import {
   BarChart2,
   ChevronLeft,
   ChevronRight,
+  User,
 } from 'lucide-react'
 import Tooltip from './Tooltip'
 
@@ -24,6 +25,12 @@ import Tooltip from './Tooltip'
  *  - onToggle {function}      — Callback para alternar el estado (opcional, si se quiere toggle interno)
  */
 const navItems = [
+  {
+    label: 'Mi Perfil',
+    icon: User,
+    path: '/perfil',
+    title: 'Datos de tu cuenta',
+  },
   {
     label: 'Profesores',
     icon: Users,

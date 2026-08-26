@@ -211,18 +211,6 @@ function Cooperadora() {
                         ¡Muchas gracias!!!
                     </p>
                 </section>
-
-                {/* ── Contacto Footer ───────────────────────────────────── */}
-                <p className="text-center text-xs text-gray-400 font-nunito pb-2">
-                    Contacto:{' '}
-                    <a
-                        href="mailto:cooperadora@cfl404.edu.ar"
-                        className="text-custom-celeste hover:underline transition-colors"
-                    >
-                        cooperadora@cfl404.edu.ar
-                    </a>{' '}
-                    | © {new Date().getFullYear()} CFL 404
-                </p>
             </div>
 
             {/* ── Toast Global ──────────────────────────────────────────── */}

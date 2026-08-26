@@ -198,23 +198,6 @@ export default function FAQ() {
             )
           })}
         </div>
-
-        {/* CTA inferior */}
-        <div className="mt-12 text-center">
-          <p
-            className="text-[#585856] text-sm"
-            style={{ fontFamily: '"Nunito", sans-serif' }}
-          >
-            ¿Tenés otra consulta?{' '}
-            <a
-              href="#contacto"
-              className="font-bold underline underline-offset-2 transition-colors duration-200 hover:text-[#1e7ab8]"
-              style={{ color: '#166193' }}
-            >
-              Contactanos
-            </a>
-          </p>
-        </div>
       </div>
     </section>
   )
