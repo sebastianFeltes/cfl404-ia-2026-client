@@ -44,36 +44,10 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-<<<<<<< HEAD
-      const data = await POST('/auth/login', { email, password });
-      const jwt = data.token ?? data.accessToken;
-      if (!jwt) {
-        throw new Error('El servidor no devolvió un token de sesión.');
-      }
-
-      login(jwt, data.user ?? data, { remember: rememberMe });
-      navigate('/admin/alumnos');
-    } catch (err) {
-      // Si se usan credenciales demo o de prueba, permitir acceso directo para desarrollo
-      if (email.includes('m.garcia') || email.includes('admin') || email.includes('cfl404')) {
-        login('demo-preview-jwt-token', {
-          id: 'demo-user-1',
-          nombres: 'Carlos',
-          apellidos: 'Benítez',
-          correo: email,
-          rol: 'Director',
-          institucion: "CFL N°404 'Berisso'"
-        }, { remember: rememberMe });
-        navigate('/admin/alumnos');
-        return;
-      }
-      setErrorMsg(err.message || 'No se pudo iniciar sesión. Verificá tus credenciales.');
-=======
       await loginWithGoogle(credentialResponse.credential, { remember: rememberMe });
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setErrorMsg(err.message || 'No pudimos validar tu cuenta de Google.');
->>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
     } finally {
       setIsSubmitting(false);
     }

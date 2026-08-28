@@ -17,20 +17,10 @@ export default function DashboardLayout() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
-<<<<<<< HEAD
-  const [rolActivo, setRolActivo] = useState(() => {
-    const savedRole = localStorage.getItem("userRole");
-    return ROLES_MOCK.find((r) => r.id === savedRole) || ROLES_MOCK[0];
-  });
-
-  const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebarOpen");
     return saved !== null ? saved === "true" : true;
   });
-  const menuRef = useRef(null);
-=======
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const userRole = mapDbRoleToUi(user?.rol);
   const puedeEditar = userRole === "director";
@@ -41,7 +31,6 @@ export default function DashboardLayout() {
     () => ({ user, userRole, puedeEditar }),
     [user, userRole, puedeEditar],
   );
->>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
 
   const handleToggleSidebar = () => {
     setSidebarOpen((prev) => {
@@ -67,13 +56,8 @@ export default function DashboardLayout() {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-nunito transition-colors duration-200">
-      <Sidebar isOpen={sidebarOpen} onToggle={handleToggleSidebar} />
-=======
     <div className="flex h-screen w-screen max-w-full bg-slate-50 dark:bg-slate-950 overflow-hidden font-nunito transition-colors duration-200">
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
->>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
+      <Sidebar isOpen={sidebarOpen} onToggle={handleToggleSidebar} />
 
       <div className="flex-1 flex flex-col min-w-0 max-w-full h-full overflow-hidden relative">
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-end px-8 shrink-0 z-20 transition-colors duration-200">
@@ -140,14 +124,8 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-<<<<<<< HEAD
-        {/* Canvas */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8">
-          <Outlet context={{ rolActivo, puedeEditar: rolActivo?.id === "director" }} />
-=======
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8">
           <Outlet context={outletContext} />
->>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
         </main>
       </div>
     </div>

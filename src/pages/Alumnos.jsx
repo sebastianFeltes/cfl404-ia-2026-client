@@ -271,16 +271,10 @@ const INITIAL_MOCK_STUDENTS = [
   }
 ]
 
-<<<<<<< HEAD
 export default function Alumnos() {
-  const context = useOutletContext()
-  const userRole = context?.userRole ?? context?.rolActivo?.id ?? 'director'
+  const context = useOutletContext() || {}
+  const userRole = context.userRole ?? context.rolActivo?.id ?? 'director'
   const puedeEditar = userRole === 'director' || userRole === 'secretaria'
-=======
-function Alumnos() {
-  // Access shared role metadata from layout context
-  const { userRole } = useOutletContext() || {}
->>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
 
   // Lista principal de alumnos
   const [students, setStudents] = useState(INITIAL_MOCK_STUDENTS)
