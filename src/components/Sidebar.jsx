@@ -8,6 +8,7 @@ import {
   BarChart2,
   ChevronLeft,
   ChevronRight,
+  User,
 } from 'lucide-react'
 import Tooltip from './Tooltip'
 
@@ -25,6 +26,12 @@ import Tooltip from './Tooltip'
  */
 const navItems = [
   {
+    label: 'Mi Perfil',
+    icon: User,
+    path: '/perfil',
+    title: 'Datos de tu cuenta',
+  },
+  {
     label: 'Profesores',
     icon: Users,
     path: '/admin/instructores',
@@ -33,7 +40,7 @@ const navItems = [
   {
     label: 'Cursos',
     icon: Book,
-    path: '/admin/cursos-admin',
+    path: '/admin/cursos',
     title: 'Gestión de ofertas formativas',
   },
   {
@@ -101,7 +108,7 @@ export default function Sidebar({ isOpen = true, onToggle }) {
 
       {/* ── Navigation Links ── */}
       <nav
-        className="flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto"
+        className="flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto overflow-x-hidden"
         aria-label="Menú principal"
       >
         {/* Sección label — solo visible en modo expandido */}

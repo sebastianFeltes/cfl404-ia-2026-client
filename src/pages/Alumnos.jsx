@@ -139,7 +139,7 @@ const INITIAL_MOCK_STUDENTS = [
 
 function Alumnos() {
   // Access shared role metadata from layout context
-  const { userRole } = useOutletContext()
+  const { userRole } = useOutletContext() || {}
 
   // Main CRUD Students State List
   const [students, setStudents] = useState(INITIAL_MOCK_STUDENTS)

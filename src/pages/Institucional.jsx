@@ -61,16 +61,9 @@ function Institucional() {
     return (
         <div className="flex-grow bg-gray-50 pb-16 font-roboto">
             {/* Hero / Banner Superior */}
-            <div className="bg-gradient-to-r from-custom-azul-oscuro via-[#1d74ad] to-custom-celeste text-white py-10 px-4 text-center flex flex-col items-center justify-center">
-                <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-                    <div className="bg-white/95 rounded-2xl p-4 sm:p-5 shadow-lg border border-white/20 max-w-[90%] sm:max-w-md transition-transform hover:scale-[1.02]">
-                        <img 
-                            src="/logo_texto_lado.svg" 
-                            alt="Centro de Formación Laboral Nº 404 Berisso" 
-                            className="h-14 sm:h-16 md:h-20 w-auto object-contain mx-auto"
-                        />
-                    </div>
-                    <p className="text-white/90 text-sm sm:text-base md:text-lg max-w-2xl mx-auto font-light leading-relaxed">
+            <div className="bg-gradient-to-r from-custom-azul-oscuro via-[#1d74ad] to-custom-celeste text-white py-16 px-4 text-center flex flex-col items-center justify-center">
+                <div className="max-w-4xl mx-auto">
+                    <p className="text-white text-base sm:text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in">
                         Conocé más sobre nuestro Centro de Formación Laboral Nº 404 de Berisso, nuestro impacto en la comunidad y los beneficios exclusivos para nuestros alumnos.
                     </p>
                 </div>
@@ -199,31 +192,6 @@ function Institucional() {
                     </div>
                 </section>
 
-                {/* 3. SECCIÓN DE UBICACIÓN (MAPA) */}
-                <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-gray-100 mt-10">
-                    <div className="text-center mb-6">
-                        <h2 className="font-nunito font-extrabold text-2xl text-custom-azul-oscuro tracking-tight">
-                            Nuestra Ubicación
-                        </h2>
-                        <p className="text-sm text-custom-gris-claro mt-2">
-                            Te esperamos en nuestra sede central de Berisso.
-                        </p>
-                        <div className="h-1 w-16 bg-custom-celeste mx-auto mt-2 rounded-full" />
-                    </div>
-                    
-                    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 shadow-sm aspect-video sm:aspect-auto sm:h-[400px]">
-                        <iframe 
-                            src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6546.912837233276!2d-57.8910297!3d-34.8698835!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95a2e435f9b7efcb%3A0xa325f7c395690ce8!2sCentro%20de%20Formaci%C3%B3n%20Laboral%20N%C2%B0404%20Berisso!5e0!3m2!1ses-419!2sar!4v1785799295092!5m2!1ses-419!2sar" 
-                            width="100%" 
-                            height="100%" 
-                            style={{ border: 0 }} 
-                            allowFullScreen="" 
-                            loading="lazy" 
-                            referrerPolicy="strict-origin-when-cross-origin"
-                            title="Mapa de ubicación del CFL 404 Berisso"
-                        ></iframe>
-                    </div>
-                </section>
             </div>
 
             {/* MODAL DETALLE / BOTTOM SHEET */}

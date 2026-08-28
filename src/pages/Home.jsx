@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import Hero from '../components/Hero';
 import FAQ from '../components/FAQ';
 import CourseFilters from '../components/CourseFilters';
 import CourseCard from '../components/CourseCard';
 import CourseDetailModal from '../components/CourseDetailModal';
-import EnrollmentModal from '../components/EnrollmentModal';
 import { coursesData as initialCourses } from '../data/coursesData';
-import { CheckCircle2, AlertCircle, Download } from 'lucide-react';
+import { AlertCircle, Download } from 'lucide-react';
 
 export default function Home() {
-  const [courses, setCourses] = useState(initialCourses);
+  const navigate = useNavigate();
+  const courses = initialCourses;
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,7 +19,6 @@ export default function Home() {
 
   // Modal States
   const [detailCourse, setDetailCourse] = useState(null);
-  const [enrollCourse, setEnrollCourse] = useState(null);
 
   // Toast Feedback State
   const [toast, setToast] = useState(null);
@@ -45,25 +45,11 @@ export default function Home() {
     });
   }, [courses, selectedStage, selectedCategory, searchTerm]);
 
-  // Handle Enrollment Success
-  const handleEnrollSuccess = ({ courseName, studentName }) => {
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.name === courseName && c.detail.quota > 0) {
-          const newQuota = c.detail.quota - 1;
-          return {
-            ...c,
-            detail: { ...c.detail, quota: newQuota },
-            status:
-              newQuota === 0
-                ? { id: 3, label: 'Cupo completo', color: 'bg-rose-500/10 text-rose-700 border-rose-300', badgeColor: 'bg-rose-500' }
-                : c.status,
-          };
-        }
-        return c;
-      })
-    );
-    showToast(`¡Felicidades ${studentName}! Tu pre-inscripción a "${courseName}" ha sido registrada.`, 'success');
+  const handleEnrollClick = () => {
+    showToast('La pre-inscripción requiere iniciar sesión. Redirigiendo a Login...', 'info');
+    setTimeout(() => {
+      navigate('/login');
+    }, 1000);
   };
 
   const handleDownloadPlanilla = (course) => {
@@ -76,15 +62,8 @@ export default function Home() {
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-20 right-4 z-50">
-          <div className={`p-4 rounded-2xl shadow-2xl border flex items-center gap-3 text-sm font-semibold max-w-md ${
-            toast.type === 'success'
-              ? 'bg-emerald-800 text-white border-emerald-600'
-              : 'bg-[#166193] text-white border-[#37ACDE]'
-          }`}>
-            {toast.type === 'success'
-              ? <CheckCircle2 className="w-6 h-6 text-[#FDEA14] shrink-0" />
-              : <Download className="w-6 h-6 text-[#FDEA14] shrink-0" />
-            }
+          <div className="p-4 rounded-2xl shadow-2xl border flex items-center gap-3 text-sm font-semibold max-w-md bg-[#166193] text-white border-[#37ACDE]">
+            <Download className="w-6 h-6 text-[#FDEA14] shrink-0" />
             <span>{toast.message}</span>
           </div>
         </div>
@@ -108,25 +87,20 @@ export default function Home() {
         />
 
         {/* Banner de etapa activa */}
-        <div className="mb-8 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping flex-shrink-0"></span>
-            <div>
-              <h3 className="font-extrabold text-lg text-[#1D1E1C] font-['Roboto_Flex']">
-                {selectedStage === 'segunda' && 'Segunda Etapa (Julio - Diciembre 2026)'}
-                {selectedStage === 'primera' && 'Primera Etapa (Marzo - Julio 2026)'}
-                {selectedStage === 'todas'   && 'Todas las Etapas del CFP'}
-              </h3>
-              <p className="text-xs text-[#585856]">
-                {selectedStage === 'segunda' && 'Edición actual activa. Cupos disponibles para pre-inscripción.'}
-                {selectedStage === 'primera' && 'Edición finalizada. Cursadas concluidas con validez oficial.'}
-                {selectedStage === 'todas'   && 'Catálogo histórico e inscripciones abiertas.'}
-              </p>
-            </div>
+        <div className="mb-8 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm flex items-start sm:items-center gap-3">
+          <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping flex-shrink-0"></span>
+          <div>
+            <h3 className="font-extrabold text-lg text-[#1D1E1C] font-['Roboto_Flex']">
+              {selectedStage === 'segunda' && 'Segunda Etapa (Julio - Diciembre 2026)'}
+              {selectedStage === 'primera' && 'Primera Etapa (Marzo - Julio 2026)'}
+              {selectedStage === 'todas'   && 'Todas las Etapas del CFP'}
+            </h3>
+            <p className="text-xs text-[#585856]">
+              {selectedStage === 'segunda' && 'Edición actual activa. Cupos disponibles para pre-inscripción.'}
+              {selectedStage === 'primera' && 'Edición finalizada. Cursadas concluidas con validez oficial.'}
+              {selectedStage === 'todas'   && 'Catálogo histórico e inscripciones abiertas.'}
+            </p>
           </div>
-          <span className="text-xs font-bold text-[#166193] bg-[#166193]/10 px-3 py-1.5 rounded-lg border border-[#166193]/20 whitespace-nowrap">
-            Actualmente en: Julio 2026
-          </span>
         </div>
 
         {/* Grid de cursos */}
@@ -143,7 +117,7 @@ export default function Home() {
             </p>
             <button
               onClick={() => { setSearchTerm(''); setSelectedCategory('Todos'); setSelectedStage('segunda'); }}
-              className="bg-[#166193] text-white font-bold px-6 py-2.5 rounded-xl text-xs"
+              className="bg-[#166193] text-white font-bold px-6 py-2.5 rounded-xl text-xs cursor-pointer"
             >
               Restablecer Filtros
             </button>
@@ -155,7 +129,7 @@ export default function Home() {
                 key={course.id}
                 course={course}
                 onSelectCourse={(c) => setDetailCourse(c)}
-                onEnrollCourse={(c) => setEnrollCourse(c)}
+                onEnrollCourse={handleEnrollClick}
               />
             ))}
           </div>
@@ -170,15 +144,8 @@ export default function Home() {
         <CourseDetailModal
           course={detailCourse}
           onClose={() => setDetailCourse(null)}
-          onEnroll={(c) => setEnrollCourse(c)}
+          onEnroll={handleEnrollClick}
           onDownloadPlanilla={handleDownloadPlanilla}
-        />
-      )}
-      {enrollCourse && (
-        <EnrollmentModal
-          course={enrollCourse}
-          onClose={() => setEnrollCourse(null)}
-          onSuccessSubmit={handleEnrollSuccess}
         />
       )}
     </div>

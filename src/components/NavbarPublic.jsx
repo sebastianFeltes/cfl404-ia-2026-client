@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { GraduationCap, Menu, X, BookOpen } from 'lucide-react';
+import { Link } from 'react-router';
+import { GraduationCap, Menu, X, BookOpen, LogIn, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * NavbarPublic — barra de navegación para el módulo público de Cursos.
@@ -7,16 +9,18 @@ import { GraduationCap, Menu, X, BookOpen } from 'lucide-react';
  *   • Banner de inscripciones con selector de perfil de visitante (aspirante, alumno, docente, empresa)
  *   • Logo institucional con enlace al hero
  *   • Navegación de escritorio
+ *   • Acceso a la plataforma: "Ingresar" (→ /login con Google) o "Mi Perfil" si hay sesión
  *   • Menú hamburguesa responsive para mobile
  */
 export default function NavbarPublic({ selectedRole, setSelectedRole }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const roles = [
-    { id: 'aspirante', label: 'Futuro Estudiante' },
-    { id: 'alumno', label: 'Alumno / Cursante' },
-    { id: 'docente', label: 'Docente / Instructor' },
-    { id: 'empresa', label: 'Empresa / Institución' },
+    { id: 'publico', label: 'Modo Público' },
+    { id: 'aspirante', label: 'Aspirantes' },
+    { id: 'alumno', label: 'Alumno' },
+    { id: 'docente', label: 'Docente' },
   ];
 
   return (
@@ -29,6 +33,9 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
             <span>Módulo de Cursos — Inscripciones Abiertas Segunda Etapa (Julio - Diciembre)</span>
           </div>
 
+          {/* El selector solo aplica en la vista pública de cursos, que es quien
+              pasa setSelectedRole. En el perfil el navbar se monta sin ese control. */}
+          {setSelectedRole && (
           <div className="flex items-center gap-2">
             <span className="text-gray-400 hidden md:inline">Vista de Perfil:</span>
             <div className="flex bg-[#585856]/40 p-0.5 rounded-md">
@@ -47,6 +54,7 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
 
@@ -85,7 +93,7 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
             </a>
           </nav>
 
-          {/* Action CTA Button */}
+          {/* Action CTA Buttons */}
           <div className="hidden lg:flex items-center gap-3">
             <a
               href="#cursos"
@@ -94,6 +102,23 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
               <BookOpen className="w-4 h-4" />
               Ver Oferta Educativa
             </a>
+
+            <Link
+              to={isAuthenticated ? '/perfil' : '/login'}
+              className="border border-white/40 hover:bg-white/15 hover:border-white/70 text-white font-bold px-4 py-2.5 rounded-lg text-sm transition-all flex items-center gap-2 focus:ring-2 focus:ring-[#FDEA14]"
+            >
+              {isAuthenticated ? (
+                <>
+                  <User className="w-4 h-4" />
+                  Mi Perfil
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4" />
+                  Ingresar
+                </>
+              )}
+            </Link>
           </div>
 
           {/* Mobile Hamburger Button */}
@@ -128,6 +153,26 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
           >
             Oferta Educativa / Cursos (15 Cursos)
           </a>
+
+          <div className="border-t border-white/10 pt-3">
+            <Link
+              to={isAuthenticated ? '/perfil' : '/login'}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-base font-semibold bg-white/10 hover:bg-white/20"
+            >
+              {isAuthenticated ? (
+                <>
+                  <User className="w-5 h-5" />
+                  Mi Perfil
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Ingresar con Google
+                </>
+              )}
+            </Link>
+          </div>
         </div>
       )}
     </header>
