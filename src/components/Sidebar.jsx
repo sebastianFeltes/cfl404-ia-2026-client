@@ -1,13 +1,12 @@
 // Archivo: src/components/Sidebar.jsx
-import { useState } from 'react'
 import { NavLink } from 'react-router'
 import {
   Users,
   Book,
   GraduationCap,
   BarChart2,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   User,
 } from 'lucide-react'
 import Tooltip from './Tooltip'
@@ -19,10 +18,11 @@ import Tooltip from './Tooltip'
  *  - Navegación con NavLink de react-router (activa estilos según la ruta actual)
  *  - Modo colapsado (isOpen=false) con isotipo y Tooltip en cada ítem
  *  - Modo expandido (isOpen=true) con texto de etiquetas y logo completo
+ *  - Botón de compresión/expansión tipo Gemini
  *
  * Props:
  *  - isOpen {boolean}         — Estado expandido/colapsado (controlado desde DashboardLayout)
- *  - onToggle {function}      — Callback para alternar el estado (opcional, si se quiere toggle interno)
+ *  - onToggle {function}      — Callback para alternar el estado
  */
 const navItems = [
   {
@@ -58,52 +58,89 @@ const navItems = [
 ]
 
 export default function Sidebar({ isOpen = true, onToggle }) {
-  // Si no se pasa onToggle, el Sidebar maneja su propio estado de colapso
-  const [internalOpen, setInternalOpen] = useState(isOpen)
-  const open = onToggle !== undefined ? isOpen : internalOpen
-  const toggle = onToggle !== undefined ? onToggle : () => setInternalOpen((v) => !v)
+  const open = onToggle !== undefined ? isOpen : true
 
   return (
     <aside
       className={`
-        flex flex-col h-screen shrink-0 sticky top-0
+        flex flex-col h-screen shrink-0 sticky top-0 z-30
         bg-white dark:bg-slate-900
         border-r border-slate-200 dark:border-slate-800
         transition-all duration-300 ease-in-out
-        overflow-hidden
         ${open ? 'w-64' : 'w-[72px]'}
       `}
       aria-label="Navegación principal"
     >
-      {/* ── Logo / Brand Header ── */}
+      {/* ── Logo / Brand Header con Botón de Compresión ── */}
       <div
-        title="Centro de Formación Laboral Nº404 · Berisso"
-        className="h-16 flex items-center gap-3 px-4 border-b border-slate-200 dark:border-slate-800 shrink-0 overflow-hidden"
+        className={`h-16 flex items-center border-b border-slate-200 dark:border-slate-800 shrink-0 transition-all duration-300 ${
+          open ? 'justify-between px-3.5' : 'justify-center px-2'
+        }`}
       >
-        <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 dark:bg-white dark:p-0.5">
-          <img
-            src="/logo_texto_hero.svg"
-            alt="CFL 404 Berisso"
-            className="h-full w-full object-cover block"
-          />
-        </div>
+        {open ? (
+          <>
+            <div
+              title="Centro de Formación Laboral Nº404 · Berisso"
+              className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden"
+            >
+              <div className="h-9 w-9 rounded-full overflow-hidden shrink-0 dark:bg-white dark:p-0.5">
+                <img
+                  src="/logo_texto_hero.svg"
+                  alt="CFL 404 Berisso"
+                  className="h-full w-full object-cover block"
+                />
+              </div>
 
-        {/* Texto del logo — visible solo cuando está expandido */}
-        <div
-          className={`flex flex-col leading-tight min-w-0 transition-all duration-200 ${
-            open ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'
-          }`}
-        >
-          <span className="text-[12px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight">
-            Centro de
-          </span>
-          <span className="text-[12px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight">
-            Formación Laboral
-          </span>
-          <span className="text-[12px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight">
-            Nº404 · Berisso
-          </span>
-        </div>
+              <div className="flex flex-col leading-tight min-w-0 transition-all duration-200">
+                <span className="text-[11px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight truncate">
+                  Centro de
+                </span>
+                <span className="text-[11px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight truncate">
+                  Formación Laboral
+                </span>
+                <span className="text-[11px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight truncate">
+                  Nº404 · Berisso
+                </span>
+              </div>
+            </div>
+
+            {onToggle && (
+              <Tooltip text="Comprimir menú" position="bottom">
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  title="Comprimir barra lateral"
+                  aria-label="Comprimir barra lateral"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                >
+                  <PanelLeftClose size={18} strokeWidth={2} />
+                </button>
+              </Tooltip>
+            )}
+          </>
+        ) : (
+          onToggle ? (
+            <Tooltip text="Expandir menú" position="right">
+              <button
+                type="button"
+                onClick={onToggle}
+                title="Expandir barra lateral"
+                aria-label="Expandir barra lateral"
+                className="p-2 rounded-lg text-slate-500 hover:text-[#166193] dark:text-slate-400 dark:hover:text-[#37A6DE] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center justify-center"
+              >
+                <PanelLeftOpen size={20} strokeWidth={2} />
+              </button>
+            </Tooltip>
+          ) : (
+            <div className="h-9 w-9 rounded-full overflow-hidden shrink-0 dark:bg-white dark:p-0.5">
+              <img
+                src="/logo_texto_hero.svg"
+                alt="CFL 404 Berisso"
+                className="h-full w-full object-cover block"
+              />
+            </div>
+          )
+        )}
       </div>
 
       {/* ── Navigation Links ── */}
@@ -161,23 +198,6 @@ export default function Sidebar({ isOpen = true, onToggle }) {
           </Tooltip>
         ))}
       </nav>
-
-      {/* ── Toggle Button (colapsar / expandir) ── */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800 shrink-0 flex justify-end">
-        <Tooltip text={open ? 'Colapsar menú' : 'Expandir menú'} position="right">
-          <button
-            onClick={toggle}
-            aria-label={open ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
-            className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-          >
-            {open ? (
-              <ChevronLeft size={18} strokeWidth={2} />
-            ) : (
-              <ChevronRight size={18} strokeWidth={2} />
-            )}
-          </button>
-        </Tooltip>
-      </div>
     </aside>
   )
 }
