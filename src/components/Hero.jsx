@@ -34,7 +34,7 @@ export default function Hero() {
           src={hombre}
           alt="Hombre soldando"
           aria-hidden="true"
-          className="h-full w-screen lg:object-right object-cover  object-[60%_25%] md:object-[75%_center] opacity-85 md:opacity-100"
+          className="h-full w-screen lg:object-right object-cover object-[60%_25%] md:object-[75%_center] opacity-85 md:opacity-100"
           loading="eager"
         />
         {/* Overlay graduado: suave en mobile para resaltar al soldador, lateral en desktop */}
