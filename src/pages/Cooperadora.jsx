@@ -95,17 +95,7 @@ function Cooperadora() {
             {/* ── Banner Superior ────────────────────────────────────────── */}
             <div className="bg-gradient-to-r from-custom-azul-oscuro via-[#1d74ad] to-custom-celeste text-white py-10 px-4 text-center">
                 <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
-                    <div className="bg-white/95 rounded-2xl p-4 sm:p-5 shadow-lg border border-white/20 max-w-[90%] sm:max-w-md transition-transform hover:scale-[1.02]">
-                        <img
-                            src="/logo_texto_lado.svg"
-                            alt="Centro de Formación Laboral Nº 404 Berisso"
-                            className="h-14 sm:h-16 md:h-20 w-auto object-contain mx-auto"
-                        />
-                    </div>
-                    <h1 className="font-nunito font-extrabold text-2xl sm:text-3xl tracking-tight drop-shadow-sm">
-                        Cooperadora CFL 404 – Berisso
-                    </h1>
-                    <p className="text-white/85 text-sm sm:text-base max-w-xl mx-auto font-light leading-relaxed">
+                    <p className="text-white text-base sm:text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in">
                         Apoyá la educación pública y gratuita de Berisso colaborando con nuestra Asociación Cooperadora.
                     </p>
                 </div>
@@ -204,33 +194,23 @@ function Cooperadora() {
                     </p>
 
                     {/* Botón WhatsApp */}
-                    <Tooltip text="Enviá tu comprobante al +54 9 221-319-2360">
-                        <button
-                            id="btn-enviar-comprobante-whatsapp"
-                            onClick={handleWhatsApp}
-                            className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-nunito font-extrabold text-base py-4 px-5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
-                        >
-                            <img src="/whatsapp.svg" alt="WhatsApp" className="w-5 h-5 flex-shrink-0 brightness-0 invert" />
-                            Enviar Comprobante
-                        </button>
-                    </Tooltip>
+                    <div className="flex justify-center w-full">
+                        <Tooltip text="Enviá tu comprobante al +54 9 221-319-2360" className="w-full sm:w-auto">
+                            <button
+                                id="btn-enviar-comprobante-whatsapp"
+                                onClick={handleWhatsApp}
+                                className="w-full sm:w-auto min-w-[260px] sm:px-8 flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-nunito font-extrabold text-base py-4 px-5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
+                            >
+                                <img src="/whatsapp.svg" alt="WhatsApp" className="w-5 h-5 flex-shrink-0 brightness-0 invert" />
+                                Enviar Comprobante
+                            </button>
+                        </Tooltip>
+                    </div>
 
                     <p className="text-center mt-5 font-nunito italic text-custom-gris-claro text-sm">
                         ¡Muchas gracias!!!
                     </p>
                 </section>
-
-                {/* ── Contacto Footer ───────────────────────────────────── */}
-                <p className="text-center text-xs text-gray-400 font-nunito pb-2">
-                    Contacto:{' '}
-                    <a
-                        href="mailto:cooperadora@cfl404.edu.ar"
-                        className="text-custom-celeste hover:underline transition-colors"
-                    >
-                        cooperadora@cfl404.edu.ar
-                    </a>{' '}
-                    | © {new Date().getFullYear()} CFL 404
-                </p>
             </div>
 
             {/* ── Toast Global ──────────────────────────────────────────── */}

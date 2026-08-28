@@ -15,6 +15,10 @@ function BadgeStatus({ status }) {
     // Inactivo: Neutral grey color
     styles = 'bg-custom-gris-claro/10 text-custom-gris-claro font-semibold'
     label = 'Inactivo'
+  } else if (statusStr === 'licencia') {
+    // Licencia: Yellow accent styling
+    styles = 'bg-custom-amarillo/20 text-yellow-800 font-bold border border-custom-amarillo/40'
+    label = 'En Licencia'
   } else if (statusStr === 'suspendido' || statusStr === '3') {
     // Suspendido: Yellow accent styling
     styles = 'bg-custom-amarillo/20 text-yellow-800 font-bold border border-custom-amarillo/40'

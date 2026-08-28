@@ -16,7 +16,11 @@ const INITIAL_FORM_STATE = {
 
 function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
+<<<<<<< HEAD
   const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
+=======
+  const isReadOnly = userRole === 'docente' || userRole === 'instructor'
+>>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
 
   // Update form data when student prop changes (Edit vs Add)
   useEffect(() => {

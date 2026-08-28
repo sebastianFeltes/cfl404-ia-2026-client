@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router'
 import { Menu, X, Home, Building2, GraduationCap, Users, Mail, LogIn } from 'lucide-react'
 import Footer from '../components/Footer'
+import AvisoConsentimiento from '../components/AvisoConsentimiento'
 
 /**
  * AppLayout — layout público del sitio institucional del CFL 404.
@@ -77,7 +78,7 @@ function AppLayout() {
         { key: 'institucional', path: '/institucional', label: 'Institucional', icon: Building2,     end: false },
         { key: 'cursos',        path: '/#cursos',       label: 'Cursos',        icon: GraduationCap, end: false },
         { key: 'cooperadora',   path: '/cooperadora',   label: 'Cooperadora',   icon: Users,         end: false },
-        { key: 'contactos',    path: '/#contacto',     label: 'Contactos',     icon: Mail,          end: false },
+        { key: 'contactos',    path: '/#contacto',     label: 'Contacto',      icon: Mail,          end: false },
     ]
 
     // Visibilidad del logo en el navbar: oculto en Home sin scroll, visible al scrollear o en otras páginas
@@ -250,6 +251,9 @@ function AppLayout() {
 
             {/* ── Footer persistente ── */}
             <Footer />
+
+            {/* ── Aviso de consentimiento ── */}
+            <AvisoConsentimiento />
         </div>
     )
 }

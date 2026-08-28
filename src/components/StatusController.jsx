@@ -1,8 +1,13 @@
 import React, { useState } from 'react'
 import { Settings2, RefreshCw, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react'
 
+<<<<<<< HEAD
 function StatusController({ currentState = 'success', onChangeState }) {
   const [isOpen, setIsOpen] = useState(true)
+=======
+function StatusController({ currentState, onChangeState }) {
+  const [isOpen, setIsOpen] = useState(false)
+>>>>>>> c6a8607ed7faaad7c87882930747140d163cd7ee
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-roboto no-print">

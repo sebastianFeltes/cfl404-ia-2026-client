@@ -3,8 +3,7 @@ import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 import Tooltip from './Tooltip'
 
 /**
- * StatCard — tarjeta de KPI numérico.
- * Recibe un `tooltip` opcional para mostrar contexto adicional al hacer hover.
+ * StatCard — tarjeta de KPI numérico con soporte para Light y Dark Mode.
  */
 function StatCard({ 
   title, 
@@ -19,14 +18,14 @@ function StatCard({
 }) {
   const card = (
     <div 
-      className={`bg-white rounded-xl shadow-xs border-l-4 ${colorClass} p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-default w-full`}
+      className={`bg-white dark:bg-slate-900 rounded-xl shadow-xs border-l-4 ${colorClass} border-y border-r border-slate-200/80 dark:border-slate-800/80 p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-default w-full`}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-bold text-custom-gris-claro uppercase tracking-wider font-roboto">
+          <p className="text-xs font-bold text-custom-gris-claro dark:text-slate-400 uppercase tracking-wider font-roboto">
             {title}
           </p>
-          <p className="text-3xl font-extrabold text-custom-gris-oscuro font-nunito tracking-tight">
+          <p className="text-3xl font-extrabold text-custom-gris-oscuro dark:text-slate-100 font-nunito tracking-tight">
             {value}
           </p>
         </div>
@@ -38,26 +37,26 @@ function StatCard({
       </div>
 
       {/* Trend indicators */}
-      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center text-xs gap-1.5">
+      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center text-xs gap-1.5">
         {trendType === 'up' && (
-          <span className="flex items-center gap-0.5 font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md">
+          <span className="flex items-center gap-0.5 font-bold text-green-600 bg-green-50 dark:bg-emerald-950/60 dark:text-emerald-400 px-1.5 py-0.5 rounded-md">
             <ArrowUpRight className="h-3 w-3" />
             {trend}
           </span>
         )}
         {trendType === 'down' && (
-          <span className="flex items-center gap-0.5 font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md">
+          <span className="flex items-center gap-0.5 font-bold text-red-500 bg-red-50 dark:bg-red-950/60 dark:text-red-400 px-1.5 py-0.5 rounded-md">
             <ArrowDownRight className="h-3 w-3" />
             {trend}
           </span>
         )}
         {trendType === 'neutral' && (
-          <span className="flex items-center gap-0.5 font-bold text-custom-gris-claro bg-gray-50 px-1.5 py-0.5 rounded-md">
+          <span className="flex items-center gap-0.5 font-bold text-custom-gris-claro dark:text-slate-400 bg-gray-50 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
             <Minus className="h-3 w-3" />
             {trend}
           </span>
         )}
-        <span className="text-custom-gris-claro font-medium">{description}</span>
+        <span className="text-custom-gris-claro dark:text-slate-400 font-medium">{description}</span>
       </div>
     </div>
   )
