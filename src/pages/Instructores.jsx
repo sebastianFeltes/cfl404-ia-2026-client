@@ -559,6 +559,10 @@ function Instructores() {
         onResetFilters={handleResetFilters}
         onAddInstructor={() => setIsAddOpen(true)}
         userRole={accessRole}
+        hasCrud={hasCrud}
+      />
+
+      {/* Drawer: Detailed view panel */}
       <InstructorDetailDrawer 
         instructor={viewInstructor}
         isOpen={!!viewInstructor}
@@ -582,6 +586,7 @@ function Instructores() {
           }}
           onSubmit={handleFormSubmit}
           userRole={accessRole}
+          hasCrud={hasCrud}
           courses={courses}
           isSubmitting={isSubmitting}
         />
