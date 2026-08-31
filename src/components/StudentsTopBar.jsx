@@ -25,6 +25,7 @@ export default function StudentsTopBar({
   onExportarCSV,
   onResetFiltros,
   puedeEditar = true,
+  activeTab = 'alumnos',
   // Modos de visualización
   viewMode = 'table',
   setViewMode,
@@ -32,6 +33,7 @@ export default function StudentsTopBar({
   demoState = 'success',
   setDemoState
 }) {
+  const isPostulantesTab = activeTab === 'postulantes';
   const isAnyFilterActive = busqueda.trim() !== "" || filtroEstado !== "todos" || filtroNivel !== "todos";
 
   return (
@@ -47,8 +49,8 @@ export default function StudentsTopBar({
             <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar por nombre, DNI, email..."
-              title="Buscar por nombre, apellido, DNI o email"
+              placeholder={isPostulantesTab ? "Buscar postulante por nombre, DNI..." : "Buscar alumno por nombre, DNI..."}
+              title={isPostulantesTab ? "Buscar por nombre, apellido, DNI o curso solicitado" : "Buscar por nombre, apellido, DNI o email"}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full h-9 pl-8 pr-3 text-xs font-nunito text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#37A6DE]/30 focus:border-[#37A6DE] transition-all"
@@ -59,15 +61,23 @@ export default function StudentsTopBar({
           <select
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value)}
-            title="Filtrar por estado del alumno"
+            title="Filtrar por estado"
             className="h-9 pl-3 pr-7 text-xs font-nunito text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#37A6DE]/30 focus:border-[#37A6DE] transition-all cursor-pointer font-medium"
           >
             <option value="todos">Todos los estados</option>
-            <option value="activo">Activos</option>
-            <option value="presente">Presentes Hoy</option>
-            <option value="aspirante">Aspirantes</option>
-            <option value="inactivo">Inactivos / Egresados</option>
-            <option value="suspendido">Suspendidos</option>
+            {!isPostulantesTab && (
+              <>
+                <option value="activo">Activos</option>
+                <option value="presente">Presentes Hoy</option>
+                <option value="inactivo">Inactivos / Egresados</option>
+                <option value="suspendido">Suspendidos</option>
+              </>
+            )}
+            {isPostulantesTab && (
+              <>
+                <option value="aspirante">Aspirantes / Pendientes</option>
+              </>
+            )}
           </select>
 
           {/* Filtro por Nivel Académico */}
@@ -97,10 +107,10 @@ export default function StudentsTopBar({
 
           {/* Contador de Resultados */}
           <span
-            title="Total de alumnos filtrados"
+            title="Total de registros filtrados"
             className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1 font-nunito cursor-default"
           >
-            {totalResultados} {totalResultados === 1 ? "alumno" : "alumnos"}
+            {totalResultados} {isPostulantesTab ? (totalResultados === 1 ? "postulante" : "postulantes") : (totalResultados === 1 ? "alumno" : "alumnos")}
           </span>
         </div>
 
@@ -156,15 +166,19 @@ export default function StudentsTopBar({
             <span>Imprimir</span>
           </button>
 
-          {/* Botón Nuevo Alumno */}
+          {/* Botón Nuevo Registro */}
           {puedeEditar && (
             <button
               onClick={onNuevo}
-              title="Registrar un nuevo alumno en la institución"
-              className="flex items-center gap-1.5 h-9 px-3.5 bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa] text-white rounded-lg text-xs font-bold font-nunito transition-colors cursor-pointer shadow-xs"
+              title={isPostulantesTab ? "Registrar un nuevo alumno postulante" : "Registrar un nuevo alumno en la institución"}
+              className={`flex items-center gap-1.5 h-9 px-3.5 text-white rounded-lg text-xs font-bold font-nunito transition-colors cursor-pointer shadow-xs ${
+                isPostulantesTab 
+                  ? 'bg-[#37A6DE] hover:bg-[#2c91c4] dark:bg-[#37A6DE] dark:hover:bg-[#2c91c4]' 
+                  : 'bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa]'
+              }`}
             >
               <Plus size={15} strokeWidth={2.5} className="text-[#FDEA14]" />
-              Nuevo Alumno
+              {isPostulantesTab ? 'Nuevo Postulante' : 'Nuevo Alumno'}
             </button>
           )}
         </div>

@@ -9,20 +9,13 @@ import {
   PanelLeftOpen,
   User,
 } from 'lucide-react'
+import { useMemo } from 'react'
 import Tooltip from './Tooltip'
+import { useAuth } from '../context/AuthContext'
+import { mapDbRoleToUi } from '../utils/roles'
 
 /**
- * Sidebar — panel lateral de navegación del dashboard.
- *
- * Fusiona:
- *  - Navegación con NavLink de react-router (activa estilos según la ruta actual)
- *  - Modo colapsado (isOpen=false) con isotipo y Tooltip en cada ítem
- *  - Modo expandido (isOpen=true) con texto de etiquetas y logo completo
- *  - Botón de compresión/expansión tipo Gemini
- *
- * Props:
- *  - isOpen {boolean}         — Estado expandido/colapsado (controlado desde DashboardLayout)
- *  - onToggle {function}      — Callback para alternar el estado
+ * Sidebar — panel lateral de navegación del dashboard con control RBAC por rol.
  */
 const navItems = [
   {
@@ -30,35 +23,49 @@ const navItems = [
     icon: User,
     path: '/perfil',
     title: 'Datos de tu cuenta',
+    roles: ['director', 'secretaria', 'instructor', 'estudiante'],
   },
   {
     label: 'Profesores',
     icon: Users,
     path: '/admin/instructores',
     title: 'Gestión de docentes e instructores',
+    roles: ['director', 'secretaria'],
   },
   {
     label: 'Cursos',
     icon: Book,
     path: '/admin/cursos',
     title: 'Gestión de ofertas formativas',
+    roles: ['director', 'secretaria', 'instructor'],
   },
   {
     label: 'Alumnos',
     icon: GraduationCap,
     path: '/admin/alumnos',
     title: 'Matrícula y nómina de estudiantes',
+    roles: ['director', 'secretaria', 'instructor'],
   },
   {
     label: 'Reportes',
     icon: BarChart2,
     path: '/admin/reportes',
     title: 'Estadísticas y reportes de gestión',
+    roles: ['director', 'secretaria'],
   },
 ]
 
 export default function Sidebar({ isOpen = true, onToggle }) {
+  const { user } = useAuth()
+  const userRole = mapDbRoleToUi(user?.rol)
   const open = onToggle !== undefined ? isOpen : true
+
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter((item) => {
+      if (item.roles && !item.roles.includes(userRole)) return false
+      return true
+    })
+  }, [userRole])
 
   return (
     <aside
@@ -157,7 +164,7 @@ export default function Sidebar({ isOpen = true, onToggle }) {
           Menú
         </p>
 
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <Tooltip
             key={item.label}
             text={open ? '' : item.label}

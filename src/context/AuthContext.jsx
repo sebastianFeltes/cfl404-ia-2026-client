@@ -86,7 +86,12 @@ export function AuthProvider({ children }) {
         const data = await GET('/api/auth/me');
         if (cancelled) return;
         const nextUser = normalizeUser(data.user ?? data);
-        persistUser(nextUser, { remember: isRememberedSession() });
+        const nextToken = data.token ?? data.accessToken ?? storedToken;
+        const rememberSession = isRememberedSession();
+
+        setAuthToken(nextToken, { remember: rememberSession });
+        persistUser(nextUser, { remember: rememberSession });
+        setToken(nextToken);
         setUser(nextUser);
       } catch {
         if (cancelled) return;
