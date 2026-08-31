@@ -12,24 +12,26 @@ import {
   Trash2, 
   FilterX, 
   X, 
-  AlertCircle 
+  AlertCircle,
+  Calendar,
+  Layers
 } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import NuevoCursoModal from '../components/NuevoCursoModal'
-import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 import { fetchCourses, addCourseService, removeCourseService } from '../services/coursesService'
 
 const COLS = [
-  { label: 'Curso', width: '28%', align: 'left' },
+  { label: 'Curso', width: '30%', align: 'left' },
   { label: 'Categoría', width: '14%', align: 'left' },
   { label: 'Horario y Días', width: '22%', align: 'left' },
-  { label: 'Horas / Cupos', width: '16%', align: 'left' },
+  { label: 'Cupos Disponibles', width: '16%', align: 'left' },
   { label: 'Estado', width: '12%', align: 'left' },
-  { label: 'Acciones', width: '8%', align: 'right' }
+  { label: 'Acciones', width: '6%', align: 'right' }
 ]
 
 export default function CursosAdmin() {
   const context = useOutletContext()
+  // Permiso concedido a 1. GOD, 2. ADMIN, 3. DIRECTOR, 4. REGENTE
   const puedeEditar = context?.puedeEditar ?? true
 
   const [courses, setCourses] = useState([])
@@ -77,9 +79,17 @@ export default function CursosAdmin() {
       const matchesSearch = searchLower === '' ||
         course.name.toLowerCase().includes(searchLower) ||
         (course.category && course.category.toLowerCase().includes(searchLower)) ||
-        (course.staff && course.staff.toLowerCase().includes(searchLower))
+        (course.sponsor?.name && course.sponsor.name.toLowerCase().includes(searchLower))
 
-      const matchesStage = filterStage === '' || course.stageKey === filterStage
+      let matchesStage = true
+      if (filterStage === 'segunda') {
+        matchesStage = course.stageKey === 'segunda' || course.is_annual || course.is_continuous || course.stageKey === 'anual'
+      } else if (filterStage === 'primera') {
+        matchesStage = course.stageKey === 'primera' || course.is_annual || course.is_continuous || course.stageKey === 'anual'
+      } else if (filterStage === 'anual') {
+        matchesStage = course.stageKey === 'anual' || course.is_annual || course.is_continuous
+      }
+
       const matchesCategory = filterCategory === '' || course.category === filterCategory
       const matchesStatus = filterStatus === '' || course.status?.id === Number(filterStatus)
 
@@ -105,9 +115,10 @@ export default function CursosAdmin() {
     const total = courses.length
     const activos = courses.filter(c => c.status?.id === 1 || c.status?.id === 2).length
     const vacantesTotales = courses.reduce((acc, curr) => acc + (curr.detail?.quota || 0), 0)
-    const horasTotales = courses.reduce((acc, curr) => acc + (curr.detail?.hour_quantity || 0), 0)
+    const primeraCount = courses.filter(c => c.stageKey === 'primera' || c.is_annual).length
+    const segundaCount = courses.filter(c => c.stageKey === 'segunda' || c.is_annual).length
 
-    return { total, activos, vacantesTotales, horasTotales }
+    return { total, activos, vacantesTotales, primeraCount, segundaCount }
   }, [courses])
 
   const handleResetFilters = () => {
@@ -168,7 +179,7 @@ export default function CursosAdmin() {
             Gestión de Cursos y Oferta Educativa
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-            Administración interna de la oferta formativa, vacantes, asignaciones e inscripciones.
+            Administración interna feaciente de capacitaciones, vacantes, etapas lectivas y altas/bajas.
           </p>
         </div>
 
@@ -178,18 +189,18 @@ export default function CursosAdmin() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 bg-[#166193] hover:bg-[#166193]/90 text-white shadow-md hover:shadow-lg cursor-pointer"
           >
             <Plus className="h-4 w-4 text-[#FDEA14]" />
-            + Nuevo Curso
+            + Agregar Curso
           </button>
         )}
       </div>
 
-      {/* KPI Cards (Alumnos style with StatCard) */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-nunito">
         <StatCard 
-          title="Total Cursos"
+          title="Total de Cursos"
           value={loading ? '...' : kpis.total}
           icon={BookOpen}
-          trend="+5%"
+          trend="Base de Datos"
           trendType="up"
           colorClass="border-[#166193]"
           iconColorClass="text-[#166193] bg-[#166193]/10"
@@ -199,11 +210,11 @@ export default function CursosAdmin() {
           title="Cursos Activos"
           value={loading ? '...' : kpis.activos}
           icon={CheckCircle2}
-          trend="+10%"
+          trend="Inscripción"
           trendType="up"
           colorClass="border-[#37A6DE]"
           iconColorClass="text-[#37A6DE] bg-[#37A6DE]/10"
-          description="con vacantes o abiertos"
+          description="abiertos o con vacantes"
         />
         <StatCard 
           title="Cupos Disponibles"
@@ -216,27 +227,72 @@ export default function CursosAdmin() {
           description="vacantes en comisión"
         />
         <StatCard 
-          title="Horas Cátedra"
-          value={loading ? '...' : `${kpis.horasTotales} hs`}
-          icon={Clock}
-          trend="Plan de Estudio"
+          title="Segunda Etapa"
+          value={loading ? '...' : `${kpis.segundaCount} cursos`}
+          icon={Calendar}
+          trend="Julio - Diciembre"
           trendType="neutral"
           colorClass="border-amber-500"
           iconColorClass="text-amber-600 bg-amber-500/10"
-          description="dictado institucional"
+          description="etapa activa de cursada"
         />
       </div>
 
-      {/* TopBar / Search & Filter Controls */}
+      {/* Stage Selector Tabs */}
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center gap-2 font-nunito">
+        <span className="text-xs font-bold text-slate-500 px-3 uppercase tracking-wider">Filtrar por Etapa:</span>
+        <button
+          onClick={() => setFilterStage('')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filterStage === ''
+              ? 'bg-[#166193] text-white shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+          }`}
+        >
+          Todas las Etapas ({courses.length})
+        </button>
+        <button
+          onClick={() => setFilterStage('segunda')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filterStage === 'segunda'
+              ? 'bg-[#166193] text-white shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+          }`}
+        >
+          Segunda mitad del año (Julio - Diciembre)
+        </button>
+        <button
+          onClick={() => setFilterStage('primera')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filterStage === 'primera'
+              ? 'bg-[#166193] text-white shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+          }`}
+        >
+          Primera mitad del año (Marzo - Junio)
+        </button>
+        <button
+          onClick={() => setFilterStage('anual')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            filterStage === 'anual'
+              ? 'bg-[#166193] text-white shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+          }`}
+        >
+          Anual / Dictado Continuo
+        </button>
+      </div>
+
+      {/* TopBar / Search & Category Filters */}
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 p-4 space-y-4 font-nunito">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           
           {/* Search Input */}
-          <div className="relative w-full lg:w-80">
+          <div className="relative w-full lg:w-96">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input 
               type="text"
-              placeholder="Buscar curso, categoría o docente..."
+              placeholder="Buscar por nombre de curso o patrocinador..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950 focus:outline-none focus:border-[#166193]"
@@ -252,17 +308,7 @@ export default function CursosAdmin() {
           </div>
 
           {/* Filters Selects */}
-          <div className="grid grid-cols-3 gap-3 w-full lg:w-auto flex-1 max-w-2xl">
-            <select
-              value={filterStage}
-              onChange={(e) => setFilterStage(e.target.value)}
-              className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
-            >
-              <option value="">Etapa: Todas</option>
-              <option value="segunda">Segunda Etapa</option>
-              <option value="primera">Primera Etapa</option>
-            </select>
-
+          <div className="grid grid-cols-2 gap-3 w-full lg:w-auto flex-1 max-w-lg">
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
@@ -282,10 +328,10 @@ export default function CursosAdmin() {
               className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
             >
               <option value="">Estado: Todos</option>
-              <option value="1">Cupos disponibles</option>
+              <option value="1">Inscripción Abierta</option>
               <option value="2">Últimos cupos</option>
               <option value="3">Cupo completo</option>
-              <option value="4">Finalizado</option>
+              <option value="4">Curso Finalizado</option>
             </select>
           </div>
 
@@ -303,16 +349,16 @@ export default function CursosAdmin() {
         </div>
       </div>
 
-      {/* Main Table Card (InstructoresTabla style) */}
+      {/* Main Table Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden font-nunito">
         
         {/* Table Header */}
-        <div className="flex items-center px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="flex items-center px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 font-bold">
           {COLS.map((col) => (
             <div
               key={col.label}
               style={{ width: col.width }}
-              className={`text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold ${
+              className={`text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300 ${
                 col.align === 'right' ? 'text-right' : 'text-left'
               }`}
             >
@@ -325,7 +371,7 @@ export default function CursosAdmin() {
         {loading ? (
           <div className="py-16 text-center text-slate-400 font-medium">Cargando cursos desde la base de datos...</div>
         ) : paginatedCourses.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 font-medium">No se encontraron cursos registrados.</div>
+          <div className="py-16 text-center text-slate-400 font-medium">No se encontraron cursos registrados con los filtros seleccionados.</div>
         ) : (
           <div className="flex flex-col">
             {paginatedCourses.map((course) => (
@@ -346,13 +392,15 @@ export default function CursosAdmin() {
                       }}
                     />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate hover:text-[#166193] cursor-pointer" onClick={() => setViewCourse(course)}>
+                  <div className="min-w-0 pr-2">
+                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug hover:text-[#166193] cursor-pointer" onClick={() => setViewCourse(course)}>
                       {course.name}
                     </p>
-                    <p className="text-[11px] text-slate-400 truncate">
-                      {course.stage || 'Segunda Etapa'}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-semibold text-[#166193] bg-[#166193]/10 px-1.5 py-0.5 rounded">
+                        {course.stage || 'Segunda Etapa'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -365,29 +413,26 @@ export default function CursosAdmin() {
 
                 {/* Horario y Días */}
                 <div style={{ width: COLS[2].width }}>
-                  <span className="text-xs text-slate-600 dark:text-slate-300">
+                  <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
                     {course.schedule}
                   </span>
                 </div>
 
-                {/* Horas / Cupos */}
+                {/* Cupos Disponibles (Limpio, bien acomodado y SIN fondo pintado) */}
                 <div style={{ width: COLS[3].width }}>
-                  <p className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                    {course.detail?.hour_quantity || 120} hs cátedra
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Cupo: {course.detail?.quota ?? 0} vacantes
-                  </p>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                    {course.detail?.quota ?? 0} vacantes
+                  </span>
                 </div>
 
-                {/* Estado Badge */}
+                {/* Estado Badge (Bien alineado) */}
                 <div style={{ width: COLS[4].width }}>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${course.status?.color}`}>
+                  <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-bold rounded-full border shadow-2xs whitespace-nowrap ${course.status?.color}`}>
                     {course.status?.label}
                   </span>
                 </div>
 
-                {/* Acciones */}
+                {/* Acciones (Habilitadas para 1. GOD, 2. ADMIN, 3. DIRECTOR, 4. REGENTE) */}
                 <div style={{ width: COLS[5].width }} className="flex items-center justify-end gap-1">
                   <button
                     onClick={() => setViewCourse(course)}
@@ -409,7 +454,7 @@ export default function CursosAdmin() {
 
                       <button
                         onClick={() => setDeleteCourse(course)}
-                        title="Eliminar / Quitar curso"
+                        title="Quitar curso"
                         className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                       >
                         <Trash2 size={15} />
@@ -487,12 +532,12 @@ export default function CursosAdmin() {
                 <Trash2 className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-roboto">
-                ¿Eliminar Curso?
+                ¿Quitar Curso?
               </h3>
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              ¿Está seguro de que desea eliminar el curso <strong>"{deleteCourse.name}"</strong> de la base de datos institucional? Esta acción removerá el registro de la oferta educativa.
+              ¿Está seguro de que desea eliminar el curso <strong>"{deleteCourse.name}"</strong> de la base de datos? Esta acción removerá el registro de la oferta educativa.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
@@ -506,7 +551,7 @@ export default function CursosAdmin() {
                 onClick={handleDeleteConfirm}
                 className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-md cursor-pointer"
               >
-                Sí, Eliminar Curso
+                Sí, Quitar Curso
               </button>
             </div>
           </div>
@@ -540,10 +585,10 @@ export default function CursosAdmin() {
               </div>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+            <div className="space-y-2 text-xs text-[#585856] dark:text-slate-300">
+              <p><strong>Etapa Lectiva:</strong> {viewCourse.stage || 'Segunda Etapa'}</p>
               <p><strong>Descripción:</strong> {viewCourse.detail?.description || 'Sin descripción.'}</p>
               <p><strong>Horarios:</strong> {viewCourse.schedule}</p>
-              <p><strong>Carga Horaria:</strong> {viewCourse.detail?.hour_quantity || 120} hs ({viewCourse.detail?.classes_quantity || 32} clases)</p>
               <p><strong>Vacantes Disponibles:</strong> {viewCourse.detail?.quota || 0}</p>
               <p><strong>Requisito de Título:</strong> {viewCourse.detail?.title_required || 'Primario completo'}</p>
               <p><strong>Aval Institucional:</strong> {viewCourse.detail?.endorsement_by || 'CFP 404 Berisso'}</p>

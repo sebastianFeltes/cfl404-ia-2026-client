@@ -1,14 +1,31 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Award, Users, ChevronDown, ChevronUp, ArrowRight, CheckCircle2, Lock, FileText, Sparkles } from 'lucide-react';
+import { Calendar, Clock, Award, ChevronDown, ChevronUp, ArrowRight, FileText, Building2, CheckCircle2 } from 'lucide-react';
+import { OFFICIAL_ENDORSEMENT } from '../data/coursesData';
 
-export default function CourseCard({ course, onSelectCourse, onEnrollCourse, forceMobileMode }) {
+export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueue, forceMobileMode }) {
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
-  const isFinished = course.stageKey === 'primera' || course.status.id === 4;
-  const hasQuotas = course.detail.quota > 0 && !isFinished;
+  const sponsor = course.sponsor || {
+    name: 'TecPlata',
+    logo: '/images/tecplata_logo.jpg',
+    mention: 'Patrocinado por TecPlata',
+    badge: 'TecPlata'
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const preenrollmentOpen = !course.preenrollment_date || todayStr >= course.preenrollment_date;
 
   const toggleAccordion = () => {
     setIsAccordionOpen(!isAccordionOpen);
+  };
+
+  const handleAction = (e) => {
+    e.stopPropagation();
+    if (onOpenQueue && preenrollmentOpen) {
+      onOpenQueue(course);
+    } else if (onLogin) {
+      onLogin();
+    }
   };
 
   return (
@@ -17,7 +34,7 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
     }`}>
       
       {/* ========================================== */}
-      {/* MOBILE ACCORDION MODE (Triggered on small screens or simulator) */}
+      {/* MOBILE ACCORDION MODE */}
       {/* ========================================== */}
       <div className={`md:hidden ${forceMobileMode ? '!block' : ''}`}>
         
@@ -28,7 +45,7 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
           aria-expanded={isAccordionOpen}
         >
           <div className="flex items-center gap-3 min-w-0">
-            {/* Thumbnail / Avatar */}
+            {/* Thumbnail */}
             <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-200 shadow-sm">
               <img
                 src={course.image}
@@ -36,20 +53,30 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&auto=format&fit=crop&q=60';
+                  e.target.src = '/images/Herreria.webp';
                 }}
               />
             </div>
 
-            {/* Course Title & Stage Badge */}
+            {/* Course Title & Category */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-gray-100 text-[#585856]">
                   {course.category}
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${course.status.color}`}>
-                  {course.status.label}
-                </span>
+                {sponsor && (
+                  sponsor.logo ? (
+                    <img
+                      src={sponsor.logo}
+                      alt={sponsor.name}
+                      className="h-5 w-auto object-contain bg-white rounded px-1 border border-gray-200"
+                    />
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#166193]/10 text-[#166193]">
+                      {sponsor.badge || sponsor.name}
+                    </span>
+                  )
+                )}
               </div>
 
               <h3 className="text-base font-bold text-[#1D1E1C] font-['Roboto_Flex'] truncate mt-0.5">
@@ -58,7 +85,6 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
             </div>
           </div>
 
-          {/* Accordion Chevron Icon */}
           <div className="p-1.5 rounded-full bg-gray-100 text-[#166193] shrink-0">
             {isAccordionOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </div>
@@ -76,34 +102,38 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
               src={course.image}
               alt={course.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/images/Herreria.webp';
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
             <div className="absolute bottom-2 left-3 right-3 text-white">
               <p className="text-xs font-semibold text-gray-200">{course.stage}</p>
               <p className="text-xs font-bold text-[#FDEA14]">Inicio: {course.start_date}</p>
             </div>
           </div>
 
-          {/* Expanded Specs */}
+          {/* Expanded Specs (Sin Cupos) */}
           <div className="space-y-2 mb-4 text-xs font-['Nunito'] text-[#585856]">
             <p className="line-clamp-2 text-gray-700 leading-relaxed">
-              {course.detail.description}
+              {course.detail?.description}
             </p>
 
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200/60">
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#166193]" />
-                <span><strong>Duración:</strong> {course.detail.hour_quantity} hs</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-[#166193]" />
-                <span><strong>Cupos:</strong> {hasQuotas ? `${course.detail.quota} disp.` : 'Agotado'}</span>
-              </div>
+            <div className="flex items-center gap-1.5 pt-2 border-t border-gray-200/60">
+              <Clock className="w-3.5 h-3.5 text-[#166193]" />
+              <span><strong>Duración:</strong> {course.detail?.hour_quantity || 120} hs ({course.detail?.classes_quantity || 32} clases)</span>
             </div>
 
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-[#166193]" />
               <span><strong>Horarios:</strong> {course.schedule}</span>
+            </div>
+
+            {/* Aval institucional */}
+            <div className="pt-2 border-t border-gray-200 text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Aval oficial del Ministerio de Educación y Trabajo PBA</span>
             </div>
           </div>
 
@@ -111,29 +141,19 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
           <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
             <button
               onClick={() => onSelectCourse(course)}
-              className="flex-1 bg-white hover:bg-gray-100 text-[#166193] border border-[#166193] font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors"
+              className="flex-1 bg-white hover:bg-gray-100 text-[#166193] border border-[#166193] font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
             >
-              <span>Ver ficha completa</span>
+              <span>Ver más</span>
               <FileText className="w-3.5 h-3.5" />
             </button>
 
-            {hasQuotas ? (
-              <button
-                onClick={() => onEnrollCourse(course)}
-                className="flex-1 bg-[#37ACDE] hover:bg-[#2892c5] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors shadow-sm"
-              >
-                <span>Inscribirme</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                disabled
-                className="flex-1 bg-gray-200 text-gray-500 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 cursor-not-allowed"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>{isFinished ? 'Finalizado' : 'Sin cupos'}</span>
-              </button>
-            )}
+            <button
+              onClick={handleAction}
+              className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors shadow-sm cursor-pointer"
+            >
+              <span>Iniciar sesión</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
         </div>
@@ -153,11 +173,11 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&auto=format&fit=crop&q=60';
+              e.target.src = '/images/Herreria.webp';
             }}
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"></div>
 
           {/* Badges Overlay */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
@@ -165,78 +185,95 @@ export default function CourseCard({ course, onSelectCourse, onEnrollCourse, for
               {course.category}
             </span>
 
-            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-sm ${course.status.color}`}>
-              {course.status.label}
-            </span>
+            {sponsor && (
+              sponsor.logo ? (
+                <div className="bg-white/95 backdrop-blur-md px-2 py-1 rounded-lg shadow-md border border-white/20 flex items-center justify-center">
+                  <img
+                    src={sponsor.logo}
+                    alt={sponsor.name}
+                    className="h-6 w-auto max-w-[100px] object-contain"
+                  />
+                </div>
+              ) : (
+                <span className="bg-[#166193] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg shadow-sm border border-white/20">
+                  {sponsor.badge || sponsor.name}
+                </span>
+              )
+            )}
           </div>
 
-          {/* Stage Footer Overlay */}
+          {/* Stage & Date Footer Overlay */}
           <div className="absolute bottom-3 left-3 right-3 text-white flex items-center justify-between text-xs">
             <span className="font-semibold text-gray-200 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#FDEA14]" />
-              {course.stageKey === 'segunda' ? 'Julio - Diciembre' : 'Marzo - Julio'}
+              {course.stage}
             </span>
-
-            {hasQuotas && (
-              <span className="font-bold text-[#FDEA14] bg-[#166193]/80 px-2 py-0.5 rounded text-[11px]">
-                {course.detail.quota} vacantes
-              </span>
-            )}
+            <span className="text-[11px] font-bold text-[#FDEA14] bg-black/40 px-2 py-0.5 rounded">
+              Inicio: {course.start_date}
+            </span>
           </div>
         </div>
 
         {/* Card Body */}
-        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+        <div className="p-5 flex-1 flex flex-col justify-between space-y-4 font-['Nunito']">
           
           <div className="space-y-2">
             <h3 className="text-lg font-bold text-[#1D1E1C] font-['Roboto_Flex'] group-hover:text-[#166193] transition-colors leading-snug">
               {course.name}
             </h3>
 
-            <p className="text-xs text-[#585856] font-['Nunito'] line-clamp-2 leading-relaxed">
-              {course.detail.description}
+            <p className="text-xs text-[#585856] line-clamp-2 leading-relaxed">
+              {course.detail?.description}
             </p>
           </div>
 
-          {/* Quick Specs Grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs text-[#585856] font-['Nunito'] pt-3 border-t border-gray-100 bg-gray-50/50 p-2.5 rounded-xl">
+          {/* Quick Specs Grid (Sin Vacantes/Cupos) */}
+          <div className="grid grid-cols-2 gap-2 text-xs text-[#585856] pt-3 border-t border-gray-100 bg-gray-50/50 p-2.5 rounded-xl">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-[#166193] shrink-0" />
-              <span>{course.detail.hour_quantity} Horas Cátedra</span>
+              <span>{course.detail?.hour_quantity || 120} hs Cátedra</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Award className="w-3.5 h-3.5 text-[#166193] shrink-0" />
-              <span>{course.detail.classes_quantity} Clases totales</span>
+              <span>{course.detail?.classes_quantity || 32} Clases</span>
             </div>
+          </div>
+
+          {/* Aval Oficial Ministerio PBA & Sponsor Mention */}
+          <div className="space-y-1.5 text-[11px] border-t border-gray-100 pt-2">
+            <div className="flex items-center gap-1 text-emerald-700 font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+              <span className="truncate">Aval oficial Ministerio de Educación y Trabajo PBA</span>
+            </div>
+            {sponsor && (
+              <div className="flex items-center gap-2 text-slate-600 font-semibold truncate bg-gray-50 p-1.5 rounded-lg border border-gray-100">
+                {sponsor.logo ? (
+                  <img src={sponsor.logo} alt={sponsor.name} className="h-5 w-auto object-contain shrink-0" />
+                ) : (
+                  <Building2 className="w-3.5 h-3.5 text-[#166193] shrink-0" />
+                )}
+                <span className="truncate">{sponsor.mention}</span>
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}
           <div className="pt-2 flex items-center gap-2">
             <button
               onClick={() => onSelectCourse(course)}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-[#166193] font-bold py-2.5 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-[#166193] font-bold py-2.5 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Ver más</span>
               <FileText className="w-3.5 h-3.5" />
             </button>
 
-            {hasQuotas ? (
-              <button
-                onClick={() => onEnrollCourse(course)}
-                className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[#166193]"
-              >
-                <span>Inscribirme</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                disabled
-                className="flex-1 bg-gray-200 text-gray-500 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>{isFinished ? 'Finalizado' : 'Sin cupos'}</span>
-              </button>
-            )}
+            <button
+              onClick={handleAction}
+              className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[#166193] cursor-pointer"
+            >
+              <span>Iniciar sesión</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
         </div>

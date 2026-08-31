@@ -27,8 +27,8 @@ const API_INSTRUCTORES = '/api/v1/instructores'
 const API_ROLES = '/api/v1/roles'
 
 function Instructores() {
-  // Access shared role metadata from layout context
-  const { userRole } = useOutletContext() || {}
+  // Access shared role metadata and permission from layout context
+  const { userRole, puedeEditar } = useOutletContext() || {}
 
   // Main CRUD Instructors State List (now from API)
   const [instructors, setInstructors] = useState([])
@@ -194,7 +194,7 @@ function Instructores() {
   }
 
   const isAnyFilterActive = searchTerm !== '' || filterEstado !== '' || filterRol !== ''
-  const canCreate = userRole === 'director'
+  const canCreate = puedeEditar ?? true
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-28 font-roboto relative">
