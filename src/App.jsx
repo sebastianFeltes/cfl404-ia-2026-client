@@ -27,6 +27,10 @@ import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
 
+// Cooperadora — Módulo de gestión de pagos de cooperadora y buffet.
+// Accesible solo a roles: GOD, ADMIN, DIRECTOR, REGENTE, SECRETARIA, PRECEPTORIA.
+import CooperadoraAdmin from './pages/CooperadoraAdmin'
+
 /**
  * Ruta protegida: sin JWT válido redirige a /login y recuerda el destino
  * en location.state para volver ahí después de autenticarse.
@@ -101,6 +105,12 @@ function AppRoutes() {
         <Route path='admin/instructores' element={<Instructores />} />
         <Route path='admin/alumnos' element={<Alumnos />} />
         <Route path='admin/cursos' element={<CursosAdmin />} />
+
+        {/* Cooperadora — Gestión de pagos mensuales y buffet.
+            El control de acceso por rol se hace dentro de CooperadoraAdmin
+            y en el Sidebar (que oculta el enlace a roles no autorizados). */}
+        <Route path='admin/cooperadora' element={<CooperadoraAdmin />} />
+
         <Route path='admin/reportes' element={
           <div className="p-2"><h1 className="text-2xl font-semibold text-slate-900 font-roboto">Reportes</h1><p className="text-sm text-slate-500 mt-1">Módulo en desarrollo...</p></div>
         } />

@@ -9,8 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  Wallet,        // ← Icono para la sección Cooperadora
 } from 'lucide-react'
 import Tooltip from './Tooltip'
+import { useAuth } from '../context/AuthContext'
 
 /**
  * Sidebar — panel lateral de navegación del dashboard.
@@ -62,6 +64,30 @@ export default function Sidebar({ isOpen = true, onToggle }) {
   const [internalOpen, setInternalOpen] = useState(isOpen)
   const open = onToggle !== undefined ? isOpen : internalOpen
   const toggle = onToggle !== undefined ? onToggle : () => setInternalOpen((v) => !v)
+
+  // ── Cooperadora: control de acceso por rol ──────────────────────────
+  // Roles de la base de datos que pueden acceder a la sección Cooperadora.
+  // Solo estos roles ven el enlace en el Sidebar y pueden acceder a la página.
+  const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+
+  const { user } = useAuth()
+  const rawRole = String(user?.rol || '').toUpperCase()
+  const canAccessCooperadora = COOPERADORA_ROLES.includes(rawRole)
+
+  // Construimos la lista de ítems del menú, inyectando Cooperadora
+  // después de Alumnos (índice 3) solo si el usuario tiene el rol adecuado.
+  const visibleNavItems = canAccessCooperadora
+    ? [
+        ...navItems.slice(0, 4), // Mi Perfil, Profesores, Cursos, Alumnos
+        {
+          label: 'Cooperadora',
+          icon: Wallet,
+          path: '/admin/cooperadora',
+          title: 'Gestión de pagos de cooperadora y buffet',
+        },
+        ...navItems.slice(4),   // Reportes
+      ]
+    : navItems
 
   return (
     <aside
@@ -120,7 +146,7 @@ export default function Sidebar({ isOpen = true, onToggle }) {
           Menú
         </p>
 
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <Tooltip
             key={item.label}
             text={open ? '' : item.label}

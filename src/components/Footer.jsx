@@ -276,6 +276,8 @@ export default function Footer() {
                 <Link
                   key={link.to}
                   to={link.to}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-white/40 text-xs hover:text-white/80 transition-colors duration-200"
                   style={{ fontFamily: '"Nunito", sans-serif' }}
                 >
