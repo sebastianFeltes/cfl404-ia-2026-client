@@ -11,7 +11,14 @@ import {
   X,
   AlertCircle,
   FilterX,
-  Printer
+  Printer,
+  ShieldCheck,
+  Eye,
+  ShieldX,
+  Crown,
+  UserCog,
+  BookUser,
+  ClipboardList,
 } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import InstructoresDataTable from '../components/instructores/InstructoresDataTable'
@@ -22,17 +29,141 @@ import InstructorFormDrawer from '../components/instructores/InstructorFormDrawe
 import InstructorDeleteModal from '../components/instructores/InstructorDeleteModal'
 
 import { GET, POST, PUT } from '../services/api'
+import { CRUD_ROLES, READ_ONLY_ROLES, NO_ACCESS_ROLES, canCrud, canRead } from '../utils/roles'
 
 const API_INSTRUCTORES = '/api/v1/instructores'
 const API_ROLES = '/api/v1/roles'
+
+// ── Configuración visual de roles ──────────────────────────────────────────
+const ROLE_CONFIG = {
+  GOD: {
+    label: 'Dios del Sistema',
+    icon: Crown,
+    color: 'text-yellow-600 dark:text-yellow-400',
+    bg: 'bg-yellow-50 dark:bg-yellow-950/40 border-yellow-200 dark:border-yellow-800/60',
+    badge: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
+    access: 'CRUD completo',
+    accessIcon: ShieldCheck,
+    accessColor: 'text-yellow-600',
+  },
+  ADMIN: {
+    label: 'Administrador',
+    icon: UserCog,
+    color: 'text-violet-600 dark:text-violet-400',
+    bg: 'bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-800/60',
+    badge: 'bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300',
+    access: 'CRUD completo',
+    accessIcon: ShieldCheck,
+    accessColor: 'text-violet-600',
+  },
+  DIRECTOR: {
+    label: 'Director/a',
+    icon: ShieldCheck,
+    color: 'text-custom-azul-oscuro dark:text-custom-celeste',
+    bg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60',
+    badge: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300',
+    access: 'CRUD completo',
+    accessIcon: ShieldCheck,
+    accessColor: 'text-blue-600',
+  },
+  REGENTE: {
+    label: 'Regente',
+    icon: ClipboardList,
+    color: 'text-teal-600 dark:text-teal-400',
+    bg: 'bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800/60',
+    badge: 'bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300',
+    access: 'CRUD completo',
+    accessIcon: ShieldCheck,
+    accessColor: 'text-teal-600',
+  },
+  SECRETARIA: {
+    label: 'Secretaría',
+    icon: Eye,
+    color: 'text-sky-600 dark:text-sky-400',
+    bg: 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60',
+    badge: 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300',
+    access: 'Solo lectura',
+    accessIcon: Eye,
+    accessColor: 'text-sky-600',
+  },
+  PRECEPTORIA: {
+    label: 'Preceptoría',
+    icon: BookUser,
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bg: 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60',
+    badge: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300',
+    access: 'Solo lectura',
+    accessIcon: Eye,
+    accessColor: 'text-indigo-600',
+  },
+}
+
+const NO_ACCESS_CONFIG = {
+  icon: ShieldX,
+  color: 'text-red-500 dark:text-red-400',
+  bg: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/60',
+}
+
+function RoleBadge({ userRole }) {
+  const config = ROLE_CONFIG[userRole]
+  if (!config) return null
+
+  const RoleIcon = config.icon
+  const AccessIcon = config.accessIcon
+
+  return (
+    <Tooltip text={`Rol: ${config.label} — ${config.access}`} position="bottom">
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold ${config.bg}`}>
+        <RoleIcon className={`h-3.5 w-3.5 ${config.color}`} />
+        <span className={config.color}>{config.label}</span>
+        <span className="text-slate-300 dark:text-slate-600">|</span>
+        <AccessIcon className={`h-3.5 w-3.5 ${config.accessColor}`} />
+        <span className={config.accessColor}>{config.access}</span>
+      </div>
+    </Tooltip>
+  )
+}
+
+function NoAccessBanner({ userRole }) {
+  const labels = {
+    INSTRUCTOR: 'Instructor/a',
+    ALUMNO: 'Alumno/a',
+    POSTULANTE: 'Postulante',
+  }
+  const label = labels[userRole] || userRole
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-5">
+      <div className="p-5 bg-red-50 dark:bg-red-950/40 rounded-2xl border border-red-200 dark:border-red-800/60 shadow-sm">
+        <ShieldX className="h-16 w-16 text-red-400 dark:text-red-500 mx-auto" />
+      </div>
+      <div>
+        <h3 className="font-nunito font-extrabold text-2xl text-custom-gris-oscuro dark:text-slate-100 mb-2">
+          Acceso Restringido
+        </h3>
+        <p className="text-sm text-custom-gris-claro dark:text-slate-400 max-w-sm">
+          El rol <span className="font-bold text-red-500">{label}</span> no tiene permisos
+          para visualizar la sección de Instructores.
+        </p>
+        <p className="text-xs text-custom-gris-claro dark:text-slate-500 mt-2">
+          Contactá al Director o Administrador para solicitar acceso.
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function Instructores() {
   // Access shared role metadata from layout context
   const { userRole } = useOutletContext() || {}
 
+  // ── Permisos según rol ────────────────────────────────────
+  const hasAccess = canRead(userRole)
+  const hasCrud   = canCrud(userRole)
+
   // Main CRUD Instructors State List (now from API)
   const [instructors, setInstructors] = useState([])
-  const [roles, setRoles] = useState([])
+  const [courses, setCourses] = useState([])
 
   // Loading and error states
   const [loading, setLoading] = useState(true)
@@ -41,7 +172,6 @@ function Instructores() {
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('')
   const [filterEstado, setFilterEstado] = useState('') 
-  const [filterRol, setFilterRol] = useState('')
 
   // Modals & Sliding Drawer triggers
   const [viewInstructor, setViewInstructor] = useState(null)
@@ -51,6 +181,8 @@ function Instructores() {
 
   // Toast Notification Simulation
   const [toastMessage, setToastMessage] = useState(null)
+  // Submitting lock — prevents double-submit while async request is in-flight
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const showToast = (message) => {
     setToastMessage(message)
@@ -59,6 +191,7 @@ function Instructores() {
 
   // ── Fetch instructores from API ──────────────────────────
   const fetchInstructors = useCallback(async () => {
+    if (!hasAccess) return
     try {
       setLoading(true)
       setError(null)
@@ -70,48 +203,64 @@ function Instructores() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [hasAccess])
 
-  // ── Fetch roles from API (for the form select) ──────────
-  const fetchRoles = useCallback(async () => {
+  // ── Fetch cursos from API (para asignar a instructores) ──
+  const fetchCoursesList = useCallback(async () => {
+    if (!hasAccess) return
     try {
-      const response = await GET(API_ROLES)
-      setRoles(response.data || [])
+      const response = await GET('/courses')
+      if (Array.isArray(response)) {
+        setCourses(response)
+      }
     } catch (err) {
-      console.error('Error fetching roles:', err)
+      console.warn('Error fetching courses list:', err)
     }
-  }, [])
+  }, [hasAccess])
 
   // Initial data load
   useEffect(() => {
+    if (!hasAccess) {
+      setLoading(false)
+      return
+    }
     fetchInstructors()
-    fetchRoles()
-  }, [fetchInstructors, fetchRoles])
+    fetchCoursesList()
+  }, [fetchInstructors, fetchCoursesList, hasAccess])
 
   // Handle resets
   const handleResetFilters = () => {
     setSearchTerm('')
     setFilterEstado('')
-    setFilterRol('')
     showToast('Filtros restablecidos correctamente.')
   }
 
-  // Filter Logic based on interactive select/search values
+  // Filter + sort: Activos (1) → En Licencia (3) → Inactivos/de baja (2) siempre al final
   const filteredInstructors = useMemo(() => {
-    return instructors.filter((instructor) => {
+    const STATUS_SORT_ORDER = { 1: 0, 3: 1, 2: 2 }
+
+    const filtered = instructors.filter((instructor) => {
       const searchLower = searchTerm.toLowerCase().trim()
       const matchesSearch = searchLower === '' || 
         instructor.first_name.toLowerCase().includes(searchLower) ||
         instructor.last_name.toLowerCase().includes(searchLower) ||
         instructor.email.toLowerCase().includes(searchLower) ||
-        instructor.dni.includes(searchLower)
+        instructor.dni.includes(searchLower) ||
+        (instructor.assigned_courses && instructor.assigned_courses.some(c => (typeof c === 'string' ? c : c.name || '').toLowerCase().includes(searchLower))) ||
+        (instructor.course_name && instructor.course_name.toLowerCase().includes(searchLower))
 
-      const matchesEstado = filterEstado === '' || instructor.status_id === Number(filterEstado)
-      const matchesRol = filterRol === '' || instructor.role_name === filterRol
+      const matchesEstado = filterEstado === '' || String(instructor.status_id) === filterEstado
 
-      return matchesSearch && matchesEstado && matchesRol
+      return matchesSearch && matchesEstado
     })
-  }, [instructors, searchTerm, filterEstado, filterRol])
+
+    // Sort: Activos → En Licencia → Inactivos (inactivos siempre al final)
+    return filtered.sort((a, b) => {
+      const orderA = STATUS_SORT_ORDER[a.status_id] ?? 1
+      const orderB = STATUS_SORT_ORDER[b.status_id] ?? 1
+      return orderA - orderB
+    })
+  }, [instructors, searchTerm, filterEstado])
 
   // Count overall KPIs dynamically based on current state list
   const kpis = useMemo(() => {
@@ -136,17 +285,21 @@ function Instructores() {
   }
 
   const handleEdit = (id) => {
+    if (!hasCrud) return
     const instructor = instructors.find(i => i.id === id)
     setEditInstructor(instructor)
   }
 
   const handleDeleteTrigger = (id) => {
+    if (!hasCrud) return
     const instructor = instructors.find(i => i.id === id)
     setDeleteInstructor(instructor)
   }
 
   // Submitting changes (Add or Edit) — connected to API
   const handleFormSubmit = async (data) => {
+    if (!hasCrud || isSubmitting) return
+    setIsSubmitting(true)
     try {
       if (data.id) {
         // Edit operation
@@ -166,11 +319,14 @@ function Instructores() {
     } catch (err) {
       showToast(`Error: ${err.message}`)
       console.error('Error submitting form:', err)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   // Confirm "deletion" (soft delete: status_id -> 2 Inactivo)
   const handleDeleteConfirm = async (id) => {
+    if (!hasCrud) return
     try {
       const response = await PUT(API_INSTRUCTORES, { status_id: 2 }, id)
       setInstructors(prev => prev.map(i => i.id === id ? response.data : i))
@@ -190,17 +346,22 @@ function Instructores() {
 
   const handleExportIndividual = (id) => {
     const inst = instructors.find(i => i.id === id)
+    if (!inst) return
     showToast(`Generando Ficha de Docente PDF para: ${inst.first_name} ${inst.last_name}...`)
   }
 
-  const isAnyFilterActive = searchTerm !== '' || filterEstado !== '' || filterRol !== ''
-  const canCreate = userRole === 'director'
+  const isAnyFilterActive = searchTerm !== '' || filterEstado !== ''
+
+  // ── Sin acceso: mostrar banner bloqueado ──────────────────
+  if (!hasAccess) {
+    return <NoAccessBanner userRole={userRole} />
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-28 font-roboto relative">
       {/* Toast Alert popup banner */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-custom-gris-oscuro text-white border border-custom-celeste px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-sm">
+        <div className="fixed top-20 right-6 z-[9999] bg-custom-gris-oscuro text-white border border-custom-celeste px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-sm">
           <AlertCircle className="h-4.5 w-4.5 text-custom-amarillo animate-pulse" />
           <span>{toastMessage}</span>
           <button 
@@ -239,6 +400,10 @@ function Instructores() {
         
         {/* Main Action buttons */}
         <div className="flex items-center gap-3 no-print">
+
+          {/* Badge de rol activo */}
+          <RoleBadge userRole={userRole} />
+
           <Tooltip text="Imprimir o exportar listado a PDF" position="bottom">
             <button
               onClick={() => window.print()}
@@ -261,7 +426,7 @@ function Instructores() {
             </button>
           </Tooltip>
           
-          {canCreate && (
+          {hasCrud && (
             <Tooltip text="Registrar un nuevo instructor en la institución" position="bottom">
               <button
                 onClick={() => setIsAddOpen(true)}
@@ -352,7 +517,7 @@ function Instructores() {
           </div>
 
           {/* Select Dropdown Filters */}
-          <div className="grid grid-cols-2 gap-3 w-full lg:w-auto flex-1 max-w-xl">
+          <div className="w-full lg:w-72">
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
@@ -360,23 +525,10 @@ function Instructores() {
               className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
               aria-label="Filtrar por Estado"
             >
-              <option value="">Estado: Todos</option>
-              <option value="1">Activo</option>
+              <option value="">Estado: Todos los Estados</option>
+              <option value="1">Docentes Activos</option>
               <option value="3">En Licencia</option>
-              <option value="2">Inactivo</option>
-            </select>
-
-            <select
-              value={filterRol}
-              onChange={(e) => setFilterRol(e.target.value)}
-              title="Filtrar docentes por rol"
-              className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
-              aria-label="Filtrar por Rol"
-            >
-              <option value="">Rol: Todos</option>
-              {uniqueRoles.map((roleName) => (
-                <option key={roleName} value={roleName}>{roleName}</option>
-              ))}
+              <option value="2">Inactivos / De Baja</option>
             </select>
           </div>
 
@@ -406,6 +558,7 @@ function Instructores() {
         onResetFilters={handleResetFilters}
         onAddInstructor={() => setIsAddOpen(true)}
         userRole={userRole}
+        hasCrud={hasCrud}
       />
 
       {/* Drawer: Detailed view panel */}
@@ -414,27 +567,29 @@ function Instructores() {
         isOpen={!!viewInstructor}
         onClose={() => setViewInstructor(null)}
         onExport={handleExportIndividual}
+        onEdit={(id) => {
+          setViewInstructor(null)
+          handleEdit(id)
+        }}
+        hasCrud={hasCrud}
       />
 
-      {/* Drawer: Form to Register a New Instructor */}
-      <InstructorFormDrawer 
-        instructor={null}
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onSubmit={handleFormSubmit}
-        userRole={userRole}
-        roles={roles}
-      />
-
-      {/* Drawer: Form to Edit an Existing Instructor */}
-      <InstructorFormDrawer 
-        instructor={editInstructor}
-        isOpen={!!editInstructor}
-        onClose={() => setEditInstructor(null)}
-        onSubmit={handleFormSubmit}
-        userRole={userRole}
-        roles={roles}
-      />
+      {/* Drawer: Form — unified Add / Edit (single mount eliminates scroll-lock conflict — BUG-13) */}
+      {(isAddOpen || !!editInstructor) && (
+        <InstructorFormDrawer 
+          instructor={editInstructor}
+          isOpen={isAddOpen || !!editInstructor}
+          onClose={() => {
+            setIsAddOpen(false)
+            setEditInstructor(null)
+          }}
+          onSubmit={handleFormSubmit}
+          userRole={userRole}
+          hasCrud={hasCrud}
+          courses={courses}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       {/* Modal: Delete Confirmation Dialog */}
       <InstructorDeleteModal 

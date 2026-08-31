@@ -1,26 +1,42 @@
-import React from 'react'
-import { X, Calendar, Phone, Mail, MapPin, Award, BookOpen, Clock, Download, Printer, GraduationCap } from 'lucide-react'
+import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { X, Calendar, Phone, Mail, MapPin, Award, BookOpen, Clock, Download, Printer, GraduationCap, Pencil } from 'lucide-react'
 import BadgeStatus from '../BadgeStatus'
 import Tooltip from '../Tooltip'
 
-function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
-  if (!instructor) return null
+function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport, onEdit, hasCrud = false }) {
+  // Lock body scroll when drawer is active
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
-  return (
+  if (!instructor || !isOpen) return null
+
+  return createPortal(
     <>
       {/* Backdrop overlay */}
       <div 
-        className={`fixed inset-0 z-30 bg-custom-gris-oscuro/50 dark:bg-slate-950/70 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 z-50 bg-custom-gris-oscuro/60 dark:bg-slate-950/80 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Drawer slide-over container */}
-      <section 
-        className={`fixed inset-y-0 right-0 z-45 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-custom-gris-claro/10 dark:border-slate-800 flex flex-col h-full transition-transform duration-300 ease-in-out transform font-roboto ${
+      <aside 
+        className={`fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-custom-gris-claro/10 dark:border-slate-800 flex flex-col h-screen h-[100dvh] transition-transform duration-300 ease-in-out transform font-roboto ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        role="dialog"
+        aria-modal="true"
         aria-labelledby="drawer-title"
         aria-hidden={!isOpen}
       >
@@ -56,7 +72,7 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
                   instructor.status_id === 3 ? 'border-2 border-amber-500 ring-2 ring-amber-500/30' :
                   'border-2 border-red-500 ring-2 ring-red-500/30'
                 }`}>
-                  {instructor.first_name[0]}{instructor.last_name[0]}
+                  {(instructor.first_name?.[0] || '?')}{(instructor.last_name?.[0] || '')}
                 </div>
               )}
             </Tooltip>
@@ -70,11 +86,6 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
               <div className="mt-2 flex items-center gap-2">
                 <Tooltip text={`Estado actual: ${instructor.status_id === 1 ? 'Activo' : instructor.status_id === 3 ? 'En Licencia' : 'Inactivo'}`} position="bottom">
                   <BadgeStatus status={instructor.status_id === 3 ? 'licencia' : instructor.status_id} />
-                </Tooltip>
-                <Tooltip text="Categoría en el cuerpo docente" position="bottom">
-                  <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded font-bold uppercase cursor-help">
-                    {instructor.role_name}
-                  </span>
                 </Tooltip>
               </div>
             </div>
@@ -146,7 +157,7 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
                 <Phone className="h-4 w-4 text-custom-gris-claro dark:text-slate-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-custom-gris-claro dark:text-slate-400">Teléfono de Contacto</p>
-                  <Tooltip text={`Llamar a ${instructor.phone}`} position="top">
+                  <Tooltip text={instructor.phone ? `Llamar a ${instructor.phone}` : 'Sin teléfono registrado'} position="top">
                     <p className="text-custom-gris-oscuro dark:text-slate-200 font-bold mt-0.5 font-mono cursor-pointer hover:underline">{instructor.phone || 'Sin registrar'}</p>
                   </Tooltip>
                 </div>
@@ -186,7 +197,19 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center gap-3 shrink-0">
+        <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center gap-2.5 shrink-0">
+          {hasCrud && onEdit && (
+            <Tooltip text="Modificar datos de este docente" position="top">
+              <button
+                onClick={() => onEdit(instructor.id)}
+                className="flex items-center justify-center gap-1.5 py-2 px-3.5 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/90 text-white rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+              >
+                <Pencil className="h-4 w-4 text-custom-amarillo" />
+                Editar
+              </button>
+            </Tooltip>
+          )}
+
           <Tooltip text="Descargar legajo completo del docente en PDF" position="top">
             <button
               onClick={() => onExport && onExport(instructor.id)}
@@ -207,8 +230,9 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport }) {
             </button>
           </Tooltip>
         </div>
-      </section>
-    </>
+      </aside>
+    </>,
+    document.body
   )
 }
 

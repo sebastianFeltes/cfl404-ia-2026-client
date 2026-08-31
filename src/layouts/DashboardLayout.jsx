@@ -5,7 +5,7 @@ import { Bell, Sun, Moon, LogOut, User } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Tooltip from "../components/Tooltip";
 import { useAuth } from "../context/AuthContext";
-import { mapDbRoleToUi, roleLabel } from "../utils/roles";
+import { mapDbRoleToUi, roleLabel, CRUD_ROLES } from "../utils/roles";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
@@ -20,7 +20,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const userRole = mapDbRoleToUi(user?.rol);
-  const puedeEditar = userRole === "director";
+  const puedeEditar = CRUD_ROLES.includes(userRole);
   const displayName = [user?.nombres, user?.apellidos].filter(Boolean).join(" ") || "Usuario";
   const displayRole = roleLabel(user?.rol);
 
