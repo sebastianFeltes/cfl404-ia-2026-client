@@ -86,23 +86,56 @@ export default function Footer() {
 
         {/* ── Contenido principal ── */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-12 pb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10">
 
-            {/* ═══ Columna 1 — Logo + Institución ═══ */}
-            <div className="flex flex-col items-start gap-4">
-              {/* Logo */}
-              <a href="#" className="block group" aria-label="Inicio">
-                <img
-                  src="/logo_texto_hero.svg"
-                  alt="CFL 404 Logo"
-                  className="w-36 lg:w-44 h-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                  style={{
-                    filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.6))',
-                  }}
-                />
-              </a>
+            {/* ═══ Columna 1 — Logos (CFL + Sponsor) + Institución ═══ */}
+            <div className="md:col-span-6 lg:col-span-5 flex flex-col items-start">
+              {/* Logos estrictamente lado a lado */}
+              <div className="flex items-center gap-4 sm:gap-5 flex-nowrap">
+                {/* Logo CFL */}
+                <a href="#" className="block shrink-0 group" aria-label="Inicio">
+                  <img
+                    src="/logo_texto_hero.svg"
+                    alt="CFL 404 Logo"
+                    className="w-32 sm:w-36 lg:w-40 h-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                    style={{
+                      filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
+                    }}
+                  />
+                </a>
+
+                {/* Divisor vertical sutil */}
+                <div className="h-14 sm:h-16 w-[1px] bg-white/20 shrink-0" />
+
+                {/* Auspicia + Logo TecPlata */}
+                <div className="flex flex-col items-start gap-1 shrink-0 -mt-1">
+                  <span
+                    className="text-white font-bold text-[10px] sm:text-[11px] tracking-widest uppercase flex items-center gap-1.5 opacity-90"
+                    style={{ fontFamily: '"Roboto Flex", sans-serif' }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    Auspicia
+                  </span>
+                  <a
+                    href="https://www.tecplata.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block transition-transform duration-300 hover:scale-105 group/tecplata"
+                    title="TecPlata - Terminal de Contenedores"
+                    aria-label="Sitio web de TecPlata"
+                  >
+                    <img
+                      src="/images/slide/tecplata logo2.png"
+                      alt="Logo TecPlata"
+                      className="h-14 sm:h-16 lg:h-18 w-auto max-w-[190px] sm:max-w-[220px] object-contain opacity-95 group-hover/tecplata:opacity-100 transition-opacity duration-300"
+                    />
+                  </a>
+                </div>
+              </div>
+
+              {/* Texto institucional con más separación */}
               <p
-                className="text-white/70 text-xs leading-relaxed max-w-xs"
+                className="text-white/70 text-xs leading-relaxed max-w-sm mt-5 sm:mt-6"
                 style={{ fontFamily: '"Nunito", sans-serif' }}
               >
                 Centro de Formación Laboral N.º 404 de Berisso. Cursos gratuitos con certificación oficial.
@@ -110,7 +143,7 @@ export default function Footer() {
             </div>
 
             {/* ═══ Columna 2 — Contacto + Redes ═══ */}
-            <div className="flex flex-col items-start gap-6">
+            <div className="md:col-span-3 flex flex-col items-start gap-6">
               <h3
                 className="text-white font-bold text-lg tracking-wide"
                 style={{ fontFamily: '"Roboto Flex", sans-serif' }}
@@ -141,7 +174,9 @@ export default function Footer() {
               {/* Email */}
               <div className="relative group/tooltip flex flex-col items-start">
                 <a
-                  href="mailto:cfp404berisso@abc.gob.ar"
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=cfp404berisso@abc.gob.ar"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-3 text-white/80 hover:text-white transition-colors duration-300 group"
                 >
                   <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-[#FDEA14]/40 group-hover:bg-[#FDEA14]/5 transition-all duration-300">
@@ -186,7 +221,7 @@ export default function Footer() {
             </div>
 
             {/* ═══ Columna 3 — Ubicación / Mapa ═══ */}
-            <div className="flex flex-col items-start gap-3.5 w-full">
+            <div className="md:col-span-4 flex flex-col items-start gap-3.5 w-full">
               <h3
                 className="text-white font-bold text-lg tracking-wide"
                 style={{ fontFamily: '"Roboto Flex", sans-serif' }}

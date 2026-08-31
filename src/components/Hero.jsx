@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import hombre from '../assets/hombre_soldando.PNG'
+import BrandSlider from './BrandSlider'
 
 export default function Hero() {
   return (
@@ -188,6 +189,9 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {/* ── Brand Slider ── */}
+      <BrandSlider />
 
       {/* ── Scroll indicator (Más compacto) ── */}
       <a

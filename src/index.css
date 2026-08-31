@@ -74,6 +74,18 @@ html {
     animation: bounceDown 1.5s ease-in-out infinite;
 }
 
+/* ── Brand Slider marquee ── */
+@keyframes brandSlide {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-33.333%); }
+}
+.brand-slider-track {
+    animation: brandSlide 20s linear infinite;
+}
+.brand-slider-track:hover {
+    animation-play-state: paused;
+}
+
 /* Clases auxiliares para impresión */
 .print-only {
   display: none;
