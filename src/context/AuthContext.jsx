@@ -29,6 +29,7 @@ function normalizeUser(payload) {
     fotoUrl: payload.fotoUrl || payload.profilePhotoUrl || '',
     tipo: payload.tipo || payload.type || '',
     emailVerificado: payload.emailVerificado ?? payload.emailVerified ?? false,
+    aceptaTerminos: Boolean(payload.aceptaTerminos ?? payload.acceptedTerms),
   };
 }
 
@@ -86,7 +87,12 @@ export function AuthProvider({ children }) {
         const data = await GET('/api/auth/me');
         if (cancelled) return;
         const nextUser = normalizeUser(data.user ?? data);
-        persistUser(nextUser, { remember: isRememberedSession() });
+        const nextToken = data.token ?? data.accessToken ?? storedToken;
+        const rememberSession = isRememberedSession();
+
+        setAuthToken(nextToken, { remember: rememberSession });
+        persistUser(nextUser, { remember: rememberSession });
+        setToken(nextToken);
         setUser(nextUser);
       } catch {
         if (cancelled) return;
@@ -149,10 +155,16 @@ export function AuthProvider({ children }) {
       lastName: updatedFields.apellidos ?? updatedFields.lastName,
       dni: updatedFields.dni,
       profilePhotoUrl: updatedFields.fotoUrl ?? updatedFields.profilePhotoUrl,
+      acceptedTerms: updatedFields.aceptaTerminos ?? updatedFields.acceptedTerms,
     }
 
     const data = await PATCH('/api/auth/me', payload)
     const nextUser = normalizeUser(data.user ?? data)
+    const nextToken = data.token ?? data.accessToken
+    if (nextToken) {
+      setAuthToken(nextToken, { remember })
+      setToken(nextToken)
+    }
     persistUser(nextUser, { remember })
     setUser(nextUser)
     return nextUser

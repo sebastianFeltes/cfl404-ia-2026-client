@@ -17,7 +17,8 @@ import {
   Download, 
   Printer, 
   Pencil, 
-  Trash2 
+  Trash2,
+  UserCheck
 } from 'lucide-react'
 import StudentAvatar from './StudentAvatar'
 import BadgeStatus from './BadgeStatus'
@@ -28,15 +29,20 @@ export default function StudentDetailDrawer({
   onClose, 
   onEdit, 
   onDelete, 
+  onPromote,
   onExport,
   userRole = 'director'
 }) {
-  if (!student || !isOpen) return null
+  const isPostulante = Boolean(student?.is_aspirante) || 
+    String(student?.role_name || '').toUpperCase() === 'POSTULANTE' || 
+    String(student?.role_name || '').toUpperCase() === 'ASPIRANTE' || 
+    student?.status_id === 3 || 
+    String(student?.status || '').toUpperCase() === 'PENDIENTE'
 
   const canEdit = userRole === 'director' || userRole === 'secretaria'
   const canDelete = userRole === 'director'
 
-  const details = {
+  const details = student ? {
     address: student.address || student.studentDetail?.address || 'Calle 122 y 60, Berisso',
     phone: student.phone || student.studentDetail?.phone || '—',
     extra_phone: student.extra_phone || student.studentDetail?.extraPhone || student.extraPhone || '—',
@@ -52,40 +58,45 @@ export default function StudentDetailDrawer({
     has_dni_copy: student.dni_copy ?? true,
     has_form_copy: student.form_copy ?? true,
     has_title_copy: student.title_copy ?? (student.status_id !== 3),
-  }
+  } : {}
 
   const estadoTextos = {
     1: 'Estado: Alumno Activo',
     activo: 'Estado: Alumno Activo',
     presente: 'Estado: Alumno Presente hoy',
-    aspirante: 'Estado: Alumno Aspirante (En proceso)',
+    aspirante: 'Estado: Postulante / Aspirante (En proceso)',
+    postulante: 'Estado: Postulante (En proceso de admisión)',
     2: 'Estado: Alumno Inactivo / Egresado',
     inactivo: 'Estado: Alumno Inactivo / Egresado',
-    3: 'Estado: Alumno Suspendido / Documentación pendiente',
-    suspendido: 'Estado: Alumno Suspendido / Documentación pendiente',
+    3: 'Estado: Postulante / Documentación pendiente',
+    suspendido: 'Estado: Suspendido / Documentación pendiente',
   }
 
   return (
     <AnimatePresence>
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-        className="fixed inset-0 z-40 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-xs"
-      />
+      {isOpen && student && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="student-drawer-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-xs"
+          />
 
-      {/* Drawer Panel */}
-      <motion.aside
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed top-0 right-0 h-full w-full max-w-[460px] z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200"
-        aria-labelledby="student-drawer-title"
-      >
+          {/* Drawer Panel */}
+          <motion.aside
+            key="student-drawer-panel"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 h-full w-full max-w-[460px] z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200"
+            aria-labelledby="student-drawer-title"
+          >
         {/* Header con estilo uniforme */}
         <div className="bg-white dark:bg-slate-900 px-7 pt-7 pb-5 border-b border-slate-100 dark:border-slate-800/80 relative shrink-0">
           <button
@@ -98,12 +109,12 @@ export default function StudentDetailDrawer({
           </button>
 
           <div className="flex items-center gap-4">
-            <div title={estadoTextos[student.status_id] || 'Estado del alumno'}>
+            <div title={estadoTextos[student.status_id] || 'Estado'}>
               <StudentAvatar 
                 src={student.profile_photo_url} 
                 nombre={student.first_name} 
                 apellido={student.last_name} 
-                estado={student.status_id} 
+                estado={isPostulante ? 'postulante' : student.status_id} 
                 size="xl" 
               />
             </div>
@@ -112,11 +123,12 @@ export default function StudentDetailDrawer({
                 {student.first_name} {student.last_name}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-nunito mt-1 mb-2">
-                ID Alumno: <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">#{student.id}</span>
+                {isPostulante ? 'ID Postulante: ' : 'ID Alumno: '}
+                <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">#{student.id}</span>
               </p>
               <div className="flex items-center gap-2">
-                <BadgeStatus status={student.status_id} />
-                {student.is_present && (
+                <BadgeStatus status={isPostulante ? 'postulante' : student.status_id} />
+                {student.is_present && !isPostulante && (
                   <span className="text-[10px] bg-[#37A6DE]/15 text-[#166193] dark:text-[#37A6DE] px-2 py-0.5 rounded font-bold uppercase">
                     Presente Hoy
                   </span>
@@ -133,21 +145,21 @@ export default function StudentDetailDrawer({
             {/* Sección: Cursada / Detalle Académico */}
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
-                <BookOpen size={14} className="text-[#166193] dark:text-[#37A6DE]" /> 
-                Información de Cursada
+                <BookOpen size={14} className={isPostulante ? "text-amber-600 dark:text-amber-400" : "text-[#166193] dark:text-[#37A6DE]"} /> 
+                {isPostulante ? 'Curso Solicitado en Preinscripción' : 'Información de Cursada'}
               </dt>
               <div className="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-3.5">
                 <DataRow 
                   icon={BookOpen} 
-                  label="Curso Asignado" 
+                  label={isPostulante ? "Curso Elegido" : "Curso Asignado"} 
                   value={details.course_name} 
-                  title="Curso actual en el que está inscripto" 
+                  title="Curso solicitado o asignado" 
                   highlight
                 />
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
                   <DataRow 
                     icon={Clock} 
-                    label="Fecha Inscripción" 
+                    label={isPostulante ? "Fecha de Postulación" : "Fecha Inscripción"} 
                     value={details.enrollment_date} 
                     title="Fecha de registro inicial" 
                   />
@@ -159,6 +171,24 @@ export default function StudentDetailDrawer({
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Sección: Documentación Presentada */}
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
+                <CheckSquare size={14} className="text-[#166193] dark:text-[#37A6DE]" /> 
+                Documentación Entregada (Papeles Físicos)
+              </dt>
+              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 space-y-2">
+                <DocItem label="Copia DNI (Frente y Dorso)" checked={details.has_dni_copy} />
+                <DocItem label="Ficha de Inscripción Firmada" checked={details.has_form_copy} />
+                <DocItem label="Copia Certificado / Título Secundario" checked={details.has_title_copy} />
+              </div>
+              {isPostulante && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/40 leading-relaxed">
+                  💡 <strong>Condición de ingreso:</strong> Para que el postulante sea dado de alta como alumno regular y pueda figurar en listas de aula, debe completar la entrega de la documentación requerida.
+                </p>
+              )}
             </div>
 
             {/* Sección: Contacto */}
@@ -192,25 +222,24 @@ export default function StudentDetailDrawer({
               </div>
             </div>
 
-            {/* Sección: Documentación Presentada */}
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
-                <CheckSquare size={14} className="text-[#166193] dark:text-[#37A6DE]" /> 
-                Documentación Entregada
-              </dt>
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 space-y-2">
-                <DocItem label="Copia DNI (Frente y Dorso)" checked={details.has_dni_copy} />
-                <DocItem label="Ficha de Inscripción Firmada" checked={details.has_form_copy} />
-                <DocItem label="Copia Certificado / Título Secundario" checked={details.has_title_copy} />
-              </div>
-            </div>
-
           </dl>
         </div>
 
         {/* Footer Actions */}
         <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 flex flex-col gap-2.5 shrink-0 no-print">
           
+          {/* Botón Promover a Alumno para Postulantes */}
+          {isPostulante && canEdit && onPromote && (
+            <button
+              onClick={() => onPromote(student.id)}
+              title="Aprobar documentación y matricular como Alumno regular del centro"
+              className="w-full h-10 flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
+            >
+              <UserCheck size={16} />
+              Aprobar y Matricular como Alumno
+            </button>
+          )}
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => onExport && onExport(student.id)}
@@ -233,28 +262,30 @@ export default function StudentDetailDrawer({
             <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-800">
               <button
                 onClick={() => { onEdit?.(student.id); }}
-                title="Editar información de este alumno"
+                title="Editar información de este registro"
                 className="flex-1 h-8.5 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 <Pencil size={13} />
-                Editar Alumno
+                {isPostulante ? 'Editar Postulante' : 'Editar Alumno'}
               </button>
 
               {canDelete && (
                 <button
                   onClick={() => { onDelete?.(student.id); }}
-                  title="Dar de baja o eliminar a este alumno"
+                  title="Descartar o dar de baja este registro"
                   className="h-8.5 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <Trash2 size={13} />
-                  Eliminar
+                  {isPostulante ? 'Descartar' : 'Eliminar'}
                 </button>
               )}
             </div>
           )}
         </div>
       </motion.aside>
-    </AnimatePresence>
+    </>
+  )}
+</AnimatePresence>
   )
 }
 

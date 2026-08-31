@@ -4,22 +4,26 @@ import React, { useState } from "react";
 const estadoRing = {
   1: "ring-2 ring-emerald-500 dark:ring-emerald-400",
   activo: "ring-2 ring-emerald-500 dark:ring-emerald-400",
-  presente: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
-  aspirante: "ring-2 ring-indigo-500 dark:ring-indigo-400",
+  presente: "ring-2 ring-emerald-500 dark:ring-emerald-400",
+  aspirante: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
+  postulante: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
+  pendiente: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
   2: "ring-2 ring-slate-400 dark:ring-slate-500",
   inactivo: "ring-2 ring-slate-400 dark:ring-slate-500",
-  3: "ring-2 ring-amber-500 dark:ring-amber-400",
+  3: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
   suspendido: "ring-2 ring-amber-500 dark:ring-amber-400",
 };
 
 const estadoDot = {
   1: "bg-emerald-500",
   activo: "bg-emerald-500",
-  presente: "bg-[#37A6DE]",
-  aspirante: "bg-indigo-500",
+  presente: "bg-emerald-500",
+  aspirante: "bg-[#37A6DE]",
+  postulante: "bg-[#37A6DE]",
+  pendiente: "bg-[#37A6DE]",
   2: "bg-slate-400",
   inactivo: "bg-slate-400",
-  3: "bg-amber-500",
+  3: "bg-[#37A6DE]",
   suspendido: "bg-amber-500",
 };
 
@@ -27,10 +31,12 @@ const estadoLabels = {
   1: "Activo",
   activo: "Activo",
   presente: "Presente",
-  aspirante: "Aspirante",
+  aspirante: "Postulante",
+  postulante: "Postulante",
+  pendiente: "Pendiente",
   2: "Inactivo",
   inactivo: "Inactivo",
-  3: "Suspendido",
+  3: "Pendiente",
   suspendido: "Suspendido",
 };
 
@@ -73,7 +79,7 @@ export default function StudentAvatar({
     <div className="relative inline-block flex-shrink-0" title={`Estado del alumno: ${estadoLabel}`}>
       {error || !src ? (
         <div
-          className={`${sizeClass} rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 transition-all ${ringClass}`}
+          className={`${sizeClass} rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 transition-all ${ringClass}`}
         >
           <span className="text-slate-600 dark:text-slate-300 font-bold font-nunito">{initials}</span>
         </div>
@@ -82,7 +88,7 @@ export default function StudentAvatar({
           src={src}
           alt={`${nombre} ${apellido}`}
           onError={() => setError(true)}
-          className={`${sizeClass} rounded-lg object-cover flex-shrink-0 transition-all ${ringClass}`}
+          className={`${sizeClass} rounded-full object-cover flex-shrink-0 transition-all ${ringClass}`}
         />
       )}
 

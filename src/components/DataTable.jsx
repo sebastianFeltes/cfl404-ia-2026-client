@@ -1,7 +1,22 @@
 import React from 'react'
 import StudentAvatar from './StudentAvatar'
 import ActionButtons from './ActionButtons'
-import { Inbox, Plus } from 'lucide-react'
+import { Inbox, Plus, Users, UserCheck, GraduationCap } from 'lucide-react'
+
+function isPostulanteCheck(student) {
+  if (!student) return false
+  const role = String(student.role_name || '').toUpperCase()
+  const status = String(student.status || '').toUpperCase()
+  return (
+    Boolean(student.is_aspirante) ||
+    role === 'POSTULANTE' ||
+    role === 'ASPIRANTE' ||
+    student.status_id === 3 ||
+    status === 'PENDIENTE' ||
+    status === 'POSTULANTE' ||
+    status === 'ASPIRANTE'
+  )
+}
 
 function DataTable({ 
   students = [], 
@@ -9,6 +24,7 @@ function DataTable({
   onView, 
   onEdit, 
   onDelete,
+  onPromote,
   onResetFilters,
   onAddStudent,
   userRole = 'director',
@@ -18,16 +34,31 @@ function DataTable({
   setPaginaActual,
   setItemsPorPagina,
   totalResultados = 0,
-  isPrintMode = false
+  isPrintMode = false,
+  // Pestañas
+  activeTab = 'alumnos',
+  setActiveTab,
+  tabCounts = { alumnos: 0, postulantes: 0 }
 }) {
-  const tableHeaders = [
-    { label: 'Alumno', align: 'left', width: '28%' },
-    { label: 'DNI', align: 'left', width: '13%' },
-    { label: 'Email', align: 'left', width: '22%' },
-    { label: 'Teléfono', align: 'left', width: '14%' },
-    { label: 'Curso Inscrito', align: 'left', width: '15%' },
-    { label: 'Acciones', align: 'center', width: '8%' }
-  ]
+  const isPostulantesTab = activeTab === 'postulantes'
+
+  const tableHeaders = isPostulantesTab
+    ? [
+        { label: 'Postulante', align: 'left', width: '28%' },
+        { label: 'DNI', align: 'left', width: '13%' },
+        { label: 'Email', align: 'left', width: '22%' },
+        { label: 'Teléfono', align: 'left', width: '14%' },
+        { label: 'Curso Solicitado', align: 'left', width: '15%' },
+        { label: 'Acciones', align: 'center', width: '8%' }
+      ]
+    : [
+        { label: 'Alumno', align: 'left', width: '28%' },
+        { label: 'DNI', align: 'left', width: '13%' },
+        { label: 'Email', align: 'left', width: '22%' },
+        { label: 'Teléfono', align: 'left', width: '14%' },
+        { label: 'Curso Asignado', align: 'left', width: '15%' },
+        { label: 'Acciones', align: 'center', width: '8%' }
+      ]
 
   const skeletonRows = Array(6).fill(null)
   const canCreate = userRole === 'director' || userRole === 'secretaria'
@@ -35,11 +66,79 @@ function DataTable({
 
   return (
     <div className="w-full bg-white dark:bg-slate-900 overflow-hidden font-roboto transition-colors duration-200">
+      
+      {/* ── Pestañas de Navegación: Alumnos vs Postulantes (no-print) ── */}
+      {!isPrintMode && setActiveTab && (
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 px-5 pt-2">
+          <div className="flex items-center gap-2">
+            
+            {/* Pestaña 1: Alumnos */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('alumnos')
+                setPaginaActual && setPaginaActual(1)
+              }}
+              className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold font-nunito border-b-2 transition-all cursor-pointer ${
+                activeTab === 'alumnos'
+                  ? 'border-[#166193] dark:border-[#37A6DE] text-[#166193] dark:text-[#37A6DE] bg-white dark:bg-slate-900 rounded-t-lg shadow-2xs'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50'
+              }`}
+              title="Ver estudiantes regulares con cursada activa o finalizada"
+            >
+              <GraduationCap size={16} className={activeTab === 'alumnos' ? 'text-[#166193] dark:text-[#37A6DE]' : 'text-slate-400'} />
+              <span>Alumnos Regulares</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'alumnos'
+                  ? 'bg-[#166193]/10 text-[#166193] dark:bg-[#37A6DE]/20 dark:text-[#37A6DE]'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}>
+                {tabCounts?.alumnos ?? 0}
+              </span>
+            </button>
+
+            {/* Pestaña 2: Alumnos Postulantes */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('postulantes')
+                setPaginaActual && setPaginaActual(1)
+              }}
+              className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold font-nunito border-b-2 transition-all cursor-pointer ${
+                activeTab === 'postulantes'
+                  ? 'border-[#37A6DE] text-[#37A6DE] bg-white dark:bg-slate-900 rounded-t-lg shadow-2xs'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50'
+              }`}
+              title="Inscripciones web y aspirantes que aún deben presentar documentación"
+            >
+              <UserCheck size={16} className={activeTab === 'postulantes' ? 'text-[#37A6DE]' : 'text-slate-400'} />
+              <span>Alumnos Postulantes</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'postulantes'
+                  ? 'bg-[#37A6DE]/15 text-[#166193] dark:text-[#37A6DE]'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}>
+                {tabCounts?.postulantes ?? 0}
+              </span>
+            </button>
+
+          </div>
+
+          <div className="hidden md:flex items-center text-[11px] text-slate-400 dark:text-slate-500 font-nunito pb-1 font-medium">
+            {isPostulantesTab 
+              ? '📋 Revisión de documentación y admisión' 
+              : '🎓 Estudiantes con matrícula confirmada'}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tabla de Datos ── */}
       <div className="overflow-x-auto">
-        <table className="w-full table-auto text-left" aria-label="Tabla de estudiantes">
+        <table className="w-full table-auto text-left" aria-label={isPostulantesTab ? "Tabla de alumnos postulantes" : "Tabla de estudiantes"}>
           <thead>
-            {/* Cabecera con azul institucional #166193 */}
-            <tr className="bg-[#166193] text-white text-[11px] font-bold uppercase tracking-wider">
+            <tr className={`text-white text-[11px] font-bold uppercase tracking-wider ${
+              isPostulantesTab ? 'bg-[#37A6DE]' : 'bg-[#166193]'
+            }`}>
               {tableHeaders.map((header, index) => (
                 <th 
                   key={index} 
@@ -60,7 +159,7 @@ function DataTable({
               skeletonRows.map((_, index) => (
                 <tr key={`skeleton-${index}`} className="animate-pulse hover:bg-gray-50/50 dark:hover:bg-slate-800/40">
                   <td className="p-3.5 flex items-center gap-3">
-                    <div className="h-9 w-9 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                    <div className="h-9 w-9 bg-slate-200 dark:bg-slate-800 rounded-full" />
                     <div className="space-y-1.5">
                       <div className="h-3.5 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
                       <div className="h-2.5 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
@@ -79,82 +178,92 @@ function DataTable({
 
             {/* Data Rows */}
             {!loading && students.length > 0 && 
-              students.map((student) => (
-                <tr 
-                  key={student.id} 
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors duration-150 text-slate-800 dark:text-slate-200"
-                >
-                  {/* Foto de perfil con anillo de estado y Nombre */}
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="cursor-pointer"
-                        onClick={() => onView && onView(student.id)}
-                        title={`Ver detalle de ${student.first_name} ${student.last_name}`}
-                      >
-                        <StudentAvatar 
-                          src={student.profile_photo_url} 
-                          nombre={student.first_name} 
-                          apellido={student.last_name} 
-                          estado={student.status_id} 
-                          size="sm" 
+              students.map((student) => {
+                const isStudentPostulante = isPostulanteCheck(student)
+                return (
+                  <tr 
+                    key={student.id} 
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors duration-150 text-slate-800 dark:text-slate-200"
+                  >
+                    {/* Foto de perfil con anillo de estado y Nombre */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="cursor-pointer"
+                          onClick={() => onView && onView(student.id)}
+                          title={`Ver detalle de ${student.first_name} ${student.last_name}`}
+                        >
+                          <StudentAvatar 
+                            src={student.profile_photo_url} 
+                            nombre={student.first_name} 
+                            apellido={student.last_name} 
+                            estado={isStudentPostulante ? 'postulante' : student.status_id} 
+                            size="sm" 
+                          />
+                        </div>
+                        <div 
+                          className="min-w-0 cursor-pointer"
+                          onClick={() => onView && onView(student.id)}
+                        >
+                          <div className="font-bold text-slate-900 dark:text-slate-100 font-nunito hover:text-[#166193] dark:hover:text-[#37A6DE] transition-colors truncate">
+                            {student.first_name} {student.last_name}
+                          </div>
+                          {isStudentPostulante && (
+                            <div className="mt-0.5">
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 bg-[#37A6DE]/15 text-[#166193] dark:text-[#37A6DE] rounded font-nunito uppercase tracking-wide">
+                                Postulante
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* DNI */}
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-xs tabular-nums">
+                      {student.dni || '—'}
+                    </td>
+
+                    {/* Email */}
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-xs truncate max-w-[200px]" title={student.email}>
+                      {student.email || '—'}
+                    </td>
+
+                    {/* Teléfono */}
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-xs font-mono tabular-nums">
+                      {student.phone || '—'}
+                    </td>
+
+                    {/* Curso Asignado / Solicitado */}
+                    <td className="py-3 px-4">
+                      <div>
+                        <div className="font-semibold text-xs text-[#166193] dark:text-[#37A6DE]">
+                          {student.course_name || 'Sin curso asignado'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                          {isStudentPostulante ? 'Postulación: ' : 'Inscripción: '}
+                          {student.enrollment_date || '—'}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="py-3 px-4 text-center no-print">
+                      <div className="flex justify-center">
+                        <ActionButtons 
+                          studentId={student.id}
+                          onView={onView}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onPromote={onPromote}
+                          isPostulante={isStudentPostulante}
+                          userRole={userRole}
                         />
                       </div>
-                      <div 
-                        className="min-w-0 cursor-pointer"
-                        onClick={() => onView && onView(student.id)}
-                      >
-                        <div className="font-bold text-slate-900 dark:text-slate-100 font-nunito hover:text-[#166193] dark:hover:text-[#37A6DE] transition-colors truncate">
-                          {student.first_name} {student.last_name}
-                        </div>
-                        <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
-                          ID: #{student.id}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* DNI */}
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-xs tabular-nums">
-                    {student.dni}
-                  </td>
-
-                  {/* Email */}
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-xs truncate max-w-[200px]" title={student.email}>
-                    {student.email}
-                  </td>
-
-                  {/* Teléfono */}
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-xs font-mono tabular-nums">
-                    {student.phone || '—'}
-                  </td>
-
-                  {/* Curso Asignado */}
-                  <td className="py-3 px-4">
-                    <div>
-                      <div className="font-semibold text-[#166193] dark:text-[#37A6DE] text-xs">
-                        {student.course_name || 'Sin curso asignado'}
-                      </div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                        Inscripción: {student.enrollment_date || '—'}
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Acciones */}
-                  <td className="py-3 px-4 text-center no-print">
-                    <div className="flex justify-center">
-                      <ActionButtons 
-                        studentId={student.id}
-                        onView={onView}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        userRole={userRole}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                )
+              })
             }
           </tbody>
         </table>
@@ -167,10 +276,12 @@ function DataTable({
             <Inbox className="h-10 w-10" aria-hidden="true" />
           </div>
           <h3 className="font-nunito font-extrabold text-base text-slate-800 dark:text-slate-200 mb-1">
-            No se encontraron alumnos
+            {isPostulantesTab ? 'No se encontraron alumnos postulantes' : 'No se encontraron alumnos'}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-5 font-nunito">
-            No hay registros que coincidan con los criterios de búsqueda o filtros actuales.
+            {isPostulantesTab
+              ? 'No hay solicitudes o preinscripciones de alumnos postulantes que coincidan con los criterios de búsqueda.'
+              : 'No hay registros de alumnos regulares que coincidan con los criterios de búsqueda o filtros actuales.'}
           </p>
           <div className="flex items-center gap-2.5">
             <button
@@ -181,11 +292,15 @@ function DataTable({
             </button>
             {canCreate && (
               <button
-                onClick={onAddStudent}
-                className="px-3.5 py-1.5 bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                onClick={() => onAddStudent && onAddStudent(isPostulantesTab ? 'Postulante' : 'Alumno')}
+                className={`px-3.5 py-1.5 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                  isPostulantesTab 
+                    ? 'bg-[#37A6DE] hover:bg-[#2c91c4] dark:bg-[#37A6DE] dark:hover:bg-[#2c91c4]' 
+                    : 'bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa]'
+                }`}
               >
                 <Plus className="h-3.5 w-3.5 text-[#FDEA14]" />
-                Nuevo Alumno
+                {isPostulantesTab ? 'Nuevo Postulante' : 'Nuevo Alumno'}
               </button>
             )}
           </div>
@@ -205,7 +320,7 @@ function DataTable({
                 setItemsPorPagina && setItemsPorPagina(Number(e.target.value))
                 setPaginaActual && setPaginaActual(1)
               }}
-              title="Cantidad de alumnos a mostrar por página"
+              title="Cantidad de registros a mostrar por página"
               className="h-7 px-2 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer font-medium"
             >
               <option value={10}>10</option>
@@ -220,7 +335,7 @@ function DataTable({
             <span>
               Mostrando <strong>{totalResultados === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1}</strong> a{" "}
               <strong>{Math.min(paginaActual * itemsPorPagina, totalResultados)}</strong> de{" "}
-              <strong>{totalResultados}</strong> resultados
+              <strong>{totalResultados}</strong> {isPostulantesTab ? 'postulantes' : 'alumnos'}
             </span>
 
             <div className="flex items-center gap-1">

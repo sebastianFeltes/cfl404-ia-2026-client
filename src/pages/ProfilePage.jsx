@@ -35,6 +35,7 @@ export default function ProfilePage() {
     setDni(user.dni || '');
     setEstado(user.estado || '');
     setFotoUrl(user.fotoUrl || '');
+    setAceptaTerminos(Boolean(user.aceptaTerminos));
   }, [user]);
 
   const triggerToast = (message, type = 'success') => {
@@ -68,6 +69,7 @@ export default function ProfilePage() {
       apellidos: isApellidosLocked ? user.apellidos : apellidos,
       dni: isDniLocked ? user.dni : dni,
       fotoUrl,
+      aceptaTerminos,
     });
   };
 
@@ -86,6 +88,7 @@ export default function ProfilePage() {
       apellidos: isApellidosLocked ? user?.apellidos : apellidos,
       dni: isDniLocked ? user?.dni : dni,
       fotoUrl,
+      aceptaTerminos,
     });
   };
 
@@ -111,6 +114,7 @@ export default function ProfilePage() {
       apellidos: isApellidosLocked ? user?.apellidos : apellidos,
       dni: isDniLocked ? user?.dni : dni,
       fotoUrl: nextPhoto,
+      aceptaTerminos,
     });
   };
 

@@ -271,6 +271,21 @@ const INITIAL_MOCK_STUDENTS = [
   }
 ]
 
+const isPostulante = (student) => {
+  if (!student) return false
+  const role = String(student.role_name || '').toUpperCase()
+  const status = String(student.status || '').toUpperCase()
+  return (
+    Boolean(student.is_aspirante) ||
+    role === 'POSTULANTE' ||
+    role === 'ASPIRANTE' ||
+    student.status_id === 3 ||
+    status === 'PENDIENTE' ||
+    status === 'POSTULANTE' ||
+    status === 'ASPIRANTE'
+  )
+}
+
 export default function Alumnos() {
   const context = useOutletContext() || {}
   const userRole = context.userRole ?? context.rolActivo?.id ?? 'director'
@@ -279,23 +294,31 @@ export default function Alumnos() {
   // Lista principal de alumnos
   const [students, setStudents] = useState(INITIAL_MOCK_STUDENTS)
 
+  // Pestaña Activa: 'alumnos' (Regulares) | 'postulantes' (Aspirantes)
+  const [activeTab, setActiveTab] = useState('alumnos')
+
   // Carga inicial sincronizada desde la API con fallback seguro
   const fetchStudents = useCallback(async () => {
     try {
       const res = await GET('/api/alumnos')
       if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        const apiStudents = res.data.map(item => ({
-          ...item,
-          status_id: item.status === 'Inactivo' ? 2 : item.status === 'Pendiente' ? 3 : 1,
-          is_present: item.is_present ?? true,
-          is_aspirante: item.is_aspirante ?? (item.status === 'Pendiente'),
-          role_name: item.role_name ?? (item.status === 'Pendiente' ? 'Aspirante' : 'Alumno'),
-          dni_copy: item.studentDetail?.dniCopy ?? true,
-          form_copy: item.studentDetail?.formCopy ?? true,
-          title_copy: item.studentDetail?.titleCopy ?? true,
-          academic_level: item.studentDetail?.academicLevel ?? 'Secundario',
-          course_name: item.course || 'Sin curso',
-        }))
+        const apiStudents = res.data.map(item => {
+          const roleUpper = String(item.role_name || '').toUpperCase()
+          const statusUpper = String(item.status || '').toUpperCase()
+          const isAsp = Boolean(item.is_aspirante) || roleUpper === 'POSTULANTE' || roleUpper === 'ASPIRANTE' || item.status_id === 3 || statusUpper === 'PENDIENTE'
+          return {
+            ...item,
+            status_id: item.status === 'Inactivo' ? 2 : isAsp ? 3 : 1,
+            is_present: item.is_present ?? !isAsp,
+            is_aspirante: isAsp,
+            role_name: item.role_name ?? (isAsp ? 'Postulante' : 'Alumno'),
+            dni_copy: item.studentDetail?.dniCopy ?? true,
+            form_copy: item.studentDetail?.formCopy ?? true,
+            title_copy: item.studentDetail?.titleCopy ?? (!isAsp),
+            academic_level: item.studentDetail?.academicLevel ?? 'Secundario',
+            course_name: item.course || 'Sin curso',
+          }
+        })
         setStudents(apiStudents)
       }
     } catch (err) {
@@ -346,11 +369,23 @@ export default function Alumnos() {
     showToast('Filtros restablecidos correctamente.')
   }
 
+  // Contadores por pestaña
+  const tabCounts = useMemo(() => {
+    const totalAlumnos = students.filter(s => !isPostulante(s)).length
+    const totalPostulantes = students.filter(s => isPostulante(s)).length
+    return { alumnos: totalAlumnos, postulantes: totalPostulantes }
+  }, [students])
+
   // Filtrado de alumnos
   const filteredStudents = useMemo(() => {
     if (demoState === 'empty') return []
 
     return students.filter((student) => {
+      // Separación por pestaña: Alumnos vs Postulantes
+      const studentIsPostulante = isPostulante(student)
+      if (activeTab === 'alumnos' && studentIsPostulante) return false
+      if (activeTab === 'postulantes' && !studentIsPostulante) return false
+
       // Filtro de texto
       const searchLower = busqueda.toLowerCase().trim()
       const matchesSearch = searchLower === '' ||
@@ -363,11 +398,11 @@ export default function Alumnos() {
       // Filtro de estado
       let matchesEstado = true
       if (filtroEstado === 'activo') {
-        matchesEstado = student.status_id === 1 && !student.is_aspirante
+        matchesEstado = student.status_id === 1 && !studentIsPostulante
       } else if (filtroEstado === 'presente') {
-        matchesEstado = !!student.is_present
-      } else if (filtroEstado === 'aspirante') {
-        matchesEstado = !!student.is_aspirante || student.role_name === 'Aspirante'
+        matchesEstado = !!student.is_present && !studentIsPostulante
+      } else if (filtroEstado === 'aspirante' || filtroEstado === 'postulante') {
+        matchesEstado = studentIsPostulante
       } else if (filtroEstado === 'inactivo') {
         matchesEstado = student.status_id === 2
       } else if (filtroEstado === 'suspendido') {
@@ -379,12 +414,12 @@ export default function Alumnos() {
 
       return matchesSearch && matchesEstado && matchesNivel
     })
-  }, [students, demoState, busqueda, filtroEstado, filtroNivel])
+  }, [students, demoState, activeTab, busqueda, filtroEstado, filtroNivel])
 
-  // Resetear página al filtrar o buscar
-  useMemo(() => {
+  // Resetear página al filtrar, buscar o cambiar de pestaña
+  useEffect(() => {
     setPaginaActual(1)
-  }, [busqueda, filtroEstado, filtroNivel, demoState])
+  }, [busqueda, filtroEstado, filtroNivel, demoState, activeTab])
 
   // Segmentación paginada para la tabla en pantalla
   const paginatedStudents = useMemo(() => {
@@ -394,12 +429,13 @@ export default function Alumnos() {
 
   // Cálculo de KPIs
   const kpis = useMemo(() => {
-    const total = students.length
-    const activos = students.filter(s => s.status_id === 1 && !s.is_aspirante).length
-    const presentes = students.filter(s => s.is_present).length
-    const aspirantes = students.filter(s => s.is_aspirante || s.role_name === 'Aspirante').length
+    const alumnosRegulares = students.filter(s => !isPostulante(s))
+    const total = alumnosRegulares.length
+    const activos = alumnosRegulares.filter(s => s.status_id === 1).length
+    const presentes = alumnosRegulares.filter(s => s.is_present).length
+    const postulantes = students.filter(s => isPostulante(s)).length
 
-    return { total, activos, presentes, aspirantes }
+    return { total, activos, presentes, aspirantes: postulantes }
   }, [students])
 
   // Callbacks de CRUD
@@ -418,6 +454,32 @@ export default function Alumnos() {
     setDeleteStudent(student)
   }
 
+  // Matricular / Promover a Alumno regular
+  const handlePromoteToStudent = async (studentId) => {
+    const student = students.find(s => s.id === studentId)
+    if (!student) return
+    try {
+      const cleanDni = student.dni ? String(student.dni).replace(/[\.\s-]/g, '') : undefined
+      await PUT('/api/alumnos', {
+        first_name: student.first_name,
+        last_name: student.last_name,
+        dni: cleanDni,
+        email: student.email,
+        phone: student.phone,
+        course_name: student.course_name,
+        academic_level: student.academic_level,
+        status: 'Activo',
+        status_id: 1,
+        role_name: 'Alumno',
+      }, studentId)
+      await fetchStudents()
+      showToast(`¡${student.first_name} ${student.last_name} fue matriculado como Alumno regular exitosamente!`)
+      setViewStudent(null)
+    } catch (err) {
+      showToast(`Error al matricular alumno: ${err.message}`)
+    }
+  }
+
   const handleFormSubmit = async (data) => {
     if (data.id) {
       // Edición
@@ -431,10 +493,11 @@ export default function Alumnos() {
           phone: data.phone,
           course_name: data.course_name,
           academic_level: data.academic_level,
-          status: data.status_id === 2 ? 'Inactivo' : data.status_id === 3 ? 'Pendiente' : 'Activo',
+          status: data.role_name === 'Postulante' || data.status_id === 3 ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
+          role_name: data.role_name,
         }, data.id)
         await fetchStudents()
-        showToast(`Alumno "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
+        showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
         setEditStudent(null)
       } catch (err) {
         showToast(`Error al actualizar: ${err.message}`)
@@ -443,6 +506,7 @@ export default function Alumnos() {
       // Creación
       try {
         const cleanDni = String(data.dni || '').replace(/[\.\s-]/g, '').trim()
+        const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
         const payload = {
           first_name: data.first_name?.trim(),
           last_name: data.last_name?.trim(),
@@ -451,16 +515,16 @@ export default function Alumnos() {
           phone: data.phone || '',
           course_name: data.course_name || 'Operador de PC',
           academic_level: data.academic_level || 'Secundario',
-          status: data.role_name === 'Aspirante' ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : data.status_id === 3 ? 'Pendiente' : 'Activo'),
-          role_name: data.role_name || 'Alumno',
+          status: isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
+          role_name: data.role_name || (isPostulant ? 'Postulante' : 'Alumno'),
         }
 
         await POST('/api/alumnos', payload)
         await fetchStudents()
-        showToast(`Nuevo alumno "${payload.first_name} ${payload.last_name}" guardado exitosamente en base de datos.`)
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado exitosamente.`)
         setIsAddOpen(false)
       } catch (err) {
-        showToast(`Error al registrar alumno: ${err.message}`)
+        showToast(`Error al registrar: ${err.message}`)
       }
     }
   }
@@ -470,9 +534,9 @@ export default function Alumnos() {
     try {
       await DELETE('/api/alumnos', id)
       await fetchStudents()
-      showToast(`Alumno "${s?.first_name} ${s?.last_name}" eliminado de la base de datos.`)
+      showToast(`Registro de "${s?.first_name} ${s?.last_name}" eliminado de la base de datos.`)
     } catch (err) {
-      showToast(`Error al eliminar alumno: ${err.message}`)
+      showToast(`Error al eliminar: ${err.message}`)
     }
 
     setDeleteStudent(null)
@@ -481,16 +545,16 @@ export default function Alumnos() {
 
   // Exportación CSV
   const handleExportCSV = () => {
-    const headers = "ID,Nombre,Apellido,DNI,Email,Teléfono,Curso,Estado\n"
+    const headers = "ID,Nombre,Apellido,DNI,Email,Teléfono,Curso,Rol,Estado\n"
     const rows = filteredStudents.map(s => 
-      `"${s.id}","${s.first_name}","${s.last_name}","${s.dni}","${s.email}","${s.phone || ''}","${s.course_name || ''}","${s.status_id === 1 ? 'Activo' : s.status_id === 2 ? 'Inactivo' : 'Suspendido'}"`
+      `"${s.id}","${s.first_name}","${s.last_name}","${s.dni}","${s.email}","${s.phone || ''}","${s.course_name || ''}","${s.role_name || ''}","${s.status_id === 1 ? 'Activo' : s.status_id === 2 ? 'Inactivo' : 'Pendiente'}"`
     ).join("\n")
     
     const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.setAttribute("href", url)
-    link.setAttribute("download", `Alumnos_CFL404_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute("download", `${activeTab === 'postulantes' ? 'Postulantes' : 'Alumnos'}_CFL404_${new Date().toISOString().slice(0, 10)}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -524,26 +588,26 @@ export default function Alumnos() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-1">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 font-roboto transition-colors">
-            Alumnos
+            Alumnos y Matrícula
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
-            Gestión del alumnado, asistencias en aula, inscripciones a cursos y expedientes académicos.
+            Gestión de alumnos regulares matriculados, revisión de postulantes preinscriptos y verificación de documentación.
           </p>
         </div>
       </div>
 
-      {/* KPI Cards — Actualizadas: Total, Activos, Presentes, Aspirantes */}
+      {/* KPI Cards — Actualizadas: Total Alumnos, Activos, Presentes, Postulantes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard 
-          title="Total Alumnos"
+          title="Alumnos Matriculados"
           value={demoState === 'empty' ? 0 : kpis.total}
           icon={Users}
           trend="+8%"
           trendType="up"
           colorClass="border-[#166193]"
           iconColorClass="text-[#166193] bg-[#166193]/10"
-          description="registrados en el centro"
-          tooltip="Total general de alumnos inscriptos y legajos activos"
+          description="con documentación validada"
+          tooltip="Total general de alumnos regulares inscriptos con legajo completo"
         />
         <StatCard 
           title="Alumnos Activos"
@@ -554,7 +618,7 @@ export default function Alumnos() {
           colorClass="border-emerald-500"
           iconColorClass="text-emerald-600 bg-emerald-500/10"
           description="cursando con regularidad"
-          tooltip="Alumnos con cursada vigente y documentación completa"
+          tooltip="Alumnos con cursada vigente y asistencia regular"
         />
         <StatCard 
           title="Alumnos Presentes"
@@ -568,15 +632,15 @@ export default function Alumnos() {
           tooltip="Alumnos que registraron presencia en sus respectivas clases"
         />
         <StatCard 
-          title="Alumnos Aspirantes"
+          title="Alumnos Postulantes"
           value={demoState === 'empty' ? 0 : kpis.aspirantes}
           icon={GraduationCap}
-          trend="Nuevos"
+          trend="Pendientes"
           trendType="neutral"
-          colorClass="border-indigo-500"
-          iconColorClass="text-indigo-600 bg-indigo-500/10"
-          description="postulantes a cursos"
-          tooltip="Personas con preinscripción en proceso de confirmación de vacante"
+          colorClass="border-[#37A6DE]"
+          iconColorClass="text-[#37A6DE] bg-[#37A6DE]/10"
+          description="preinscripciones a revisar"
+          tooltip="Personas preinscriptas que deben presentar documentación física para matricularse"
         />
       </div>
 
@@ -596,6 +660,7 @@ export default function Alumnos() {
           onExportarCSV={handleExportCSV}
           onResetFiltros={handleResetFilters}
           puedeEditar={puedeEditar}
+          activeTab={activeTab}
           viewMode={viewMode}
           setViewMode={setViewMode}
           demoState={demoState}
@@ -605,7 +670,7 @@ export default function Alumnos() {
         {/* ── Vista en Modo Tabla ── */}
         {viewMode === 'table' && (
           <>
-            {/* Tabla en Pantalla (Paginada) */}
+            {/* Tabla en Pantalla (Paginada) con Pestañas Alumnos vs Postulantes */}
             <div className="no-print">
               <DataTable 
                 students={paginatedStudents}
@@ -613,6 +678,7 @@ export default function Alumnos() {
                 onView={handleView}
                 onEdit={handleEdit}
                 onDelete={handleDeleteTrigger}
+                onPromote={handlePromoteToStudent}
                 onResetFilters={handleResetFilters}
                 onAddStudent={() => setIsAddOpen(true)}
                 userRole={userRole}
@@ -622,6 +688,9 @@ export default function Alumnos() {
                 setItemsPorPagina={setItemsPorPagina}
                 totalResultados={demoState === 'empty' ? 0 : filteredStudents.length}
                 isPrintMode={false}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                tabCounts={tabCounts}
               />
             </div>
 
@@ -633,6 +702,7 @@ export default function Alumnos() {
                 onView={() => {}}
                 onEdit={() => {}}
                 onDelete={() => {}}
+                onPromote={() => {}}
                 onResetFilters={() => {}}
                 onAddStudent={() => {}}
                 userRole={userRole}
@@ -642,6 +712,9 @@ export default function Alumnos() {
                 setItemsPorPagina={() => {}}
                 totalResultados={filteredStudents.length}
                 isPrintMode={true}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                tabCounts={tabCounts}
               />
             </div>
           </>
@@ -656,9 +729,11 @@ export default function Alumnos() {
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteTrigger}
+              onPromote={handlePromoteToStudent}
               onResetFilters={handleResetFilters}
               onAddStudent={() => setIsAddOpen(true)}
               userRole={userRole}
+              activeTab={activeTab}
               paginaActual={paginaActual}
               itemsPorPagina={itemsPorPagina}
               setPaginaActual={setPaginaActual}
@@ -683,17 +758,19 @@ export default function Alumnos() {
         onDelete={(id) => {
           handleDeleteTrigger(id)
         }}
+        onPromote={handlePromoteToStudent}
         onExport={handleExportIndividual}
         userRole={userRole}
       />
 
-      {/* Drawer: Formulario de Alta de Nuevo Alumno */}
+      {/* Drawer: Formulario de Alta de Nuevo Alumno / Postulante */}
       <StudentFormDrawer 
         student={null}
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onSubmit={handleFormSubmit}
         userRole={userRole}
+        initialRole={activeTab === 'postulantes' ? 'Postulante' : 'Alumno'}
       />
 
       {/* Drawer: Formulario de Edición de Alumno Existente */}
@@ -703,6 +780,7 @@ export default function Alumnos() {
         onClose={() => setEditStudent(null)}
         onSubmit={handleFormSubmit}
         userRole={userRole}
+        initialRole={editStudent && isPostulante(editStudent) ? 'Postulante' : 'Alumno'}
       />
 
       {/* Modal: Confirmación de Eliminación */}

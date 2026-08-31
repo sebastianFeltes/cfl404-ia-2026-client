@@ -14,7 +14,7 @@ const INITIAL_FORM_STATE = {
   enrollment_date: ''
 }
 
-function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole }) {
+function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole, initialRole = 'Alumno' }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
 
@@ -28,19 +28,22 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole }) {
         email: student.email || '',
         dni: student.dni || '',
         status_id: Number(student.status_id) || 1,
-        role_name: student.role_name || 'Alumno',
+        role_name: student.role_name || (student.is_aspirante ? 'Postulante' : 'Alumno'),
         phone: student.phone || '',
         academic_level: student.academic_level || 'Secundario',
         course_name: student.course_name || '',
         enrollment_date: student.enrollment_date || new Date().toLocaleDateString('es-AR')
       })
     } else {
+      const defaultRole = initialRole === 'Postulante' ? 'Postulante' : 'Alumno'
       setFormData({
         ...INITIAL_FORM_STATE,
+        role_name: defaultRole,
+        status_id: defaultRole === 'Postulante' ? 3 : 1,
         enrollment_date: new Date().toLocaleDateString('es-AR')
       })
     }
-  }, [student, isOpen])
+  }, [student, isOpen, initialRole])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -91,10 +94,12 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole }) {
             </div>
             <div>
               <h2 id="form-drawer-title" className="font-nunito font-extrabold text-lg leading-tight">
-                {student ? 'Modificar Registro de Alumno' : 'Registrar Nuevo Alumno'}
+                {student 
+                  ? (formData.role_name === 'Postulante' ? 'Modificar Registro de Postulante' : 'Modificar Registro de Alumno') 
+                  : (formData.role_name === 'Postulante' ? 'Registrar Nuevo Postulante' : 'Registrar Nuevo Alumno')}
               </h2>
               <p className="text-xs text-custom-gris-claro font-semibold mt-0.5">
-                {student ? `Editando registro ID #${student.id}` : 'Alta inicial en base de datos'}
+                {student ? `Editando registro ID #${student.id}` : (formData.role_name === 'Postulante' ? 'Carga de aspirante a curso' : 'Alta inicial en base de datos')}
               </p>
             </div>
           </div>

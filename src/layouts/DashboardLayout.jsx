@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const userRole = mapDbRoleToUi(user?.rol);
-  const puedeEditar = userRole === "director";
+  const puedeEditar = userRole === "director" || userRole === "secretaria";
   const displayName = [user?.nombres, user?.apellidos].filter(Boolean).join(" ") || "Usuario";
   const displayRole = roleLabel(user?.rol);
 
