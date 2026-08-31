@@ -47,7 +47,7 @@ export default function InstructoresTabla({ instructores, onSeleccionar, onEdita
         {instructores.map((inst) => (
           <div
             key={inst.id}
-            className="group flex items-center px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors duration-200"
+            className="group flex items-center px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 hover:bg-slate-100/90 dark:hover:bg-slate-800/80 transition-colors duration-200"
           >
             {/* Instructor */}
             <div style={{ width: COLS[0].width }} className="flex items-center gap-3">
