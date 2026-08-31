@@ -8,8 +8,11 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   User,
+  Wallet,
 } from 'lucide-react'
 import Tooltip from './Tooltip'
+import { useAuth } from '../context/AuthContext'
+import { canonicalRole } from '../utils/roles'
 
 /**
  * Sidebar — panel lateral de navegación del dashboard.
@@ -59,6 +62,27 @@ const navItems = [
 
 export default function Sidebar({ isOpen = true, onToggle }) {
   const open = onToggle !== undefined ? isOpen : true
+  const { user } = useAuth()
+  const canAccessCooperadora = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA'].includes(
+    canonicalRole(user?.rol),
+  )
+
+  // Cooperadora va después de Alumnos, solo si el rol tiene acceso.
+
+  // Construimos la lista de ítems del menú, inyectando Cooperadora
+  // después de Alumnos (índice 3) solo si el usuario tiene el rol adecuado.
+  const visibleNavItems = canAccessCooperadora
+    ? [
+        ...navItems.slice(0, 4), // Mi Perfil, Profesores, Cursos, Alumnos
+        {
+          label: 'Cooperadora',
+          icon: Wallet,
+          path: '/admin/cooperadora',
+          title: 'Gestión de pagos de cooperadora y buffet',
+        },
+        ...navItems.slice(4),   // Reportes
+      ]
+    : navItems
 
   return (
     <aside
@@ -157,7 +181,7 @@ export default function Sidebar({ isOpen = true, onToggle }) {
           Menú
         </p>
 
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <Tooltip
             key={item.label}
             text={open ? '' : item.label}

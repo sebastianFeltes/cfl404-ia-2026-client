@@ -61,6 +61,8 @@ function AvisoConsentimiento() {
                             Consultá nuestra{' '}
                             <Link
                                 to="/cookies"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-custom-celeste underline underline-offset-2 hover:text-white transition-colors font-medium"
                             >
                                 Política de Cookies
