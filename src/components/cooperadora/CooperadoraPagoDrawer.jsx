@@ -29,6 +29,8 @@ export default function CooperadoraPagoDrawer({
   studentsList = [],
   onSelectStudent,
 }) {
+  const MIN_FEE = 2000
+
   const currentMonthIndex = new Date().getMonth() + 1
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex)
   const [amount, setAmount] = useState(2000)
@@ -39,6 +41,34 @@ export default function CooperadoraPagoDrawer({
   const [studentSearch, setStudentSearch] = useState('')
 
   const studentPayments = student ? (payments[student.id] || {}) : {}
+
+  // Calcular distribución de cuotas localmente para preview
+  const calcDistribution = (startMonth, totalAmount) => {
+    const fullMonths = Math.floor(totalAmount / MIN_FEE)
+    if (fullMonths <= 1) return [{ month: Math.min(startMonth, 12), amount: totalAmount }]
+
+    const dist = []
+    let cur = startMonth
+    let remaining = totalAmount
+
+    while (cur <= 12 && remaining >= MIN_FEE && dist.length < fullMonths - 1) {
+      dist.push({ month: cur, amount: MIN_FEE })
+      remaining -= MIN_FEE
+      cur++
+    }
+
+    if (cur <= 12) {
+      dist.push({ month: cur, amount: remaining })
+    } else if (dist.length > 0) {
+      dist[dist.length - 1].amount += remaining
+    }
+
+    return dist
+  }
+
+  const distributionPreview = Number(amount) >= MIN_FEE
+    ? calcDistribution(selectedMonth, Number(amount))
+    : []
 
   // Actualizar valores de monto y notas cuando se selecciona un mes
   const handleSelectMonth = (monthId) => {
@@ -413,18 +443,56 @@ export default function CooperadoraPagoDrawer({
                 </form>
               </div>
 
-              {/* Quick Summary Pill */}
-              <div className="p-3 rounded-xl bg-custom-celeste/10 dark:bg-custom-celeste/15 border border-custom-celeste/20 text-xs flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-custom-celeste shrink-0" />
-                  <span className="font-medium text-custom-azul-oscuro dark:text-custom-celeste">
-                    Cuota {MESES.find(m => m.id === selectedMonth)?.name}:
+              {/* Distribution Preview */}
+              {distributionPreview.length > 1 ? (
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span className="font-bold text-amber-800 dark:text-amber-300">
+                      Distribución automática en {distributionPreview.length} meses
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {distributionPreview.map((item, idx) => {
+                      const mesName = MESES.find(m => m.id === item.month)?.short || `M${item.month}`
+                      const isPartial = item.amount < MIN_FEE
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg font-mono text-xs ${
+                            isPartial
+                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-300/50'
+                              : 'bg-white dark:bg-slate-800 text-custom-azul-oscuro dark:text-custom-celeste border border-custom-celeste/30'
+                          }`}
+                        >
+                          <span className="font-bold">{mesName}:</span>
+                          <span>${item.amount.toLocaleString('es-AR')}</span>
+                          {isPartial && (
+                            <span className="text-amber-500 dark:text-amber-400 font-bold" title="Monto parcial (menor al mínimo)">*</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {distributionPreview[distributionPreview.length - 1].amount < MIN_FEE && (
+                    <p className="mt-1.5 text-amber-600 dark:text-amber-400 text-[11px]">
+                      * El último mes tiene un saldo parcial de ${distributionPreview[distributionPreview.length - 1].amount.toLocaleString('es-AR')} (menor al mínimo de $2.000)
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-custom-celeste/10 dark:bg-custom-celeste/15 border border-custom-celeste/20 text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-custom-celeste shrink-0" />
+                    <span className="font-medium text-custom-azul-oscuro dark:text-custom-celeste">
+                      Cuota {MESES.find(m => m.id === selectedMonth)?.name}:
+                    </span>
+                  </div>
+                  <span className="font-mono font-extrabold text-custom-azul-oscuro dark:text-custom-celeste text-sm">
+                    ${Number(amount || 0).toLocaleString('es-AR')}
                   </span>
                 </div>
-                <span className="font-mono font-extrabold text-custom-azul-oscuro dark:text-custom-celeste text-sm">
-                  ${Number(amount || 0).toLocaleString('es-AR')}
-                </span>
-              </div>
+              )}
             </div>
           </div>
 

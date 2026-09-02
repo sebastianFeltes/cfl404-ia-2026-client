@@ -147,29 +147,33 @@ export default function CooperadoraAdmin() {
         notes,
       })
 
-      // Actualizar estado local inmediatamente
+      // Soporte para distribución automática multi-mes
+      const allSaved = res.allSaved || [res.data]
+
       setPayments((prev) => {
         const studentCurrent = prev[studentId] || {}
-        return {
-          ...prev,
-          [studentId]: {
-            ...studentCurrent,
-            [month]: {
-              id: res.data?.id,
-              pagado: true,
-              monto: amount,
-              year: year || selectedYear,
-              fecha: date || new Date().toISOString().split('T')[0],
-              notas: notes || '',
-            },
-          },
-        }
+        const updated = { ...studentCurrent }
+
+        allSaved.forEach((p) => {
+          updated[p.month] = {
+            id: p.id,
+            pagado: true,
+            monto: p.amount,
+            year: p.year || year || selectedYear,
+            fecha: p.fecha || date || new Date().toISOString().split('T')[0],
+            notas: p.notas || notes || '',
+          }
+        })
+
+        return { ...prev, [studentId]: updated }
       })
 
       const st = students.find((s) => s.id === studentId)
-      showToast(
-        `Pago registrado para ${st ? `${st.first_name} ${st.last_name}` : 'alumno'}: Cuota Mes ${month} ($${Number(amount).toLocaleString('es-AR')})`
-      )
+      const monthsMsg =
+        allSaved.length > 1
+          ? `${allSaved.length} cuotas (Meses ${allSaved.map(p => p.month).join(', ')}) — Total $${Number(amount).toLocaleString('es-AR')}`
+          : `Cuota Mes ${month} ($${Number(amount).toLocaleString('es-AR')})`
+      showToast(`Pago registrado para ${st ? `${st.first_name} ${st.last_name}` : 'alumno'}: ${monthsMsg}`)
     } catch (err) {
       throw new Error(err.message || 'Error al guardar el pago en el servidor')
     }
