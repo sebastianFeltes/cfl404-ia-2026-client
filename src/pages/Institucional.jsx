@@ -1,11 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, MapPin, Tag, X, Phone, Check, Award, GraduationCap, Building2, Users2 } from 'lucide-react'
-import { stats, comercios } from '../utils/mockData'
+import { comercios, stats } from '../utils/mockData'
+import { getKpis } from '../services/settingsService'
 import Tooltip from '../components/Tooltip'
+
+// Valores de fallback a partir del mockData (mismo formato que la API)
+const FALLBACK_KPIS = stats.map((s, i) => ({
+    id: i + 1,
+    key: `kpi_${i + 1}`,
+    name: s.label,
+    value: s.value,
+    description: s.description,
+}))
 
 function Institucional() {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedComercio, setSelectedComercio] = useState(null)
+    const [kpis, setKpis] = useState(FALLBACK_KPIS)
+    const [kpisLoading, setKpisLoading] = useState(false)
+
+    // Cargar KPIs desde la base de datos (actualiza el fallback cuando el servidor responde)
+    useEffect(() => {
+        getKpis()
+            .then((data) => { if (data?.length) setKpis(data) })
+            .catch((err) => console.error('Error al cargar KPIs:', err))
+    }, [])
 
     // Filter businesses based on search input (name or category/rubro)
     const filteredComercios = comercios.filter(comercio => {
@@ -27,16 +46,16 @@ function Institucional() {
             .substring(0, 2);
     };
 
-    // Helper to map stats id to lucide icon
-    const getStatIcon = (id) => {
-        switch (id) {
-            case 1:
+    // Helper to map KPI index to lucide icon
+    const getStatIcon = (index) => {
+        switch (index) {
+            case 0:
                 return <GraduationCap className="w-8 h-8 text-custom-celeste animate-pulse" />;
-            case 2:
+            case 1:
                 return <Users2 className="w-8 h-8 text-custom-celeste animate-pulse" />;
-            case 3:
+            case 2:
                 return <Building2 className="w-8 h-8 text-custom-celeste animate-pulse" />;
-            case 4:
+            case 3:
                 return <Award className="w-8 h-8 text-custom-celeste animate-pulse" />;
             default:
                 return <Award className="w-8 h-8 text-custom-celeste" />;
@@ -82,27 +101,41 @@ function Institucional() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {stats.map((stat) => (
-                            <div 
-                                key={stat.id} 
-                                className="flex gap-4 p-5 rounded-2xl border border-gray-100 hover:border-custom-celeste/20 hover:bg-custom-celeste/[0.02] hover:-translate-y-1 transition-all duration-300 group"
-                            >
-                                <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 bg-custom-celeste/10 rounded-2xl group-hover:bg-custom-celeste/20 transition-colors">
-                                    {getStatIcon(stat.id)}
+                        {kpisLoading ? (
+                            // Skeleton mientras carga
+                            Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="flex gap-4 p-5 rounded-2xl border border-gray-100 animate-pulse">
+                                    <div className="flex-shrink-0 w-14 h-14 bg-gray-200 rounded-2xl" />
+                                    <div className="flex flex-col justify-center gap-2 flex-1">
+                                        <div className="h-7 bg-gray-200 rounded w-16" />
+                                        <div className="h-3 bg-gray-200 rounded w-28" />
+                                        <div className="h-3 bg-gray-100 rounded w-40" />
+                                    </div>
                                 </div>
-                                <div className="flex flex-col justify-center">
-                                    <span className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro leading-none">
-                                        {stat.value}
-                                    </span>
-                                    <span className="font-nunito font-bold text-sm text-custom-gris-oscuro mt-1">
-                                        {stat.label}
-                                    </span>
-                                    <span className="text-xs text-custom-gris-claro mt-1 leading-snug">
-                                        {stat.description}
-                                    </span>
+                            ))
+                        ) : (
+                            kpis.map((kpi, index) => (
+                                <div
+                                    key={kpi.id}
+                                    className="flex gap-4 p-5 rounded-2xl border border-gray-100 hover:border-custom-celeste/20 hover:bg-custom-celeste/[0.02] hover:-translate-y-1 transition-all duration-300 group"
+                                >
+                                    <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 bg-custom-celeste/10 rounded-2xl group-hover:bg-custom-celeste/20 transition-colors">
+                                        {getStatIcon(index)}
+                                    </div>
+                                    <div className="flex flex-col justify-center">
+                                        <span className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro leading-none">
+                                            {kpi.value}
+                                        </span>
+                                        <span className="font-nunito font-bold text-sm text-custom-gris-oscuro mt-1">
+                                            {kpi.name || kpi.label}
+                                        </span>
+                                        <span className="text-xs text-custom-gris-claro mt-1 leading-snug">
+                                            {kpi.description}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </section>
 
