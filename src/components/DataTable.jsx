@@ -1,7 +1,7 @@
 import React from 'react'
 import StudentAvatar from './StudentAvatar'
 import ActionButtons from './ActionButtons'
-import { Inbox, Plus, Users, UserCheck, GraduationCap } from 'lucide-react'
+import { Inbox, Plus, Users, UserCheck, GraduationCap, ShieldAlert } from 'lucide-react'
 
 function isPostulanteCheck(student) {
   if (!student) return false
@@ -128,6 +128,23 @@ function DataTable({
             {isPostulantesTab 
               ? '📋 Revisión de documentación y admisión' 
               : '🎓 Estudiantes con matrícula confirmada'}
+          </div>
+        </div>
+      )}
+
+      {/* ── Cartel de Doble Verificación en Postulantes (no-print) ── */}
+      {!isPrintMode && isPostulantesTab && (
+        <div className="mx-5 my-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3.5 flex items-start gap-3 shadow-2xs">
+          <div className="p-2 bg-amber-500/15 rounded-lg text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+            <ShieldAlert size={18} />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+              Verificar que los datos sean Reales
+            </h4>
+            <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
+              Doble verificación obligatoria: corrobora que el postulante haya entregado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID + Email).
+            </p>
           </div>
         </div>
       )}

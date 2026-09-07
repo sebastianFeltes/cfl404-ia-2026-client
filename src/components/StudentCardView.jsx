@@ -3,7 +3,7 @@ import React from 'react'
 import StudentAvatar from './StudentAvatar'
 import ActionButtons from './ActionButtons'
 import BadgeStatus from './BadgeStatus'
-import { Mail, Phone, BookOpen, Calendar, MapPin, Inbox, Plus } from 'lucide-react'
+import { Mail, Phone, BookOpen, Calendar, MapPin, Inbox, Plus, ShieldAlert } from 'lucide-react'
 
 function isPostulanteCheck(student) {
   if (!student) return false
@@ -46,6 +46,23 @@ export default function StudentCardView({
   return (
     <div className="w-full bg-slate-50/50 dark:bg-slate-900/50 p-5 font-nunito transition-colors duration-200">
       
+      {/* Cartel de Doble Verificación en Pestaña Postulantes */}
+      {!isPrintMode && isPostulantesTab && (
+        <div className="mb-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3.5 flex items-start gap-3 shadow-2xs">
+          <div className="p-2 bg-amber-500/15 rounded-lg text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+            <ShieldAlert size={18} />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+              Verificar que los datos sean Reales
+            </h4>
+            <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
+              Doble verificación obligatoria: corrobora que el postulante haya entregado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID + Email).
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Loading Skeleton Cards */}
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -91,7 +108,7 @@ export default function StudentCardView({
                           e.stopPropagation()
                           onView && onView(student.id)
                         }}
-                        title="Ver expediente completo"
+                        title="Ver legajo completo"
                       >
                         <StudentAvatar
                           src={student.profile_photo_url}
@@ -159,8 +176,9 @@ export default function StudentCardView({
                       onView && onView(student.id)
                     }}
                     className="text-xs font-bold text-[#166193] dark:text-[#37A6DE] hover:underline cursor-pointer flex items-center gap-1"
+                    title="Ver legajo completo del alumno"
                   >
-                    Ver Ficha →
+                    Ver Legajo →
                   </button>
 
                   <ActionButtons

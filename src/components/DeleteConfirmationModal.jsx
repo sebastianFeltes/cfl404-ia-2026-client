@@ -35,12 +35,12 @@ function DeleteConfirmationModal({ student, isOpen, onClose, onConfirm }) {
               <AlertTriangle className="h-6 w-6" />
             </div>
             <h3 id="modal-title" className="font-nunito font-extrabold text-lg text-custom-gris-oscuro leading-tight">
-              Confirmar Eliminación
+              Confirmar Baja
             </h3>
           </div>
 
           <p className="text-xs text-custom-gris-claro font-medium leading-relaxed">
-            Estás por eliminar de forma permanente el registro del alumno:
+            Estás por dar de baja el registro de:
           </p>
           
           <div className="my-3 p-3 bg-red-50/50 rounded-lg border border-red-100">
@@ -53,7 +53,7 @@ function DeleteConfirmationModal({ student, isOpen, onClose, onConfirm }) {
           </div>
 
           <p className="text-xs text-red-600 font-semibold mt-2">
-            * Esta acción no se puede deshacer y retirará al alumno de todos sus cursos activos.
+            * Esta acción dará de baja al alumno y lo desvinculará de las listas de asistencia activas.
           </p>
         </div>
 
@@ -71,7 +71,7 @@ function DeleteConfirmationModal({ student, isOpen, onClose, onConfirm }) {
             className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
           >
             <Trash2 className="h-4 w-4" />
-            Confirmar Eliminación
+            Confirmar Baja
           </button>
         </div>
       </div>

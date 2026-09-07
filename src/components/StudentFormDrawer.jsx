@@ -1,20 +1,26 @@
 import React, { useState, useEffect } from 'react'
-import { X, Save, UserPlus, Pencil } from 'lucide-react'
+import { X, Save, UserPlus, Pencil, MapPin, Phone, Mail, Calendar, User, Globe, UserX } from 'lucide-react'
 
 const INITIAL_FORM_STATE = {
   first_name: '',
   last_name: '',
   email: '',
+  extra_email: '',
   dni: '',
   status_id: 1, // Default Activo
   role_name: 'Alumno',
   phone: '',
+  extra_phone: '',
+  address: '',
+  dob: '',
+  gender: 'Masculino',
+  nacionality: 'Argentina',
   academic_level: 'Secundario',
   course_name: '',
   enrollment_date: ''
 }
 
-function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole, initialRole = 'Alumno' }) {
+function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userRole, initialRole = 'Alumno' }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
 
@@ -26,11 +32,17 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole, initi
         first_name: student.first_name || '',
         last_name: student.last_name || '',
         email: student.email || '',
+        extra_email: student.extra_email || student.studentDetail?.extraEmail || student.extraEmail || '',
         dni: student.dni || '',
         status_id: Number(student.status_id) || 1,
         role_name: student.role_name || (student.is_aspirante ? 'Postulante' : 'Alumno'),
-        phone: student.phone || '',
-        academic_level: student.academic_level || 'Secundario',
+        phone: student.phone || student.studentDetail?.phone || '',
+        extra_phone: student.extra_phone || student.studentDetail?.extraPhone || student.extraPhone || '',
+        address: student.address || student.studentDetail?.address || '',
+        dob: student.dob || student.studentDetail?.dob || '',
+        gender: student.gender || student.studentDetail?.gender || 'Masculino',
+        nacionality: student.nacionality || student.studentDetail?.nacionality || 'Argentina',
+        academic_level: student.academic_level || student.studentDetail?.academicLevel || 'Secundario',
         course_name: student.course_name || '',
         enrollment_date: student.enrollment_date || new Date().toLocaleDateString('es-AR')
       })
@@ -177,7 +189,81 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole, initi
               </div>
             </div>
 
-            {/* Field: Email y Teléfono */}
+            <hr className="border-gray-100 my-2" />
+
+            {/* Subtítulo: Datos Personales y Domicilio */}
+            <h3 className="text-[11px] font-extrabold text-custom-celeste uppercase tracking-widest flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              Datos Personales y Domicilio
+            </h3>
+
+            {/* Field: Fecha de Nacimiento y Género */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Fecha de Nacimiento</label>
+                <input 
+                  type="text" 
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
+                  placeholder="Ej: 14/05/2002"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Género</label>
+                <select 
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs bg-white focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
+                >
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="No binario">No binario</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Field: Domicilio y Nacionalidad */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Domicilio / Dirección</label>
+              <input 
+                type="text" 
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
+                placeholder="Ej: Calle 12 N° 450, Berisso"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Nacionalidad</label>
+              <input 
+                type="text" 
+                name="nacionality"
+                value={formData.nacionality}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
+                placeholder="Ej: Argentina"
+              />
+            </div>
+
+            <hr className="border-gray-100 my-2" />
+
+            {/* Subtítulo: Contacto y Emergencia */}
+            <h3 className="text-[11px] font-extrabold text-custom-celeste uppercase tracking-widest flex items-center gap-1.5">
+              <Phone className="h-3.5 w-3.5" />
+              Contacto y Emergencia
+            </h3>
+
+            {/* Field: Email Principal y Alternativo */}
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Email Principal</label>
               <input 
@@ -193,16 +279,44 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole, initi
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Teléfono de Contacto</label>
+              <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Email Alternativo (Opcional)</label>
               <input 
-                type="text" 
-                name="phone"
-                value={formData.phone}
+                type="email" 
+                name="extra_email"
+                value={formData.extra_email}
                 onChange={handleChange}
                 disabled={isReadOnly}
                 className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
-                placeholder="Ej: 11-4567-8901"
+                placeholder="Ej: jperez.trabajo@outlook.com"
               />
+            </div>
+
+            {/* Field: Teléfono Principal y Teléfono de Emergencia */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Teléfono Principal</label>
+                <input 
+                  type="text" 
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
+                  placeholder="Ej: 11-4567-8901"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-custom-gris-claro uppercase tracking-wider">Teléfono Emergencia</label>
+                <input 
+                  type="text" 
+                  name="extra_phone"
+                  value={formData.extra_phone}
+                  onChange={handleChange}
+                  disabled={isReadOnly}
+                  className="w-full p-2 border border-custom-gris-claro/20 rounded-lg text-xs focus:outline-none focus:border-custom-azul-oscuro text-custom-gris-oscuro font-semibold"
+                  placeholder="Ej: 11-4567-0099"
+                />
+              </div>
             </div>
 
             <hr className="border-gray-100 my-4" />
@@ -264,26 +378,34 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, userRole, initi
             </div>
           </div>
 
-          {/* Footer Submit Actions */}
-          <div className="p-4 border-t border-custom-gris-claro/10 bg-gray-50 flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-custom-gris-claro/30 text-custom-gris-oscuro hover:bg-gray-100 rounded-lg text-xs font-bold transition-all cursor-pointer text-center"
-            >
-              Cancelar
-            </button>
+          {/* Footer Submit Actions — "Dar de Baja" a la izquierda y "Guardar Cambios" a la derecha */}
+          <div className="p-4 border-t border-custom-gris-claro/10 bg-gray-50 flex items-center justify-between gap-3 shrink-0">
+            {student && (userRole === 'director' || userRole === 'secretaria') ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onDelete?.(student.id)
+                }}
+                className="px-3.5 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
+                title="Dar de baja este alumno"
+              >
+                <UserX className="h-3.5 w-3.5" />
+                Dar de Baja
+              </button>
+            ) : <div />}
+
             <button
               type="submit"
               disabled={isReadOnly}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ml-auto ${
                 isReadOnly 
                   ? 'bg-custom-gris-claro text-white opacity-50 cursor-not-allowed' 
                   : 'bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white shadow-sm'
               }`}
             >
               <Save className="h-4 w-4 text-custom-amarillo" />
-              Guardar Cambios
+              {student ? 'Guardar Cambios' : (formData.role_name === 'Postulante' ? 'Registrar Postulante' : 'Guardar Alumno')}
             </button>
           </div>
         </form>

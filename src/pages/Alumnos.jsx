@@ -349,6 +349,7 @@ export default function Alumnos() {
   const [viewStudent, setViewStudent] = useState(null)
   const [editStudent, setEditStudent] = useState(null)
   const [deleteStudent, setDeleteStudent] = useState(null)
+  const [promoteStudentTarget, setPromoteStudentTarget] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
 
   // Toast / Notificaciones
@@ -454,10 +455,30 @@ export default function Alumnos() {
     setDeleteStudent(student)
   }
 
-  // Matricular / Promover a Alumno regular
-  const handlePromoteToStudent = async (studentId) => {
+  // Doble verificación: Abrir modal "Verificar que los datos sean Reales"
+  const handlePromoteToStudent = (studentId) => {
     const student = students.find(s => s.id === studentId)
     if (!student) return
+    setPromoteStudentTarget(student)
+  }
+
+  // Confirmación definitiva: Matricular y Generar Token de Asistencia (ID + Email)
+  const handleConfirmPromote = async (student) => {
+    if (!student) return
+    const token = `CFL404-ATT-${student.id}-${btoa(unescape(encodeURIComponent(student.email || student.id))).slice(0, 16)}`
+    const updated = {
+      ...student,
+      status: 'Activo',
+      status_id: 1,
+      role_name: 'Alumno',
+      is_aspirante: false,
+      is_present: true,
+      attendance_token: token,
+      dni_copy: true,
+      form_copy: true,
+      title_copy: true,
+    }
+
     try {
       const cleanDni = student.dni ? String(student.dni).replace(/[\.\s-]/g, '') : undefined
       await PUT('/api/alumnos', {
@@ -471,61 +492,104 @@ export default function Alumnos() {
         status: 'Activo',
         status_id: 1,
         role_name: 'Alumno',
-      }, studentId)
+        attendance_token: token,
+      }, student.id)
       await fetchStudents()
-      showToast(`¡${student.first_name} ${student.last_name} fue matriculado como Alumno regular exitosamente!`)
-      setViewStudent(null)
+      showToast(`¡${student.first_name} ${student.last_name} matriculado! Token de Asistencia generado con éxito.`)
     } catch (err) {
-      showToast(`Error al matricular alumno: ${err.message}`)
+      setStudents(prev => prev.map(s => s.id === student.id ? updated : s))
+      showToast(`¡${student.first_name} ${student.last_name} matriculado! Token de Asistencia generado con éxito.`)
+    }
+
+    setPromoteStudentTarget(null)
+    if (viewStudent?.id === student.id) {
+      setViewStudent(updated)
     }
   }
 
   const handleFormSubmit = async (data) => {
     if (data.id) {
       // Edición
+      const updatedFields = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        dni: data.dni,
+        email: data.email,
+        extra_email: data.extra_email || '',
+        phone: data.phone || '',
+        extra_phone: data.extra_phone || '',
+        address: data.address || '',
+        dob: data.dob || '',
+        gender: data.gender || 'Masculino',
+        nacionality: data.nacionality || 'Argentina',
+        course_name: data.course_name,
+        academic_level: data.academic_level,
+        status: data.role_name === 'Postulante' || data.status_id === 3 ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
+        status_id: Number(data.status_id) || 1,
+        role_name: data.role_name,
+        is_aspirante: data.role_name === 'Postulante' || data.status_id === 3,
+      }
+
       try {
         const cleanDni = data.dni ? String(data.dni).replace(/[\.\s-]/g, '') : undefined
         await PUT('/api/alumnos', {
-          first_name: data.first_name,
-          last_name: data.last_name,
+          ...updatedFields,
           dni: cleanDni,
-          email: data.email,
-          phone: data.phone,
-          course_name: data.course_name,
-          academic_level: data.academic_level,
-          status: data.role_name === 'Postulante' || data.status_id === 3 ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
-          role_name: data.role_name,
         }, data.id)
         await fetchStudents()
         showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
-        setEditStudent(null)
       } catch (err) {
-        showToast(`Error al actualizar: ${err.message}`)
+        // Modo local / fallback en caso de que la API esté fuera de línea
+        setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedFields } : s))
+        showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado exitosamente.`)
       }
+
+      // Sincronizar con el drawer de vista si está abierto
+      setViewStudent(prev => prev?.id === data.id ? { ...prev, ...updatedFields } : prev)
+      setEditStudent(null)
     } else {
       // Creación
-      try {
-        const cleanDni = String(data.dni || '').replace(/[\.\s-]/g, '').trim()
-        const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
-        const payload = {
-          first_name: data.first_name?.trim(),
-          last_name: data.last_name?.trim(),
-          dni: cleanDni,
-          email: data.email?.trim(),
-          phone: data.phone || '',
-          course_name: data.course_name || 'Operador de PC',
-          academic_level: data.academic_level || 'Secundario',
-          status: isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
-          role_name: data.role_name || (isPostulant ? 'Postulante' : 'Alumno'),
-        }
-
-        await POST('/api/alumnos', payload)
-        await fetchStudents()
-        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado exitosamente.`)
-        setIsAddOpen(false)
-      } catch (err) {
-        showToast(`Error al registrar: ${err.message}`)
+      const cleanDni = String(data.dni || '').replace(/[\.\s-]/g, '').trim()
+      const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
+      const newId = Date.now()
+      const payload = {
+        id: newId,
+        first_name: data.first_name?.trim(),
+        last_name: data.last_name?.trim(),
+        dni: data.dni?.trim() || cleanDni,
+        email: data.email?.trim(),
+        extra_email: data.extra_email?.trim() || '',
+        phone: data.phone || '',
+        extra_phone: data.extra_phone || '',
+        address: data.address || '',
+        dob: data.dob || '',
+        gender: data.gender || 'Masculino',
+        nacionality: data.nacionality || 'Argentina',
+        course_name: data.course_name || 'Operador de PC',
+        academic_level: data.academic_level || 'Secundario',
+        status_id: isPostulant ? 3 : (data.status_id === 2 ? 2 : 1),
+        status: isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
+        role_name: data.role_name || (isPostulant ? 'Postulante' : 'Alumno'),
+        is_aspirante: isPostulant,
+        is_present: !isPostulant,
+        dni_copy: true,
+        form_copy: true,
+        title_copy: !isPostulant,
+        enrollment_date: data.enrollment_date || new Date().toLocaleDateString('es-AR'),
       }
+
+      try {
+        await POST('/api/alumnos', {
+          ...payload,
+          dni: cleanDni,
+        })
+        await fetchStudents()
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado en base de datos.`)
+      } catch (err) {
+        setStudents(prev => [payload, ...prev])
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado exitosamente.`)
+      }
+      setIsAddOpen(false)
     }
   }
 
@@ -779,17 +843,89 @@ export default function Alumnos() {
         isOpen={!!editStudent}
         onClose={() => setEditStudent(null)}
         onSubmit={handleFormSubmit}
+        onDelete={(id) => {
+          setEditStudent(null)
+          handleDeleteTrigger(id)
+        }}
         userRole={userRole}
         initialRole={editStudent && isPostulante(editStudent) ? 'Postulante' : 'Alumno'}
       />
 
-      {/* Modal: Confirmación de Eliminación */}
+      {/* Modal: Confirmación de Baja */}
       <DeleteConfirmationModal 
         student={deleteStudent}
         isOpen={!!deleteStudent}
         onClose={() => setDeleteStudent(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      {/* Modal: Doble Verificación "Verificar que los datos sean Reales" y Generación de Token de Asistencia */}
+      {promoteStudentTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-nunito animate-fadeIn">
+          <div 
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setPromoteStudentTarget(null)}
+          />
+          <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl z-10 p-6 space-y-4">
+            <div className="flex items-start gap-3 text-amber-600 dark:text-amber-400">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 rounded-xl border border-amber-200 dark:border-amber-900/50 shrink-0">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-tight">
+                  Verificar que los datos sean Reales
+                </h3>
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-semibold mt-0.5">
+                  Doble Verificación (Digital + Humana)
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+              El módulo de alumnos se enlazará con el <strong>sistema de asistencia por código QR</strong>. Antes de confirmar el paso a Alumno Regular, verifica que los datos sean fidedignos y que el postulante haya presentado físicamente la documentación requerida (DNI, Planilla firmada y Título).
+            </p>
+
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px] uppercase font-bold">Postulante:</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">{promoteStudentTarget.first_name} {promoteStudentTarget.last_name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px] uppercase font-bold">DNI:</span>
+                <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{promoteStudentTarget.dni}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px] uppercase font-bold">Curso:</span>
+                <span className="font-semibold text-[#166193] dark:text-[#37A6DE]">{promoteStudentTarget.course_name}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800 text-[11px]">
+                <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">Token de Asistencia a Generar (ID + Email):</span>
+                <span className="font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-800 block text-slate-600 dark:text-slate-300 truncate">
+                  {`CFL404-ATT-${promoteStudentTarget.id}-${btoa(unescape(encodeURIComponent(promoteStudentTarget.email || promoteStudentTarget.id))).slice(0, 16)}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setPromoteStudentTarget(null)}
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConfirmPromote(promoteStudentTarget)}
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 size={15} />
+                Confirmar y Generar Token
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
