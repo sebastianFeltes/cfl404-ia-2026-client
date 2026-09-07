@@ -43,6 +43,7 @@ export default function Alumnos() {
 
   // Lista principal de alumnos
   const [students, setStudents] = useState([])
+  const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState(null)
 
   // Pestaña Activa: 'alumnos' (Regulares) | 'postulantes' (Aspirantes)
@@ -50,6 +51,7 @@ export default function Alumnos() {
 
   // Carga inicial sincronizada desde la API con fallback seguro
   const fetchStudents = useCallback(async () => {
+    setLoading(true)
     try {
       const res = await GET('/api/v1/alumnos')
       if (res?.data && Array.isArray(res.data)) {
@@ -83,6 +85,8 @@ export default function Alumnos() {
       if (import.meta.env.DEV) {
         console.error('Error al cargar alumnos:', err.message)
       }
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -562,7 +566,7 @@ export default function Alumnos() {
           <div className="no-print">
             <DataTable 
               students={paginatedStudents}
-              loading={false}
+              loading={loading}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteTrigger}
@@ -612,7 +616,7 @@ export default function Alumnos() {
         <div className="no-print">
           <StudentCardView 
             students={paginatedStudents}
-            loading={false}
+            loading={loading}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDeleteTrigger}
