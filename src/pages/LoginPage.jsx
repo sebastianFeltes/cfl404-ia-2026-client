@@ -14,6 +14,13 @@ const DEMO_ACCOUNTS = [
   { id: 'directivo', label: 'Directivo' },
 ];
 
+function safeRedirectPath(pathname) {
+  if (typeof pathname !== 'string') return '/perfil'
+  if (pathname.includes('//') || pathname.includes('\\') || /https?:/i.test(pathname)) return '/perfil'
+  if (!/^\/(perfil|admin)(\/|$)/.test(pathname)) return '/perfil'
+  return pathname
+}
+
 export default function LoginPage() {
   const { isAuthenticated, isLoading, loginWithGoogle, loginAsDemo } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +32,7 @@ export default function LoginPage() {
   const [showDevAccess, setShowDevAccess] = useState(false);
 
   // Destino original cuando el usuario llegó acá por una ruta protegida.
-  const redirectTo = location.state?.from?.pathname || '/perfil';
+  const redirectTo = safeRedirectPath(location.state?.from?.pathname);
 
   if (isLoading) {
     return (

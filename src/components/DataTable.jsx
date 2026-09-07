@@ -65,7 +65,7 @@ function DataTable({
   const totalPaginas = Math.ceil(totalResultados / itemsPorPagina) || 1
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 overflow-hidden font-roboto transition-colors duration-200">
+    <div className="w-full bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-custom-gris-claro/10 dark:border-slate-800 overflow-hidden font-roboto transition-colors">
       
       {/* ── Pestañas de Navegación: Alumnos vs Postulantes (no-print) ── */}
       {!isPrintMode && setActiveTab && (
@@ -136,15 +136,17 @@ function DataTable({
       <div className="overflow-x-auto">
         <table className="w-full table-auto text-left" aria-label={isPostulantesTab ? "Tabla de alumnos postulantes" : "Tabla de estudiantes"}>
           <thead>
-            <tr className={`text-white text-[11px] font-bold uppercase tracking-wider ${
-              isPostulantesTab ? 'bg-[#37A6DE]' : 'bg-[#166193]'
+            <tr className={`text-white text-xs font-bold uppercase tracking-wider border-b ${
+              isPostulantesTab
+                ? 'bg-[#37A6DE] border-[#37A6DE]'
+                : 'bg-custom-azul-oscuro dark:bg-custom-azul-oscuro border-custom-azul-oscuro'
             }`}>
               {tableHeaders.map((header, index) => (
                 <th 
                   key={index} 
                   scope="col"
                   style={{ width: header.width }}
-                  className={`py-3.5 px-4 ${
+                  className={`p-4 ${
                     header.align === 'center' ? 'text-center' : header.align === 'right' ? 'text-right' : 'text-left'
                   } ${header.label === 'Acciones' ? 'no-print' : ''}`}
                 >
@@ -186,7 +188,7 @@ function DataTable({
                     className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors duration-150 text-slate-800 dark:text-slate-200"
                   >
                     {/* Foto de perfil con anillo de estado y Nombre */}
-                    <td className="py-3 px-4">
+                    <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div 
                           className="cursor-pointer"
@@ -220,22 +222,22 @@ function DataTable({
                     </td>
 
                     {/* DNI */}
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-xs tabular-nums">
+                    <td className="p-4 text-slate-600 dark:text-slate-300 font-mono text-xs tabular-nums">
                       {student.dni || '—'}
                     </td>
 
                     {/* Email */}
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-xs truncate max-w-[200px]" title={student.email}>
+                    <td className="p-4 text-slate-600 dark:text-slate-300 text-xs truncate max-w-[200px]" title={student.email}>
                       {student.email || '—'}
                     </td>
 
                     {/* Teléfono */}
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 text-xs font-mono tabular-nums">
+                    <td className="p-4 text-slate-600 dark:text-slate-300 text-xs font-mono tabular-nums">
                       {student.phone || '—'}
                     </td>
 
                     {/* Curso Asignado / Solicitado */}
-                    <td className="py-3 px-4">
+                    <td className="p-4">
                       <div>
                         <div className="font-semibold text-xs text-[#166193] dark:text-[#37A6DE]">
                           {student.course_name || 'Sin curso asignado'}
@@ -248,7 +250,7 @@ function DataTable({
                     </td>
 
                     {/* Acciones */}
-                    <td className="py-3 px-4 text-center no-print">
+                    <td className="p-4 text-center no-print">
                       <div className="flex justify-center">
                         <ActionButtons 
                           studentId={student.id}

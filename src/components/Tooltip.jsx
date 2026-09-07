@@ -1,50 +1,120 @@
-import React from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 /**
- * Tooltip — componente accesible con Tailwind CSS puro.
- * Usa z-[9999] para garantizar visibilidad sobre drawers, modales y overlays (z-50).
- * Soporta posición dinámica: top | bottom | left | right.
+ * Tooltip — se renderiza en document.body con position:fixed para no quedar
+ * recortado por overflow ni debajo del aside (que crea su propio stacking context).
  *
- * IMPORTANTE: si el contenedor padre tiene overflow:hidden, los tooltips
- * con position="top"/"bottom" pueden quedar cortados. En ese caso usar
- * position="right" o "left", o asegurarse que el padre tenga overflow visible.
+ * Soporta posición: top | bottom | left | right.
  */
-function Tooltip({ text, position = 'top', children }) {
+const GAP = 8
+
+const originClass = {
+  top: 'origin-bottom',
+  bottom: 'origin-top',
+  left: 'origin-right',
+  right: 'origin-left',
+}
+
+const arrowClass = {
+  top: 'top-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent border-t-slate-900',
+  bottom: 'bottom-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent border-b-slate-900',
+  left: 'left-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-r-transparent border-l-slate-900',
+  right: 'right-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent border-r-slate-900',
+}
+
+function styleFromRect(rect, position) {
+  switch (position) {
+    case 'bottom':
+      return {
+        top: rect.bottom + GAP,
+        left: rect.left + rect.width / 2,
+        transform: 'translateX(-50%)',
+      }
+    case 'left':
+      return {
+        top: rect.top + rect.height / 2,
+        left: rect.left - GAP,
+        transform: 'translate(-100%, -50%)',
+      }
+    case 'right':
+      return {
+        top: rect.top + rect.height / 2,
+        left: rect.right + GAP,
+        transform: 'translateY(-50%)',
+      }
+    default:
+      return {
+        top: rect.top - GAP,
+        left: rect.left + rect.width / 2,
+        transform: 'translate(-50%, -100%)',
+      }
+  }
+}
+
+function Tooltip({ text, position = 'top', children, className = '' }) {
+  const triggerRef = useRef(null)
+  const [rect, setRect] = useState(null)
+
+  const show = useCallback(() => {
+    const el = triggerRef.current
+    if (!el) return
+    setRect(el.getBoundingClientRect())
+  }, [])
+
+  const hide = useCallback(() => setRect(null), [])
+
+  useEffect(() => {
+    if (!rect) return
+    const sync = () => {
+      const el = triggerRef.current
+      if (!el) return
+      setRect(el.getBoundingClientRect())
+    }
+    window.addEventListener('scroll', sync, true)
+    window.addEventListener('resize', sync)
+    return () => {
+      window.removeEventListener('scroll', sync, true)
+      window.removeEventListener('resize', sync)
+    }
+  }, [rect])
+
   if (!text) return children
 
-  const positionClasses = {
-    top:    'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left:   'right-full top-1/2 -translate-y-1/2 mr-2',
-    right:  'left-full top-1/2 -translate-y-1/2 ml-2'
-  }
-
-  const arrowClasses = {
-    top:    'top-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent border-t-slate-900 dark:border-t-slate-700',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent border-b-slate-900 dark:border-b-slate-700',
-    left:   'left-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-r-transparent border-l-slate-900 dark:border-l-slate-700',
-    right:  'right-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent border-r-slate-900 dark:border-r-slate-700'
-  }
+  const visible = Boolean(rect)
 
   return (
-    <div className="relative group/tooltip inline-flex items-center">
-      {children}
-      {/* Tooltip bubble — z-[9999] ensures visibility over drawers (z-50) and modals */}
+    <>
       <div
-        className={`pointer-events-none absolute z-[9999] whitespace-nowrap rounded-md bg-slate-900 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-white shadow-xl border border-slate-700/60 dark:border-slate-600/60
-          opacity-0 scale-95 transition-all duration-150 ease-out
-          group-hover/tooltip:opacity-100 group-hover/tooltip:scale-100
-          ${positionClasses[position]}`}
-        role="tooltip"
+        ref={triggerRef}
+        className={`flex items-center ${className}`}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocusCapture={show}
+        onBlurCapture={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) hide()
+        }}
       >
-        {text}
-        {/* Arrow indicator */}
-        <span
-          className={`absolute border-4 ${arrowClasses[position]}`}
-          aria-hidden="true"
-        />
+        {children}
       </div>
-    </div>
+      {visible &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              zIndex: 10000,
+              pointerEvents: 'none',
+              ...styleFromRect(rect, position),
+            }}
+            className={`whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-xl border border-slate-700/60 ${originClass[position] ?? originClass.top}`}
+          >
+            {text}
+            <span className={`absolute border-4 ${arrowClass[position] ?? arrowClass.top}`} aria-hidden="true" />
+          </div>,
+          document.body,
+        )}
+    </>
   )
 }
 

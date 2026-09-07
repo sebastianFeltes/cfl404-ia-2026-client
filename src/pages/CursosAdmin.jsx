@@ -1,59 +1,71 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useOutletContext } from 'react-router'
-import { 
-  BookOpen, 
-  CheckCircle2, 
-  Clock, 
-  Users, 
-  Search, 
-  Plus, 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  FilterX, 
-  X, 
+import {
+  BookOpen,
+  CheckCircle2,
+  Users,
+  Search,
+  Plus,
+  Eye,
+  Pencil,
+  FilterX,
+  X,
   AlertCircle,
   Calendar,
-  Layers
+  Printer,
 } from 'lucide-react'
 import StatCard from '../components/StatCard'
-import NuevoCursoModal from '../components/NuevoCursoModal'
-import { fetchCourses, addCourseService, removeCourseService } from '../services/coursesService'
+import Tooltip from '../components/Tooltip'
+import CourseFormDrawer from '../components/cursos/CourseFormDrawer'
+import CourseDetailDrawer from '../components/cursos/CourseDetailDrawer'
+import CourseDeleteModal from '../components/cursos/CourseDeleteModal'
+import {
+  fetchCourses,
+  fetchFamilies,
+  fetchDays,
+  fetchInstructorsForCourses,
+  addCourseService,
+  updateCourseService,
+  deactivateCourseService,
+} from '../services/coursesService'
+import { courseMatchesStage, getCourseStageFromDates, toDateInputValue } from '../utils/courseStage'
+import { canCrud } from '../utils/roles'
 
 const COLS = [
-  { label: 'Curso', width: '30%', align: 'left' },
-  { label: 'Categoría', width: '14%', align: 'left' },
-  { label: 'Horario y Días', width: '22%', align: 'left' },
-  { label: 'Cupos Disponibles', width: '16%', align: 'left' },
-  { label: 'Estado', width: '12%', align: 'left' },
-  { label: 'Acciones', width: '6%', align: 'right' }
+  { label: 'Curso', width: '26%', align: 'left' },
+  { label: 'Familia', width: '12%', align: 'left' },
+  { label: 'Instructor', width: '16%', align: 'left' },
+  { label: 'Horario y Días', width: '18%', align: 'left' },
+  { label: 'Cupos', width: '10%', align: 'left' },
+  { label: 'Estado', width: '10%', align: 'left' },
+  { label: 'Acciones', width: '8%', align: 'right' },
 ]
 
 export default function CursosAdmin() {
   const context = useOutletContext()
-  // Permiso concedido a 1. GOD, 2. ADMIN, 3. DIRECTOR, 4. REGENTE
-  const puedeEditar = context?.puedeEditar ?? true
+  const puedeEditar = canCrud(context?.user?.rol || context?.userRole)
 
   const [courses, setCourses] = useState([])
+  const [families, setFamilies] = useState([])
+  const [days, setDays] = useState([])
+  const [instructors, setInstructors] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStage, setFilterStage] = useState('')
-  const [filterCategory, setFilterCategory] = useState('')
+  const [filterFamily, setFilterFamily] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
 
-  // Pagination States
   const [paginaActual, setPaginaActual] = useState(1)
   const [itemsPorPagina, setItemsPorPagina] = useState(10)
 
-  // Modals & Triggers
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState(null)
   const [deleteCourse, setDeleteCourse] = useState(null)
   const [viewCourse, setViewCourse] = useState(null)
+  const [printCourse, setPrintCourse] = useState(null)
 
-  // Toast feedback
   const [toastMessage, setToastMessage] = useState(null)
 
   const showToast = (message) => {
@@ -61,109 +73,132 @@ export default function CursosAdmin() {
     setTimeout(() => setToastMessage(null), 4000)
   }
 
-  // Load courses on mount
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true)
-      const data = await fetchCourses()
-      setCourses(data)
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [coursesData, familiesData, daysData, instructorsData] = await Promise.all([
+        fetchCourses(),
+        fetchFamilies(),
+        fetchDays(),
+        fetchInstructorsForCourses(),
+      ])
+      setCourses(coursesData)
+      setFamilies(familiesData)
+      setDays(daysData)
+      setInstructors(instructorsData)
+    } catch (error) {
+      showToast(error.message || 'No se pudieron cargar los cursos')
+    } finally {
       setLoading(false)
     }
-    loadData()
   }, [])
 
-  // Filters logic
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  useEffect(() => {
+    const handleAfterPrint = () => setPrintCourse(null)
+    window.addEventListener('afterprint', handleAfterPrint)
+    return () => window.removeEventListener('afterprint', handleAfterPrint)
+  }, [])
+
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
       const searchLower = searchTerm.toLowerCase().trim()
+      const familyName = course.family?.name || course.category || ''
+      const instructorName = course.instructorName || course.staff || ''
       const matchesSearch = searchLower === '' ||
-        course.name.toLowerCase().includes(searchLower) ||
-        (course.category && course.category.toLowerCase().includes(searchLower)) ||
+        (course.name || '').toLowerCase().includes(searchLower) ||
+        familyName.toLowerCase().includes(searchLower) ||
+        instructorName.toLowerCase().includes(searchLower) ||
         (course.sponsor?.name && course.sponsor.name.toLowerCase().includes(searchLower))
 
-      let matchesStage = true
-      if (filterStage === 'segunda') {
-        matchesStage = course.stageKey === 'segunda' || course.is_annual || course.is_continuous || course.stageKey === 'anual'
-      } else if (filterStage === 'primera') {
-        matchesStage = course.stageKey === 'primera' || course.is_annual || course.is_continuous || course.stageKey === 'anual'
-      } else if (filterStage === 'anual') {
-        matchesStage = course.stageKey === 'anual' || course.is_annual || course.is_continuous
-      }
+      const matchesStage = courseMatchesStage(course, filterStage)
+      const matchesFamily = filterFamily === '' || String(course.familyId) === String(filterFamily) || familyName === filterFamily
+      const matchesStatus = filterStatus === '' || Number(course.statusId || course.status?.id) === Number(filterStatus)
 
-      const matchesCategory = filterCategory === '' || course.category === filterCategory
-      const matchesStatus = filterStatus === '' || course.status?.id === Number(filterStatus)
-
-      return matchesSearch && matchesStage && matchesCategory && matchesStatus
+      return matchesSearch && matchesStage && matchesFamily && matchesStatus
     })
-  }, [courses, searchTerm, filterStage, filterCategory, filterStatus])
+  }, [courses, searchTerm, filterStage, filterFamily, filterStatus])
 
-  // Reset page when filters change
   useEffect(() => {
     setPaginaActual(1)
-  }, [searchTerm, filterStage, filterCategory, filterStatus])
+  }, [searchTerm, filterStage, filterFamily, filterStatus])
 
-  // Pagination slice
   const paginatedCourses = useMemo(() => {
     const inicio = (paginaActual - 1) * itemsPorPagina
     return filteredCourses.slice(inicio, inicio + itemsPorPagina)
   }, [filteredCourses, paginaActual, itemsPorPagina])
 
-  const totalPaginas = Math.ceil(filteredCourses.length / itemsPorPagina)
+  const totalPaginas = Math.ceil(filteredCourses.length / itemsPorPagina) || 1
 
-  // KPIs dynamic calculation
   const kpis = useMemo(() => {
     const total = courses.length
-    const activos = courses.filter(c => c.status?.id === 1 || c.status?.id === 2).length
-    const vacantesTotales = courses.reduce((acc, curr) => acc + (curr.detail?.quota || 0), 0)
-    const primeraCount = courses.filter(c => c.stageKey === 'primera' || c.is_annual).length
-    const segundaCount = courses.filter(c => c.stageKey === 'segunda' || c.is_annual).length
-
+    const activos = courses.filter((c) => Number(c.statusId || c.status?.id) === 1).length
+    const vacantesTotales = courses.reduce((acc, curr) => acc + (curr.availableQuota ?? curr.detail?.quota ?? 0), 0)
+    const primeraCount = courses.filter((c) => courseMatchesStage(c, 'primera')).length
+    const segundaCount = courses.filter((c) => courseMatchesStage(c, 'segunda')).length
     return { total, activos, vacantesTotales, primeraCount, segundaCount }
   }, [courses])
 
   const handleResetFilters = () => {
     setSearchTerm('')
     setFilterStage('')
-    setFilterCategory('')
+    setFilterFamily('')
     setFilterStatus('')
     showToast('Filtros restablecidos correctamente.')
   }
 
-  // Create or Update course
   const handleSaveCourse = async (courseData) => {
-    if (courseData.id) {
-      // Edit
-      setCourses(prev => prev.map(c => c.id === courseData.id ? courseData : c))
-      showToast(`Curso "${courseData.name}" actualizado correctamente.`)
-    } else {
-      // Add
-      const nextId = courses.length > 0 ? Math.max(...courses.map(c => typeof c.id === 'number' ? c.id : 0)) + 1 : 101
-      const newCourse = {
-        ...courseData,
-        id: nextId
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      if (courseData.id) {
+        const updated = await updateCourseService(courseData.id, courseData)
+        setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+        showToast(`Curso "${updated.name}" actualizado correctamente.`)
+        setEditingCourse(null)
+      } else {
+        const created = await addCourseService(courseData)
+        setCourses((prev) => [created, ...prev])
+        showToast(`Nuevo curso "${created.name}" agregado con éxito.`)
+        setIsAddOpen(false)
       }
-      await addCourseService(newCourse)
-      setCourses(prev => [newCourse, ...prev])
-      showToast(`Nuevo curso "${newCourse.name}" agregado con éxito a la base de datos.`)
+    } catch (error) {
+      showToast(error.message || 'No se pudo guardar el curso')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  // Confirm delete course
-  const handleDeleteConfirm = async () => {
-    if (!deleteCourse) return
-    await removeCourseService(deleteCourse.id)
-    setCourses(prev => prev.filter(c => c.id !== deleteCourse.id))
-    showToast(`Se ha eliminado el curso "${deleteCourse.name}".`)
-    setDeleteCourse(null)
+  const handleDeactivateConfirm = async () => {
+    const target = deleteCourse
+    if (!target) return
+    try {
+      const updated = await deactivateCourseService(target.id)
+      setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+      showToast(`Se dio de baja el curso "${updated.name}".`)
+      setDeleteCourse(null)
+      setViewCourse(null)
+      setEditingCourse(null)
+    } catch (error) {
+      showToast(error.message || 'No se pudo dar de baja el curso')
+    }
   }
 
-  const isAnyFilterActive = searchTerm !== '' || filterStage !== '' || filterCategory !== '' || filterStatus !== ''
+  const handlePrintList = () => {
+    setPrintCourse(null)
+    setTimeout(() => window.print(), 50)
+  }
+
+  const isAnyFilterActive = searchTerm !== '' || filterStage !== '' || filterFamily !== '' || filterStatus !== ''
+  const printSource = printCourse ? [printCourse] : filteredCourses
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 font-roboto relative">
-      {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white border border-custom-celeste px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-fade-in text-xs">
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white border border-custom-celeste px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-fade-in text-xs no-print">
           <AlertCircle className="h-4.5 w-4.5 text-[#FDEA14] animate-pulse" />
           <span>{toastMessage}</span>
           <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white ml-2 cursor-pointer">
@@ -172,31 +207,51 @@ export default function CursosAdmin() {
         </div>
       )}
 
-      {/* Header Page */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2 font-nunito">
+      <div className="print-only mb-4">
+        <h1 className="text-xl font-extrabold text-slate-900">
+          {printCourse ? `Ficha de curso — ${printCourse.name}` : 'Oferta educativa CFL 404'}
+        </h1>
+        <p className="text-xs text-slate-500">
+          {printCourse
+            ? `Familia: ${printCourse.family?.name || printCourse.category || '—'} · Instructor: ${printCourse.instructorName || printCourse.staff}`
+            : `${filteredCourses.length} cursos · generado ${new Date().toLocaleDateString('es-AR')}`}
+        </p>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2 font-nunito no-print">
         <div>
           <h2 className="font-roboto font-extrabold text-3xl text-slate-900 dark:text-slate-100 tracking-tight">
             Gestión de Cursos y Oferta Educativa
           </h2>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-            Administración interna feaciente de capacitaciones, vacantes, etapas lectivas y altas/bajas.
+            Familias, instructores, etapas lectivas (marzo-julio / julio-diciembre) y vacantes.
           </p>
         </div>
 
-        {puedeEditar && (
-          <button
-            onClick={() => { setEditingCourse(null); setIsAddOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 bg-[#166193] hover:bg-[#166193]/90 text-white shadow-md hover:shadow-lg cursor-pointer"
-          >
-            <Plus className="h-4 w-4 text-[#FDEA14]" />
-            + Agregar Curso
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <Tooltip text="Imprimir o exportar el listado filtrado a PDF" position="bottom">
+            <button
+              onClick={handlePrintList}
+              className="flex items-center gap-2 px-4 py-2.5 border-2 border-custom-azul-oscuro/25 text-custom-azul-oscuro hover:bg-custom-azul-oscuro/5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              <Printer className="h-4 w-4" />
+              Exportar PDF
+            </button>
+          </Tooltip>
+          {puedeEditar && (
+            <button
+              onClick={() => { setEditingCourse(null); setIsAddOpen(true) }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 bg-[#166193] hover:bg-[#166193]/90 text-white shadow-md hover:shadow-lg cursor-pointer"
+            >
+              <Plus className="h-4 w-4 text-[#FDEA14]" />
+              + Agregar Curso
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-nunito">
-        <StatCard 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-nunito no-print">
+        <StatCard
           title="Total de Cursos"
           value={loading ? '...' : kpis.total}
           icon={BookOpen}
@@ -206,27 +261,27 @@ export default function CursosAdmin() {
           iconColorClass="text-[#166193] bg-[#166193]/10"
           description="ofertas registradas"
         />
-        <StatCard 
+        <StatCard
           title="Cursos Activos"
           value={loading ? '...' : kpis.activos}
           icon={CheckCircle2}
-          trend="Inscripción"
+          trend="Estado ACTIVO"
           trendType="up"
           colorClass="border-[#37A6DE]"
           iconColorClass="text-[#37A6DE] bg-[#37A6DE]/10"
-          description="abiertos o con vacantes"
+          description="en dictado"
         />
-        <StatCard 
+        <StatCard
           title="Cupos Disponibles"
           value={loading ? '...' : kpis.vacantesTotales}
           icon={Users}
-          trend="Disponibles"
+          trend="Vacantes"
           trendType="neutral"
           colorClass="border-emerald-500"
           iconColorClass="text-emerald-600 bg-emerald-500/10"
-          description="vacantes en comisión"
+          description="cupo menos inscriptos"
         />
-        <StatCard 
+        <StatCard
           title="Segunda Etapa"
           value={loading ? '...' : `${kpis.segundaCount} cursos`}
           icon={Calendar}
@@ -234,92 +289,60 @@ export default function CursosAdmin() {
           trendType="neutral"
           colorClass="border-amber-500"
           iconColorClass="text-amber-600 bg-amber-500/10"
-          description="etapa activa de cursada"
+          description={`${kpis.primeraCount} en primera etapa`}
         />
       </div>
 
-      {/* Stage Selector Tabs */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center gap-2 font-nunito">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center gap-2 font-nunito no-print">
         <span className="text-xs font-bold text-slate-500 px-3 uppercase tracking-wider">Filtrar por Etapa:</span>
-        <button
-          onClick={() => setFilterStage('')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            filterStage === ''
-              ? 'bg-[#166193] text-white shadow-sm'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-          }`}
-        >
-          Todas las Etapas ({courses.length})
-        </button>
-        <button
-          onClick={() => setFilterStage('segunda')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            filterStage === 'segunda'
-              ? 'bg-[#166193] text-white shadow-sm'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-          }`}
-        >
-          Segunda mitad del año (Julio - Diciembre)
-        </button>
-        <button
-          onClick={() => setFilterStage('primera')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            filterStage === 'primera'
-              ? 'bg-[#166193] text-white shadow-sm'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-          }`}
-        >
-          Primera mitad del año (Marzo - Junio)
-        </button>
-        <button
-          onClick={() => setFilterStage('anual')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            filterStage === 'anual'
-              ? 'bg-[#166193] text-white shadow-sm'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-          }`}
-        >
-          Anual / Dictado Continuo
-        </button>
+        {[
+          { key: '', label: `Todas las Etapas (${courses.length})` },
+          { key: 'segunda', label: 'Segunda etapa (Julio - Diciembre)' },
+          { key: 'primera', label: 'Primera etapa (Marzo - Julio)' },
+          { key: 'anual', label: 'Anual / Dictado Continuo' },
+        ].map((tab) => (
+          <button
+            key={tab.key || 'all'}
+            onClick={() => setFilterStage(tab.key)}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              filterStage === tab.key
+                ? 'bg-[#166193] text-white shadow-sm'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* TopBar / Search & Category Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 p-4 space-y-4 font-nunito">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 p-4 space-y-4 font-nunito no-print">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-          
-          {/* Search Input */}
           <div className="relative w-full lg:w-96">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input 
+            <input
               type="text"
-              placeholder="Buscar por nombre de curso o patrocinador..."
+              placeholder="Buscar por curso, familia, instructor o patrocinador..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950 focus:outline-none focus:border-[#166193]"
             />
             {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-              >
+              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
 
-          {/* Filters Selects */}
           <div className="grid grid-cols-2 gap-3 w-full lg:w-auto flex-1 max-w-lg">
             <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+              value={filterFamily}
+              onChange={(e) => setFilterFamily(e.target.value)}
               className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
             >
-              <option value="">Categoría: Todas</option>
-              <option value="Oficios">Oficios</option>
-              <option value="Tecnología">Tecnología</option>
-              <option value="Emprendimiento">Emprendimiento</option>
-              <option value="Servicios">Servicios</option>
-              <option value="Administración">Administración</option>
+              <option value="">Familia: Todas</option>
+              {families.map((family) => (
+                <option key={family.id} value={family.id}>{family.name}</option>
+              ))}
             </select>
 
             <select
@@ -328,14 +351,13 @@ export default function CursosAdmin() {
               className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
             >
               <option value="">Estado: Todos</option>
-              <option value="1">Inscripción Abierta</option>
-              <option value="2">Últimos cupos</option>
-              <option value="3">Cupo completo</option>
-              <option value="4">Curso Finalizado</option>
+              <option value="1">Activo</option>
+              <option value="2">Inactivo</option>
+              <option value="3">Pendiente</option>
+              <option value="4">Finalizado</option>
             </select>
           </div>
 
-          {/* Reset Filters */}
           {isAnyFilterActive && (
             <button
               onClick={handleResetFilters}
@@ -345,15 +367,11 @@ export default function CursosAdmin() {
               Limpiar
             </button>
           )}
-
         </div>
       </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden font-nunito">
-        
-        {/* Table Header */}
-        <div className="flex items-center px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 font-bold">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden font-nunito no-print">
+        <div className="flex items-center px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 font-bold no-print">
           {COLS.map((col) => (
             <div
               key={col.label}
@@ -367,109 +385,82 @@ export default function CursosAdmin() {
           ))}
         </div>
 
-        {/* Table Rows */}
         {loading ? (
           <div className="py-16 text-center text-slate-400 font-medium">Cargando cursos desde la base de datos...</div>
         ) : paginatedCourses.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 font-medium">No se encontraron cursos registrados con los filtros seleccionados.</div>
+          <div className="py-16 text-center text-slate-400 font-medium">No se encontraron cursos con los filtros seleccionados.</div>
         ) : (
           <div className="flex flex-col">
-            {paginatedCourses.map((course) => (
-              <div
-                key={course.id}
-                className="group flex items-center px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-              >
-                {/* Curso Name & Image */}
-                <div style={{ width: COLS[0].width }} className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
-                    <img
-                      src={course.image}
-                      alt={course.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/images/Herreria.webp';
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-0 pr-2">
-                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug hover:text-[#166193] cursor-pointer" onClick={() => setViewCourse(course)}>
+            {paginatedCourses.map((course) => {
+              const stage = getCourseStageFromDates(course)
+              return (
+                <div
+                  key={course.id}
+                  className="group flex items-center px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/60 last:border-b-0 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                >
+                  <div style={{ width: COLS[0].width }} className="min-w-0 pr-2">
+                    <p
+                      className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug hover:text-[#166193] cursor-pointer"
+                      onClick={() => setViewCourse(course)}
+                    >
                       {course.name}
                     </p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] font-semibold text-[#166193] bg-[#166193]/10 px-1.5 py-0.5 rounded">
-                        {course.stage || 'Segunda Etapa'}
-                      </span>
-                    </div>
+                    <span className="text-[10px] font-semibold text-[#166193] bg-[#166193]/10 px-1.5 py-0.5 rounded inline-block mt-0.5">
+                      {stage?.label || course.stage || 'Sin etapa'}
+                    </span>
                   </div>
-                </div>
 
-                {/* Categoría */}
-                <div style={{ width: COLS[1].width }}>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                    {course.category}
-                  </span>
-                </div>
+                  <div style={{ width: COLS[1].width }}>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {course.family?.name || course.category || '—'}
+                    </span>
+                  </div>
 
-                {/* Horario y Días */}
-                <div style={{ width: COLS[2].width }}>
-                  <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  <div style={{ width: COLS[2].width }} className="text-xs text-slate-600 dark:text-slate-300 font-medium pr-2 truncate">
+                    {course.instructorName || course.staff || 'Sin instructor'}
+                  </div>
+
+                  <div style={{ width: COLS[3].width }} className="text-xs text-slate-600 dark:text-slate-300 font-medium pr-2">
                     {course.schedule}
-                  </span>
-                </div>
+                  </div>
 
-                {/* Cupos Disponibles (Limpio, bien acomodado y SIN fondo pintado) */}
-                <div style={{ width: COLS[3].width }}>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                    {course.detail?.quota ?? 0} vacantes
-                  </span>
-                </div>
+                  <div style={{ width: COLS[4].width }}>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                      {course.availableQuota ?? course.detail?.quota ?? 0} vacantes
+                    </span>
+                  </div>
 
-                {/* Estado Badge (Bien alineado) */}
-                <div style={{ width: COLS[4].width }}>
-                  <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-bold rounded-full border shadow-2xs whitespace-nowrap ${course.status?.color}`}>
-                    {course.status?.label}
-                  </span>
-                </div>
+                  <div style={{ width: COLS[5].width }}>
+                    <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-bold rounded-full border shadow-2xs whitespace-nowrap ${course.status?.color}`}>
+                      {course.status?.label}
+                    </span>
+                  </div>
 
-                {/* Acciones (Habilitadas para 1. GOD, 2. ADMIN, 3. DIRECTOR, 4. REGENTE) */}
-                <div style={{ width: COLS[5].width }} className="flex items-center justify-end gap-1">
-                  <button
-                    onClick={() => setViewCourse(course)}
-                    title="Ver detalle del curso"
-                    className="p-1.5 rounded-md text-slate-400 hover:text-[#166193] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <Eye size={15} />
-                  </button>
-
-                  {puedeEditar && (
-                    <>
+                  <div style={{ width: COLS[6].width }} className="flex items-center justify-end gap-1 no-print">
+                    <button
+                      onClick={() => setViewCourse(course)}
+                      title="Ver detalle del curso"
+                      className="p-1.5 rounded-md text-slate-400 hover:text-[#166193] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      <Eye size={15} />
+                    </button>
+                    {puedeEditar && (
                       <button
-                        onClick={() => { setEditingCourse(course); setIsAddOpen(true); }}
+                        onClick={() => { setIsAddOpen(false); setEditingCourse(course) }}
                         title="Editar curso"
-                        className="p-1.5 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
                       >
                         <Pencil size={15} />
                       </button>
-
-                      <button
-                        onClick={() => setDeleteCourse(course)}
-                        title="Quitar curso"
-                        className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
-
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
-        {/* Pagination Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-xs">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-xs no-print">
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
             <span>Mostrar</span>
             <select
@@ -493,119 +484,106 @@ export default function CursosAdmin() {
               <strong>{Math.min(paginaActual * itemsPorPagina, filteredCourses.length)}</strong> de{' '}
               <strong>{filteredCourses.length}</strong> resultados
             </span>
-
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
                 disabled={paginaActual === 1}
-                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold disabled:opacity-50 cursor-pointer"
+                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 Anterior
               </button>
               <button
-                onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
-                disabled={paginaActual === totalPaginas || totalPaginas === 0}
-                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold disabled:opacity-50 cursor-pointer"
+                onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas || filteredCourses.length === 0}
+                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 Siguiente
               </button>
             </div>
           </div>
         </div>
-
       </div>
 
-      {/* Modal: Agregar / Editar Curso */}
-      <NuevoCursoModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onSubmit={handleSaveCourse}
-        initialData={editingCourse}
+      <div className="print-only">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr>
+              <th className="text-left border-b py-2">Curso</th>
+              <th className="text-left border-b py-2">Familia</th>
+              <th className="text-left border-b py-2">Instructor</th>
+              <th className="text-left border-b py-2">Etapa</th>
+              <th className="text-left border-b py-2">Horario</th>
+              <th className="text-left border-b py-2">Cupos</th>
+              <th className="text-left border-b py-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {printSource.map((course) => (
+              <tr key={course.id}>
+                <td className="py-1.5 border-b">{course.name}</td>
+                <td className="py-1.5 border-b">{course.family?.name || course.category || '—'}</td>
+                <td className="py-1.5 border-b">{course.instructorName || course.staff}</td>
+                <td className="py-1.5 border-b">{getCourseStageFromDates(course)?.label || course.stage}</td>
+                <td className="py-1.5 border-b">{course.schedule}</td>
+                <td className="py-1.5 border-b">{course.availableQuota ?? 0}</td>
+                <td className="py-1.5 border-b">{course.status?.label}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {printCourse && (
+          <div className="mt-4 space-y-1 text-sm">
+            <p><strong>Inicio:</strong> {toDateInputValue(printCourse.startDate || printCourse.start_date)}</p>
+            <p><strong>Fin:</strong> {toDateInputValue(printCourse.endDate || printCourse.end_time)}</p>
+            <p><strong>Descripción:</strong> {printCourse.detail?.description}</p>
+            <p><strong>Aval:</strong> {printCourse.detail?.endorsement_by}</p>
+          </div>
+        )}
+      </div>
+
+      {(isAddOpen || !!editingCourse) && (
+        <CourseFormDrawer
+          course={editingCourse}
+          isOpen={isAddOpen || !!editingCourse}
+          onClose={() => {
+            setIsAddOpen(false)
+            setEditingCourse(null)
+          }}
+          onSubmit={handleSaveCourse}
+          onDeactivate={(course) => {
+            setIsAddOpen(false)
+            setEditingCourse(null)
+            setDeleteCourse(course)
+          }}
+          families={families}
+          instructors={instructors}
+          days={days}
+          isSubmitting={isSubmitting}
+          isReadOnly={!puedeEditar}
+        />
+      )}
+
+      <CourseDetailDrawer
+        course={viewCourse}
+        isOpen={!!viewCourse}
+        onClose={() => setViewCourse(null)}
+        onEdit={(course) => {
+          setViewCourse(null)
+          setEditingCourse(course)
+        }}
+        onDeactivate={(course) => {
+          setViewCourse(null)
+          setDeleteCourse(course)
+        }}
+        hasCrud={puedeEditar}
       />
 
-      {/* Modal: Confirmación de Eliminación de Curso */}
-      {deleteCourse && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 font-nunito animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="p-2 bg-red-100 dark:bg-red-950/50 rounded-xl">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-roboto">
-                ¿Quitar Curso?
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              ¿Está seguro de que desea eliminar el curso <strong>"{deleteCourse.name}"</strong> de la base de datos? Esta acción removerá el registro de la oferta educativa.
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setDeleteCourse(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-md cursor-pointer"
-              >
-                Sí, Quitar Curso
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal / Drawer: Ver Ficha Completa del Curso */}
-      {viewCourse && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 font-nunito animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 relative">
-            <button
-              onClick={() => setViewCourse(null)}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-              <img
-                src={viewCourse.image}
-                alt={viewCourse.name}
-                className="w-14 h-14 rounded-xl object-cover border border-slate-200"
-              />
-              <div>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                  {viewCourse.category}
-                </span>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 font-roboto mt-0.5">
-                  {viewCourse.name}
-                </h3>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs text-[#585856] dark:text-slate-300">
-              <p><strong>Etapa Lectiva:</strong> {viewCourse.stage || 'Segunda Etapa'}</p>
-              <p><strong>Descripción:</strong> {viewCourse.detail?.description || 'Sin descripción.'}</p>
-              <p><strong>Horarios:</strong> {viewCourse.schedule}</p>
-              <p><strong>Vacantes Disponibles:</strong> {viewCourse.detail?.quota || 0}</p>
-              <p><strong>Requisito de Título:</strong> {viewCourse.detail?.title_required || 'Primario completo'}</p>
-              <p><strong>Aval Institucional:</strong> {viewCourse.detail?.endorsement_by || 'CFP 404 Berisso'}</p>
-            </div>
-
-            <div className="pt-2 text-right">
-              <button
-                onClick={() => setViewCourse(null)}
-                className="px-4 py-2 bg-[#166193] text-white text-xs font-bold rounded-lg cursor-pointer"
-              >
-                Cerrar Ficha
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <CourseDeleteModal
+        course={deleteCourse}
+        isOpen={!!deleteCourse}
+        onClose={() => setDeleteCourse(null)}
+        onConfirm={handleDeactivateConfirm}
+      />
     </div>
   )
 }

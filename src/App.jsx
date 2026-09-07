@@ -3,14 +3,13 @@ import { BrowserRouter, Route, Routes, Navigate, useLocation } from 'react-route
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './App.css'
 
-// Auth context
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { canonicalRole } from './utils/roles'
+import ErrorBoundary from './components/ErrorBoundary'
 
-// Layouts
 import AppLayout from './layouts/AppLayout'
 import DashboardLayout from './layouts/DashboardLayout'
 
-// Páginas públicas (sitio institucional)
 import Home from './pages/Home'
 import Institucional from './pages/Institucional'
 import Cooperadora from './pages/Cooperadora'
@@ -18,35 +17,33 @@ import Cookies from './pages/Cookies'
 import Privacidad from './pages/Privacidad'
 import TerminosCondiciones from './pages/TerminosCondiciones'
 
-// Auth
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 
-// Páginas del panel administrativo
+import Dashboard from './pages/Dashboard'
+import Asistencia from './pages/Asistencia'
 import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
-
-// Cooperadora — Módulo de gestión de pagos de cooperadora y buffet.
-// Accesible solo a roles: GOD, ADMIN, DIRECTOR, REGENTE, SECRETARIA, PRECEPTORIA.
 import CooperadoraAdmin from './pages/CooperadoraAdmin'
 
-/**
- * Ruta protegida: sin JWT válido redirige a /login y recuerda el destino
- * en location.state para volver ahí después de autenticarse.
- */
+const STAFF_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-100 font-nunito">
+      <div className="w-10 h-10 border-4 border-custom-celeste border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm font-semibold text-custom-gris-claro">Verificando tu sesión…</p>
+    </div>
+  )
+}
+
 function PrivateRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-100 font-nunito">
-        <div className="w-10 h-10 border-4 border-custom-celeste border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-semibold text-custom-gris-claro">Verificando tu sesión…</p>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingScreen />
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />
@@ -55,10 +52,24 @@ function PrivateRoute({ children }) {
   return children
 }
 
-/**
- * ScrollToTop — al cambiar de ruta lleva el scroll al inicio de la página.
- * Si la URL trae un hash (#cursos, #contacto), respeta el desplazamiento a la sección.
- */
+function RoleRoute({ children, allowedRoles }) {
+  const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
+
+  if (isLoading) return <LoadingScreen />
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+
+  const role = canonicalRole(user?.rol)
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to="/perfil" replace />
+  }
+
+  return children
+}
+
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
 
@@ -71,11 +82,8 @@ function ScrollToTop() {
 }
 
 function AppRoutes() {
-  
-    return (
+  return (
     <Routes>
-
-      {/* ── Sitio público institucional — bajo AppLayout ── */}
       <Route path='/' element={<AppLayout />}>
         <Route index element={<Home />} />
         <Route path='institucional' element={<Institucional />} />
@@ -91,29 +99,35 @@ function AppRoutes() {
         } />
       </Route>
 
-      {/* ── Autenticación ── */}
       <Route path='/login' element={<LoginPage />} />
 
-      {/* ── Área autenticada: mismo aside + navbar que el resto del admin ── */}
       <Route element={
         <PrivateRoute>
           <DashboardLayout />
         </PrivateRoute>
       }>
         <Route path='perfil' element={<ProfilePage />} />
-        <Route path='admin' element={<Navigate to="/admin/instructores" replace />} />
+      </Route>
+
+      <Route element={
+        <RoleRoute allowedRoles={STAFF_ROLES}>
+          <DashboardLayout />
+        </RoleRoute>
+      }>
+        <Route path='admin' element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path='admin/dashboard' element={<Dashboard />} />
+        <Route path='admin/asistencia' element={<Asistencia />} />
         <Route path='admin/instructores' element={<Instructores />} />
         <Route path='admin/alumnos' element={<Alumnos />} />
         <Route path='admin/cursos' element={<CursosAdmin />} />
+      </Route>
 
-        {/* Cooperadora — Gestión de pagos mensuales y buffet.
-            El control de acceso por rol se hace dentro de CooperadoraAdmin
-            y en el Sidebar (que oculta el enlace a roles no autorizados). */}
+      <Route element={
+        <RoleRoute allowedRoles={COOPERADORA_ROLES}>
+          <DashboardLayout />
+        </RoleRoute>
+      }>
         <Route path='admin/cooperadora' element={<CooperadoraAdmin />} />
-
-        <Route path='admin/reportes' element={
-          <div className="p-2"><h1 className="text-2xl font-semibold text-slate-900 font-roboto">Reportes</h1><p className="text-sm text-slate-500 mt-1">Módulo en desarrollo...</p></div>
-        } />
       </Route>
     </Routes>
   )
@@ -121,15 +135,17 @@ function AppRoutes() {
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
-      <AuthProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </GoogleOAuthProvider>
+    <ErrorBoundary>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
+        <AuthProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
+      </GoogleOAuthProvider>
+    </ErrorBoundary>
   )
 }
 
-export default App;
+export default App

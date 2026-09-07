@@ -181,7 +181,6 @@ export default function Home() {
         />
       )}
 
-      {/* Modal de Cola Virtual de Pre-inscripción */}
       {queueCourse && (
         <VirtualQueueModal
           key={`queue-${queueCourse.id}`}

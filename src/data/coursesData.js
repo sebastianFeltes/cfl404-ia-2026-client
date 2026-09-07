@@ -36,7 +36,7 @@ export const OFFICIAL_ENDORSEMENT = 'Ministerio de Educación y Trabajo de la Pr
  * Función auxiliar para obtener info detallada de la etapa
  */
 export function getCourseStageInfo(course) {
-  if (course.is_annual || course.is_continuous || course.stageKey === 'anual') {
+  if (course.is_annual || course.is_continuous || course.isAnnual || course.stageKey === 'anual') {
     return {
       stageKey: 'anual',
       label: STAGES.STAGE_ANNUAL,
@@ -44,9 +44,29 @@ export function getCourseStageInfo(course) {
       isAnnual: true
     };
   }
+
+  const start = course.startDate || course.start_date
+  if (start) {
+    const month = new Date(start).getMonth() + 1
+    const endMonth = course.endDate || course.end_time
+      ? new Date(course.endDate || course.end_time).getMonth() + 1
+      : null
+    if (month >= 3 && month <= 6) {
+      return { stageKey: 'primera', label: STAGES.STAGE_1, description: 'Primera mitad del año (Marzo - Julio)', isAnnual: false }
+    }
+    if (month === 7) {
+      if (endMonth && endMonth <= 7) {
+        return { stageKey: 'primera', label: STAGES.STAGE_1, description: 'Primera mitad del año (Marzo - Julio)', isAnnual: false }
+      }
+      return { stageKey: 'segunda', label: STAGES.STAGE_2, description: 'Segunda mitad del año (Julio - Diciembre)', isAnnual: false }
+    }
+    if (month >= 8) {
+      return { stageKey: 'segunda', label: STAGES.STAGE_2, description: 'Segunda mitad del año (Julio - Diciembre)', isAnnual: false }
+    }
+  }
   
   if (course.stageKey === 'primera') {
-    return { stageKey: 'primera', label: STAGES.STAGE_1, description: 'Primera mitad del año (Marzo - Junio)', isAnnual: false };
+    return { stageKey: 'primera', label: STAGES.STAGE_1, description: 'Primera mitad del año (Marzo - Julio)', isAnnual: false };
   }
 
   return { stageKey: 'segunda', label: STAGES.STAGE_2, description: 'Segunda mitad del año (Julio - Diciembre)', isAnnual: false };

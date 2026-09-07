@@ -1,40 +1,40 @@
 import axios from 'axios'
 
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  throw new Error('VITE_API_URL es obligatorio en producción')
+}
+
 const DEV_URL = 'http://localhost:4000'
-const PROD_URL = 'https://clf404.ar'
+const BASE_URL = import.meta.env.VITE_API_URL || DEV_URL
 
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? PROD_URL : DEV_URL)
-
-const TOKEN_KEY = 'cfl404_token'
 const USER_KEY = 'cfl404_user'
+const SESSION_FLAG = 'cfl404_session'
 
-let authToken = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY)
+let authToken = null
 let onUnauthorized = null
 
 export function getAuthToken() {
   return authToken
-    || localStorage.getItem(TOKEN_KEY)
-    || sessionStorage.getItem(TOKEN_KEY)
 }
 
 export function setAuthToken(token, { remember = true } = {}) {
-  authToken = token || null
-
-  localStorage.removeItem(TOKEN_KEY)
-  sessionStorage.removeItem(TOKEN_KEY)
-
-  if (!token) return
-
+  authToken = token && String(token).includes('.') ? token : null
+  localStorage.removeItem('cfl404_token')
+  sessionStorage.removeItem('cfl404_token')
   const storage = remember ? localStorage : sessionStorage
-  storage.setItem(TOKEN_KEY, token)
+  const other = remember ? sessionStorage : localStorage
+  other.removeItem(SESSION_FLAG)
+  storage.setItem(SESSION_FLAG, '1')
 }
 
 export function clearAuthToken() {
   authToken = null
-  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem('cfl404_token')
   localStorage.removeItem(USER_KEY)
-  sessionStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(SESSION_FLAG)
+  sessionStorage.removeItem('cfl404_token')
   sessionStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(SESSION_FLAG)
 }
 
 export function persistUser(user, { remember = true } = {}) {
@@ -63,16 +63,13 @@ export function setOnUnauthorized(callback) {
   onUnauthorized = callback
 }
 
-function authStoragePrefersRemember() {
-  return Boolean(localStorage.getItem(TOKEN_KEY))
-}
-
 export function isRememberedSession() {
-  return authStoragePrefersRemember()
+  return Boolean(localStorage.getItem(SESSION_FLAG) || localStorage.getItem(USER_KEY))
 }
 
 const api = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -86,8 +83,6 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Un 401 en los endpoints de inicio de sesión significa "credencial rechazada",
-// no "sesión vencida": no debe disparar el cierre de sesión global.
 const LOGIN_ENDPOINTS = ['/api/auth/google', '/api/auth/dev-login']
 
 api.interceptors.response.use(
@@ -112,12 +107,16 @@ function extractError(error) {
   return error.message || 'Error de red'
 }
 
+export function isUnauthorizedError(error) {
+  return error?.response?.status === 401 || error?.response?.status === 403
+}
+
 export async function GET(route) {
   try {
     const res = await api.get(route)
     return res.data
   } catch (error) {
-    throw new Error(extractError(error))
+    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
   }
 }
 
@@ -126,7 +125,7 @@ export async function POST(route, data) {
     const res = await api.post(route, data)
     return res.data
   } catch (error) {
-    throw new Error(extractError(error))
+    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
   }
 }
 
@@ -135,7 +134,7 @@ export async function PUT(route, data, id) {
     const res = await api.put(`${route}/${id}`, data)
     return res.data
   } catch (error) {
-    throw new Error(extractError(error))
+    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
   }
 }
 
@@ -144,7 +143,7 @@ export async function PATCH(route, data) {
     const res = await api.patch(route, data)
     return res.data
   } catch (error) {
-    throw new Error(extractError(error))
+    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
   }
 }
 
@@ -153,7 +152,7 @@ export async function DELETE(route, id) {
     const res = await api.delete(`${route}/${id}`)
     return res.data
   } catch (error) {
-    throw new Error(extractError(error))
+    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
   }
 }
 
@@ -162,6 +161,6 @@ export async function GET_BY_ID(route, id) {
     const res = await api.get(`${route}/${id}`)
     return res.data
   } catch (error) {
-    throw new Error(extractError(error))
+    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
   }
 }

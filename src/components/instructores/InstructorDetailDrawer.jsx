@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Calendar, Phone, Mail, MapPin, Award, BookOpen, Clock, Download, Printer, GraduationCap, Pencil } from 'lucide-react'
+import { X, Phone, Mail, MapPin, Award, BookOpen, GraduationCap, Pencil } from 'lucide-react'
 import BadgeStatus from '../BadgeStatus'
 import Tooltip from '../Tooltip'
 
-function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport, onEdit, hasCrud = false }) {
+function InstructorDetailDrawer({ instructor, isOpen, onClose, onEdit, hasCrud = false }) {
   // Lock body scroll when drawer is active
   useEffect(() => {
     if (isOpen) {
@@ -180,25 +180,17 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport, onEdit,
               <GraduationCap className="h-4 w-4 text-custom-celeste" />
               Documentación y Registro
             </h3>
-            <div className="bg-gray-50 dark:bg-slate-950 p-4 rounded-xl flex items-center justify-between text-xs border border-gray-100/50 dark:border-slate-800/80">
-              <div>
-                <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Documento Nacional de Identidad</p>
-                <p className="font-mono font-bold text-custom-gris-oscuro dark:text-slate-200 mt-0.5">{instructor.dni}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Estado de Legajo</p>
-                <Tooltip text="Legajo verificado administrativamente" position="top">
-                  <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 cursor-help">Completo / Vigente</p>
-                </Tooltip>
-              </div>
+            <div className="bg-gray-50 dark:bg-slate-950 p-4 rounded-xl text-xs border border-gray-100/50 dark:border-slate-800/80">
+              <p className="text-[10px] text-custom-gris-claro dark:text-slate-400 font-bold uppercase">Documento Nacional de Identidad</p>
+              <p className="font-mono font-bold text-custom-gris-oscuro dark:text-slate-200 mt-0.5">{instructor.dni}</p>
             </div>
           </div>
 
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center gap-2.5 shrink-0">
-          {hasCrud && onEdit && (
+        {hasCrud && onEdit && (
+          <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center gap-2.5 shrink-0">
             <Tooltip text="Modificar datos de este docente" position="top">
               <button
                 onClick={() => onEdit(instructor.id)}
@@ -208,28 +200,8 @@ function InstructorDetailDrawer({ instructor, isOpen, onClose, onExport, onEdit,
                 Editar
               </button>
             </Tooltip>
-          )}
-
-          <Tooltip text="Descargar legajo completo del docente en PDF" position="top">
-            <button
-              onClick={() => onExport && onExport(instructor.id)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-white dark:bg-slate-900 border border-custom-gris-claro/20 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
-            >
-              <Download className="h-4 w-4 text-custom-azul-oscuro dark:text-custom-celeste" />
-              Descargar Ficha PDF
-            </button>
-          </Tooltip>
-          
-          <Tooltip text="Imprimir ficha del docente" position="top">
-            <button
-              onClick={() => window.print()}
-              className="p-2 border border-custom-gris-claro/20 dark:border-slate-700 text-custom-gris-claro dark:text-slate-400 hover:text-custom-gris-oscuro dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-900"
-              aria-label="Imprimir legajo"
-            >
-              <Printer className="h-4 w-4" />
-            </button>
-          </Tooltip>
-        </div>
+          </div>
+        )}
       </aside>
     </>,
     document.body

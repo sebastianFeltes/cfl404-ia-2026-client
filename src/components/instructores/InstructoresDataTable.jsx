@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Inbox, Plus, Eye, Pencil, UserMinus, BookOpen, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Inbox, Plus, Eye, Pencil, BookOpen, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import Tooltip from '../Tooltip'
 
 const getStatusBorder = (status) => {
@@ -49,7 +49,6 @@ function InstructoresDataTable({
   loading = false, 
   onView, 
   onEdit, 
-  onDelete,
   onResetFilters,
   onAddInstructor,
   userRole,
@@ -61,7 +60,7 @@ function InstructoresDataTable({
     { label: 'Email Institucional', align: 'left', width: 'w-[22%]', title: 'Correo electrónico oficial' },
     { label: 'Teléfono', align: 'left', width: 'w-[14%]', title: 'Teléfono o móvil de contacto' },
     { label: 'Cursos Asignados', align: 'left', width: 'w-[18%]', title: 'Oferta técnica y fecha de asignación' },
-    { label: 'Acciones', align: 'center', width: 'w-[10%]', title: 'Ver detalle, editar o dar de baja' }
+    { label: 'Acciones', align: 'center', width: 'w-[10%]', title: 'Ver detalle o editar' }
   ]
 
   // Pagination state (5, 15, 25)
@@ -102,7 +101,7 @@ function InstructoresDataTable({
       <div className="w-full overflow-hidden">
         <table className="w-full table-fixed text-left" aria-label="Tabla de instructores">
           <thead>
-            <tr className="bg-slate-900 dark:bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-800">
+            <tr className="bg-custom-azul-oscuro dark:bg-custom-azul-oscuro text-white text-xs font-bold uppercase tracking-wider border-b border-custom-azul-oscuro">
               {tableHeaders.map((header, index) => (
                 <th 
                   key={index} 
@@ -266,19 +265,6 @@ function InstructoresDataTable({
                             aria-label={`Editar instructor ${instructor.id}`}
                           >
                             <Pencil className="h-4 w-4" />
-                          </button>
-                        </Tooltip>
-                      )}
-
-                      {/* Dar de baja — solo roles CRUD */}
-                      {hasCrud && (
-                        <Tooltip text="Dar de baja al docente" position="top">
-                          <button
-                            onClick={() => onDelete && onDelete(instructor.id)}
-                            className="p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all duration-150 cursor-pointer"
-                            aria-label={`Dar de baja instructor ${instructor.id}`}
-                          >
-                            <UserMinus className="h-4 w-4" />
                           </button>
                         </Tooltip>
                       )}

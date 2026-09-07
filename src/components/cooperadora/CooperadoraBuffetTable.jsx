@@ -1,10 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Calendar, DollarSign, Trash2, ArrowDownLeft, ArrowUpRight, ShoppingBag, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
-import Tooltip from '../Tooltip'
+import { Calendar, ArrowDownLeft, ArrowUpRight, ShoppingBag, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
 export default function CooperadoraBuffetTable({
   registros = [],
-  onDeleteRegistro,
   onOpenNewModal,
 }) {
   const [currentPage, setCurrentPage] = useState(1)
@@ -103,7 +101,6 @@ export default function CooperadoraBuffetTable({
                 <th className="py-3.5 px-4 min-w-[220px]">Detalle / Concepto</th>
                 <th className="py-3.5 px-4 min-w-[180px]">Observaciones</th>
                 <th className="py-3.5 px-4 text-right min-w-[120px]">Monto</th>
-                <th className="py-3.5 px-3 text-center w-14">Acción</th>
               </tr>
             </thead>
 
@@ -154,20 +151,6 @@ export default function CooperadoraBuffetTable({
                     }`}>
                       {esIngreso ? '+' : '-'}${Number(item.monto).toLocaleString('es-AR')}
                     </td>
-
-                    {/* Acción */}
-                    <td className="py-3 px-3 text-center">
-                      <Tooltip text="Eliminar este registro" position="left">
-                        <button
-                          type="button"
-                          onClick={() => onDeleteRegistro && onDeleteRegistro(item.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          aria-label="Eliminar registro"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </Tooltip>
-                    </td>
                   </tr>
                 )
               })}
@@ -184,7 +167,6 @@ export default function CooperadoraBuffetTable({
                 }`}>
                   ${balanceNeto.toLocaleString('es-AR')}
                 </td>
-                <td></td>
               </tr>
             </tfoot>
           </table>

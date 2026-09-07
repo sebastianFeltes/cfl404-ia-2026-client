@@ -73,8 +73,9 @@ function Institucional() {
     };
 
     const handleWhatsAppClick = (comercio) => {
+        const digits = String(comercio.telefono || '').replace(/\D/g, '')
         const text = encodeURIComponent(`Hola ${comercio.nombre}, me contacto desde la web de CFL 404. Quería consultar sobre el beneficio del ${comercio.descuento} y su catálogo.`);
-        window.open(`https://wa.me/${comercio.telefono}?text=${text}`, '_blank');
+        window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener,noreferrer');
     };
 
     return (

@@ -32,12 +32,13 @@ export async function deleteCooperadoraPago(id) {
 
 /**
  * Obtener todos los movimientos de Buffet (ingresos y egresos)
- * @param {Object} [filters] - { tipo, year }
+ * @param {Object} [filters] - { tipo, year, month }
  */
 export async function getBuffetMovements(filters = {}) {
   const params = new URLSearchParams()
   if (filters.tipo) params.append('tipo', filters.tipo)
   if (filters.year) params.append('year', filters.year)
+  if (filters.month) params.append('month', filters.month)
 
   const query = params.toString() ? `?${params.toString()}` : ''
   return await GET(`/api/v1/cooperadora/buffet${query}`)

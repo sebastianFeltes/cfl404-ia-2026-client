@@ -23,7 +23,7 @@ import {
   Search, 
   CheckSquare, 
   Square, 
-  Trash2 
+  UserMinus,
 } from 'lucide-react'
 import Tooltip from '../Tooltip'
 import BadgeStatus from '../BadgeStatus'
@@ -42,7 +42,7 @@ const INITIAL_FORM_STATE = {
   assigned_course_ids: [],
 }
 
-function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole, hasCrud = false, courses = [], isSubmitting = false }) {
+function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete, userRole, hasCrud = false, courses = [], isSubmitting = false }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const [imgError, setImgError] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -207,7 +207,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole,
       return {
         id,
         name: found?.name || `Curso ID: ${id}`,
-        category: found?.category || null,
+        category: found?.category || found?.family?.name || null,
         stage: found?.stage || null,
       }
     })
@@ -220,7 +220,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole,
     const term = courseSearch.toLowerCase()
     return courses.filter(c => 
       (c.name || '').toLowerCase().includes(term) ||
-      (c.category || '').toLowerCase().includes(term) ||
+      (c.category || c.family?.name || '').toLowerCase().includes(term) ||
       (c.stage || '').toLowerCase().includes(term)
     )
   }, [courses, courseSearch])
@@ -592,9 +592,9 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole,
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs truncate">{curso.name}</p>
-                                  {curso.category && (
+                                  {(curso.category || curso.family?.name) && (
                                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-normal truncate">
-                                      Área: {curso.category} {curso.stage ? `• ${curso.stage}` : ''}
+                                      Área: {curso.category || curso.family?.name} {curso.stage ? `• ${curso.stage}` : ''}
                                     </p>
                                   )}
                                 </div>
@@ -791,40 +791,57 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, userRole,
         </form>
 
         {/* Footer with Submit button */}
-        <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0">
-          <Tooltip text="Cancelar y descartar cambios" position="top">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
-            >
-              Cancelar
-            </button>
-          </Tooltip>
-          
-          <Tooltip text={isSubmitting ? 'Guardando...' : instructor ? 'Guardar cambios en el legajo del docente' : 'Dar de alta al nuevo instructor'} position="top">
-            <button
-              type="submit"
-              form={`instructor-form-${instructor ? 'edit' : 'add'}`}
-              disabled={isReadOnly || isSubmitting}
-              className="flex items-center gap-1.5 px-4 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-custom-amarillo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 text-custom-amarillo" />
-                  {instructor ? 'Guardar Cambios' : 'Registrar Instructor'}
-                </>
-              )}
-            </button>
-          </Tooltip>
+        <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+          <div>
+            {instructor && hasCrud && onDelete && (
+              <Tooltip text="Dar de baja al docente" position="top">
+                <button
+                  type="button"
+                  onClick={() => onDelete(instructor.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                >
+                  <UserMinus className="h-4 w-4" />
+                  Dar de baja
+                </button>
+              </Tooltip>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Tooltip text="Cancelar y descartar cambios" position="top">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </Tooltip>
+            
+            <Tooltip text={isSubmitting ? 'Guardando...' : instructor ? 'Guardar cambios en el legajo del docente' : 'Dar de alta al nuevo instructor'} position="top">
+              <button
+                type="submit"
+                form={`instructor-form-${instructor ? 'edit' : 'add'}`}
+                disabled={isReadOnly || isSubmitting}
+                className="flex items-center gap-1.5 px-4 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-custom-amarillo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 text-custom-amarillo" />
+                    {instructor ? 'Guardar Cambios' : 'Registrar Instructor'}
+                  </>
+                )}
+              </button>
+            </Tooltip>
+          </div>
         </div>
       </aside>
     </>,

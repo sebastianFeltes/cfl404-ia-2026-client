@@ -6,7 +6,6 @@ import {
   ShoppingBag,
   Search,
   Download,
-  Printer,
   Plus,
   AlertCircle,
   CheckCircle,
@@ -18,14 +17,13 @@ import {
   Lock,
   ArrowRight,
   RefreshCw,
-  Loader2,
 } from 'lucide-react'
 
 import StatCard from '../components/StatCard'
 import Tooltip from '../components/Tooltip'
 import CooperadoraAlumnosTable from '../components/cooperadora/CooperadoraAlumnosTable'
 import CooperadoraBuffetTable from '../components/cooperadora/CooperadoraBuffetTable'
-import CooperadoraPagoDrawer from '../components/cooperadora/CooperadoraPagoDrawer'
+import CooperadoraPagoDrawer, { MESES } from '../components/cooperadora/CooperadoraPagoDrawer'
 import CooperadoraBuffetDrawer from '../components/cooperadora/CooperadoraBuffetDrawer'
 import { GET } from '../services/api'
 import {
@@ -34,7 +32,6 @@ import {
   deleteCooperadoraPago,
   getBuffetMovements,
   createBuffetMovement,
-  deleteBuffetMovement,
 } from '../services/cooperadoraService'
 import { useAuth } from '../context/AuthContext'
 import { canonicalRole } from '../utils/roles'
@@ -56,6 +53,7 @@ export default function CooperadoraAdmin() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCurso, setFilterCurso] = useState('')
   const [filterBuffetTipo, setFilterBuffetTipo] = useState('')
+  const [filterBuffetMes, setFilterBuffetMes] = useState('')
 
   // State: Data from Backend
   const [students, setStudents] = useState([])
@@ -79,7 +77,10 @@ export default function CooperadoraAdmin() {
   }
 
   // ── 1. Cargar Datos del Servidor ──────────────────────────────────────────
+  const hasAccess = COOPERADORA_ALLOWED_ROLES.includes(rawRole)
+
   const fetchData = useCallback(async () => {
+    if (!hasAccess) return
     try {
       setLoading(true)
       setErrorMessage(null)
@@ -88,7 +89,10 @@ export default function CooperadoraAdmin() {
       const [studentsRes, paymentsRes, buffetRes] = await Promise.allSettled([
         GET('/api/v1/alumnos'),
         getCooperadoraPagos(selectedYear),
-        getBuffetMovements({ year: selectedYear }),
+        getBuffetMovements({
+          year: selectedYear,
+          month: filterBuffetMes || undefined,
+        }),
       ])
 
       // Procesar Alumnos
@@ -96,7 +100,7 @@ export default function CooperadoraAdmin() {
         const studentList = Array.isArray(studentsRes.value.data) ? studentsRes.value.data : []
         setStudents(studentList)
       } else if (studentsRes.status === 'rejected') {
-        console.warn('Error al cargar alumnos:', studentsRes.reason)
+        if (import.meta.env.DEV) console.warn('Error al cargar alumnos:', studentsRes.reason)
       }
 
       // Procesar Pagos de Cooperadora
@@ -104,7 +108,7 @@ export default function CooperadoraAdmin() {
         const paymentsMap = paymentsRes.value.paymentsMap || {}
         setPayments(paymentsMap)
       } else if (paymentsRes.status === 'rejected') {
-        console.warn('Error al cargar pagos de cooperadora:', paymentsRes.reason)
+        if (import.meta.env.DEV) console.warn('Error al cargar pagos de cooperadora:', paymentsRes.reason)
       }
 
       // Procesar Movimientos de Buffet
@@ -112,19 +116,23 @@ export default function CooperadoraAdmin() {
         const records = Array.isArray(buffetRes.value.data) ? buffetRes.value.data : []
         setBuffetRecords(records)
       } else if (buffetRes.status === 'rejected') {
-        console.warn('Error al cargar movimientos de buffet:', buffetRes.reason)
+        if (import.meta.env.DEV) console.warn('Error al cargar movimientos de buffet:', buffetRes.reason)
       }
     } catch (err) {
-      console.error('Error global cargando cooperadora:', err)
+      if (import.meta.env.DEV) console.error('Error global cargando cooperadora:', err)
       setErrorMessage('No se pudieron sincronizar todos los datos con el servidor.')
     } finally {
       setLoading(false)
     }
-  }, [selectedYear])
+  }, [selectedYear, filterBuffetMes, hasAccess])
 
   useEffect(() => {
+    if (!hasAccess) {
+      setLoading(false)
+      return
+    }
     fetchData()
-  }, [fetchData])
+  }, [fetchData, hasAccess])
 
   // ── 2. Manejo de Pagos de Cuotas de Alumnos ────────────────────────────────
   const handleSavePayment = async ({ studentId, month, amount, year, date, notes }) => {
@@ -139,7 +147,14 @@ export default function CooperadoraAdmin() {
       })
 
       // Soporte para distribución automática multi-mes
-      const allSaved = res.allSaved || [res.data]
+      const allSaved = Array.isArray(res.allSaved)
+        ? res.allSaved.filter(Boolean)
+        : (res.data ? [res.data] : [])
+
+      if (allSaved.length === 0) {
+        showToast('No se pudo registrar el pago')
+        return
+      }
 
       setPayments((prev) => {
         const studentCurrent = prev[studentId] || {}
@@ -204,22 +219,12 @@ export default function CooperadoraAdmin() {
     }
   }
 
-  const handleDeleteBuffetRecord = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este registro de buffet?')) return
-    try {
-      await deleteBuffetMovement(id)
-      setBuffetRecords((prev) => prev.filter((r) => r.id !== id))
-      showToast('Registro de buffet eliminado de la base de datos.')
-    } catch (err) {
-      showToast(`Error al eliminar registro: ${err.message}`)
-    }
-  }
-
   // ── 4. Filtros y Búsquedas ────────────────────────────────────────────────
   const handleResetFilters = () => {
     setSearchTerm('')
     setFilterCurso('')
     setFilterBuffetTipo('')
+    setFilterBuffetMes('')
   }
 
   const filteredStudents = useMemo(() => {
@@ -296,48 +301,12 @@ export default function CooperadoraAdmin() {
     }
   }, [students, payments, buffetRecords])
 
-  // ── 6. Exportación CSV Real ───────────────────────────────────────────────
-  const handleExportCSV = () => {
-    if (activeTab === 'alumnos') {
-      const headers = ['ID,Apellido,Nombre,DNI,Curso,Cuotas Pagadas,Total Abonado ($)']
-      const rows = students.map((s) => {
-        const studentMap = payments[s.id] || {}
-        const totalPaid = Object.keys(studentMap).filter((m) => studentMap[m]?.pagado).length
-        const totalAmount = Object.values(studentMap).reduce(
-          (acc, p) => acc + (p?.pagado ? Number(p.monto || 0) : 0),
-          0
-        )
-        return `"${s.id}","${s.last_name || ''}","${s.first_name || ''}","${s.dni || ''}","${s.course_name || ''}",${totalPaid},${totalAmount}`
-      })
-      const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n')
-      const encodedUri = encodeURI(csvContent)
-      const link = document.createElement('a')
-      link.setAttribute('href', encodedUri)
-      link.setAttribute('download', `Cooperadora_Alumnos_${selectedYear}.csv`)
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      showToast(`Archivo "Cooperadora_Alumnos_${selectedYear}.csv" descargado con éxito.`)
-    } else {
-      const headers = ['ID,Fecha,Tipo,Detalle,Observaciones,Monto ($)']
-      const rows = buffetRecords.map((r) => {
-        return `"${r.id}","${r.fecha}","${r.tipo}","${(r.detalle || '').replace(/"/g, '""')}","${(r.observaciones || '').replace(/"/g, '""')}",${r.monto}`
-      })
-      const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n')
-      const encodedUri = encodeURI(csvContent)
-      const link = document.createElement('a')
-      link.setAttribute('href', encodedUri)
-      link.setAttribute('download', `Cooperadora_Buffet_${selectedYear}.csv`)
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      showToast(`Archivo "Cooperadora_Buffet_${selectedYear}.csv" descargado con éxito.`)
-    }
+  // ── 6. Exportación PDF ───────────────────────────────────────────────────
+  const handleExportPDF = () => {
+    window.print()
   }
 
   // ── 7. Control de Acceso ──────────────────────────────────────────────────
-  const hasAccess = COOPERADORA_ALLOWED_ROLES.includes(rawRole)
-
   if (!hasAccess && rawRole !== '') {
     return (
       <div className="max-w-2xl mx-auto mt-12 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/60 p-8 text-center font-roboto">
@@ -392,25 +361,8 @@ export default function CooperadoraAdmin() {
           </p>
         </div>
 
-        {/* Action Buttons & Year Selector */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3 no-print">
-          {/* Selector de Ciclo Lectivo */}
-          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-custom-gris-claro/20 dark:border-slate-800 rounded-lg px-2.5 py-1.5 shadow-2xs">
-            <Calendar className="h-4 w-4 text-custom-celeste" />
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="bg-transparent text-xs font-extrabold text-custom-azul-oscuro dark:text-custom-celeste focus:outline-none cursor-pointer"
-              aria-label="Seleccionar ciclo lectivo"
-            >
-              {[currentSystemYear - 1, currentSystemYear, currentSystemYear + 1].map((y) => (
-                <option key={y} value={y}>
-                  Ciclo {y}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <Tooltip text="Recargar datos desde el servidor" position="bottom">
             <button
               onClick={fetchData}
@@ -422,29 +374,18 @@ export default function CooperadoraAdmin() {
             </button>
           </Tooltip>
 
-          <Tooltip text="Imprimir o generar PDF" position="bottom">
+          <Tooltip text="Exportar listado a PDF" position="bottom">
             <button
-              onClick={() => window.print()}
+              onClick={handleExportPDF}
               className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
-              aria-label="Imprimir listado"
-            >
-              <Printer className="h-4 w-4" />
-              Imprimir
-            </button>
-          </Tooltip>
-
-          <Tooltip text="Descargar nómina en formato CSV" position="bottom">
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
-              aria-label="Exportar CSV"
+              aria-label="Exportar PDF"
             >
               <Download className="h-4 w-4" />
-              Exportar CSV
+              Exportar PDF
             </button>
           </Tooltip>
 
-          {activeTab === 'buffet' ? (
+          {activeTab === 'buffet' && (
             <Tooltip text="Registrar un ingreso o egreso en el buffet" position="bottom">
               <button
                 onClick={() => setIsBuffetDrawerOpen(true)}
@@ -453,19 +394,6 @@ export default function CooperadoraAdmin() {
               >
                 <Plus className="h-4 w-4 text-custom-amarillo" />
                 Nuevo Registro
-              </button>
-            </Tooltip>
-          ) : (
-            <Tooltip text="Seleccioná un alumno para cargar su cuota" position="bottom">
-              <button
-                onClick={() => {
-                  if (students.length > 0) setSelectedStudentForDrawer(students[0])
-                }}
-                disabled={students.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer disabled:opacity-50"
-                aria-label="Registrar cuota"
-              >
-                <Plus className="h-4 w-4 text-custom-amarillo" /> Cargar Pago
               </button>
             </Tooltip>
           )}
@@ -606,7 +534,24 @@ export default function CooperadoraAdmin() {
           </div>
 
           {/* Select Dropdown Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto flex-1 max-w-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full lg:w-auto flex-1 max-w-2xl">
+            {/* Ciclo lectivo — común a ambos modos */}
+            <div className="flex items-center gap-1.5 bg-gray-50/50 dark:bg-slate-950 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
+              <Calendar className="h-4 w-4 text-custom-celeste shrink-0" />
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-transparent text-xs font-extrabold text-custom-azul-oscuro dark:text-custom-celeste focus:outline-none cursor-pointer w-full"
+                aria-label="Seleccionar ciclo lectivo"
+              >
+                {[currentSystemYear - 1, currentSystemYear, currentSystemYear + 1].map((y) => (
+                  <option key={y} value={y}>
+                    Ciclo {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {activeTab === 'alumnos' ? (
               <select
                 value={filterCurso}
@@ -622,20 +567,36 @@ export default function CooperadoraAdmin() {
                 ))}
               </select>
             ) : (
-              <select
-                value={filterBuffetTipo}
-                onChange={(e) => setFilterBuffetTipo(e.target.value)}
-                className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
-                aria-label="Filtrar por Tipo de Registro"
-              >
-                <option value="">Tipo: Todos</option>
-                <option value="ingreso">Solo Ingresos / Ventas</option>
-                <option value="egreso">Solo Gastos / Insumos</option>
-              </select>
+              <>
+                <select
+                  value={filterBuffetMes}
+                  onChange={(e) => setFilterBuffetMes(e.target.value)}
+                  className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
+                  aria-label="Filtrar por Mes"
+                >
+                  <option value="">Mes: Todos</option>
+                  {MESES.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={filterBuffetTipo}
+                  onChange={(e) => setFilterBuffetTipo(e.target.value)}
+                  className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-200 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer transition-colors"
+                  aria-label="Filtrar por Tipo de Registro"
+                >
+                  <option value="">Tipo: Todos</option>
+                  <option value="ingreso">Solo Ingresos / Ventas</option>
+                  <option value="egreso">Solo Gastos / Insumos</option>
+                </select>
+              </>
             )}
 
             {/* Clear Filters Button */}
-            {(searchTerm !== '' || filterCurso !== '' || filterBuffetTipo !== '') && (
+            {(searchTerm !== '' || filterCurso !== '' || filterBuffetTipo !== '' || filterBuffetMes !== '') && (
               <Tooltip text="Restablecer todos los filtros" position="bottom">
                 <button
                   onClick={handleResetFilters}
@@ -662,7 +623,6 @@ export default function CooperadoraAdmin() {
       ) : (
         <CooperadoraBuffetTable
           registros={filteredBuffetRecords}
-          onDeleteRegistro={handleDeleteBuffetRecord}
           onOpenNewModal={() => setIsBuffetDrawerOpen(true)}
         />
       )}
