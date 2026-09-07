@@ -3,11 +3,14 @@ import { useState } from "react";
 
 const estadoRing = {
   activo: "ring-2 ring-emerald-500 dark:ring-emerald-400",
+  1: "ring-2 ring-emerald-500 dark:ring-emerald-400",
   licencia: "ring-2 ring-amber-500 dark:ring-amber-400",
+  3: "ring-2 ring-amber-500 dark:ring-amber-400",
   inactivo: "ring-2 ring-red-500 dark:ring-red-400",
+  2: "ring-2 ring-red-500 dark:ring-red-400",
 };
 
-export default function InstructorAvatar({ src, nombre, estado, size = "md" }) {
+export default function InstructorAvatar({ src, nombre, apellido = "", estado, size = "md" }) {
   const [error, setError] = useState(false);
 
   const sizes = {
@@ -18,8 +21,10 @@ export default function InstructorAvatar({ src, nombre, estado, size = "md" }) {
   };
 
   const sizeClass = sizes[size] ?? sizes.md;
-  const initials = nombre ? nombre.charAt(0).toUpperCase() : "?";
-  const ringClass = estado ? (estadoRing[estado] ?? "") : "";
+  const firstInitial = nombre ? nombre.charAt(0).toUpperCase() : "";
+  const lastInitial = apellido ? apellido.charAt(0).toUpperCase() : "";
+  const initials = `${firstInitial}${lastInitial}` || "?";
+  const ringClass = estado ? (estadoRing[estado] ?? estadoRing[String(estado).toLowerCase()] ?? "") : "";
 
   if (error || !src) {
     return (

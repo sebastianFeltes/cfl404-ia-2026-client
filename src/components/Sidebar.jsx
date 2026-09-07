@@ -1,164 +1,157 @@
-// Archivo: src/components/Sidebar.jsx
-import { NavLink } from 'react-router'
+import { NavLink, Link } from 'react-router'
 import {
   Users,
   Book,
   GraduationCap,
-  BarChart2,
   PanelLeftClose,
   PanelLeftOpen,
-  User,
+  LayoutDashboard,
+  ClipboardCheck,
+  Wallet,
+  Scale,
+  Shield,
 } from 'lucide-react'
-import { useMemo } from 'react'
 import Tooltip from './Tooltip'
 import { useAuth } from '../context/AuthContext'
-import { mapDbRoleToUi } from '../utils/roles'
+import { canonicalRole } from '../utils/roles'
 
-/**
- * Sidebar — panel lateral de navegación del dashboard con control RBAC por rol.
- */
+const ADMIN_NAV_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+const YEAR = new Date().getFullYear()
+
 const navItems = [
   {
-    label: 'Mi Perfil',
-    icon: User,
-    path: '/perfil',
-    title: 'Datos de tu cuenta',
-    roles: ['director', 'secretaria', 'instructor', 'estudiante'],
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    path: '/admin/dashboard',
+    title: 'Resumen del centro',
+  },
+  {
+    label: 'Asistencia',
+    icon: ClipboardCheck,
+    path: '/admin/asistencia',
+    title: 'Registro y seguimiento de asistencia',
   },
   {
     label: 'Profesores',
     icon: Users,
     path: '/admin/instructores',
     title: 'Gestión de docentes e instructores',
-    roles: ['director', 'secretaria'],
   },
   {
     label: 'Cursos',
     icon: Book,
     path: '/admin/cursos',
     title: 'Gestión de ofertas formativas',
-    roles: ['director', 'secretaria', 'instructor'],
   },
   {
     label: 'Alumnos',
     icon: GraduationCap,
     path: '/admin/alumnos',
     title: 'Matrícula y nómina de estudiantes',
-    roles: ['director', 'secretaria', 'instructor'],
-  },
-  {
-    label: 'Reportes',
-    icon: BarChart2,
-    path: '/admin/reportes',
-    title: 'Estadísticas y reportes de gestión',
-    roles: ['director', 'secretaria'],
   },
 ]
 
-export default function Sidebar({ isOpen = true, onToggle }) {
-  const { user } = useAuth()
-  const userRole = mapDbRoleToUi(user?.rol)
-  const open = onToggle !== undefined ? isOpen : true
+const cooperadoraItem = {
+  label: 'Cooperadora',
+  icon: Wallet,
+  path: '/admin/cooperadora',
+  title: 'Gestión de pagos de cooperadora y buffet',
+}
 
-  const visibleNavItems = useMemo(() => {
-    return navItems.filter((item) => {
-      if (item.roles && !item.roles.includes(userRole)) return false
-      return true
-    })
-  }, [userRole])
+function BrandMark({ className = 'h-9 w-9' }) {
+  return (
+    <div className={`${className} rounded-full overflow-hidden shrink-0 bg-white`}>
+      <img
+        src="/logo_texto_hero.svg"
+        alt="CFL 404 Berisso"
+        className="h-full w-full object-cover block"
+      />
+    </div>
+  )
+}
+
+export default function Sidebar({ isOpen = true, onToggle }) {
+  const open = onToggle !== undefined ? isOpen : true
+  const { user } = useAuth()
+  const role = canonicalRole(user?.rol)
+  const canSeeAdmin = ADMIN_NAV_ROLES.includes(role)
+  const canAccessCooperadora = COOPERADORA_ROLES.includes(role)
+
+  const visibleNavItems = canSeeAdmin
+    ? (canAccessCooperadora ? [...navItems, cooperadoraItem] : navItems)
+    : []
 
   return (
     <aside
       className={`
-        flex flex-col h-screen shrink-0 sticky top-0 z-30
-        bg-white dark:bg-slate-900
-        border-r border-slate-200 dark:border-slate-800
-        transition-all duration-300 ease-in-out
+        relative flex flex-col h-screen shrink-0 sticky top-0 z-30
+        bg-custom-azul-oscuro text-white
+        border-r border-black/5
+        shadow-[6px_0_18px_rgba(15,23,42,0.28)]
+        transition-all duration-300 ease-in-out overflow-visible
         ${open ? 'w-64' : 'w-[72px]'}
       `}
       aria-label="Navegación principal"
     >
-      {/* ── Logo / Brand Header con Botón de Compresión ── */}
+      {onToggle && (
+        <Tooltip
+          text={open ? 'Comprimir menú' : 'Expandir menú'}
+          position="right"
+          className="absolute top-4 -right-3 z-40"
+        >
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={open ? 'Comprimir barra lateral' : 'Expandir barra lateral'}
+            className="h-7 w-7 rounded-full bg-white text-custom-azul-oscuro shadow-md border border-slate-200/80 flex items-center justify-center hover:bg-slate-50 cursor-pointer"
+          >
+            {open ? (
+              <PanelLeftClose size={14} strokeWidth={2.2} />
+            ) : (
+              <PanelLeftOpen size={14} strokeWidth={2.2} />
+            )}
+          </button>
+        </Tooltip>
+      )}
+
       <div
-        className={`h-16 flex items-center border-b border-slate-200 dark:border-slate-800 shrink-0 transition-all duration-300 ${
-          open ? 'justify-between px-3.5' : 'justify-center px-2'
+        className={`h-16 flex items-center border-b border-white/10 shrink-0 ${
+          open ? 'justify-start px-3.5' : 'justify-center px-0'
         }`}
       >
         {open ? (
-          <>
-            <div
-              title="Centro de Formación Laboral Nº404 · Berisso"
-              className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden"
-            >
-              <div className="h-9 w-9 rounded-full overflow-hidden shrink-0 dark:bg-white dark:p-0.5">
-                <img
-                  src="/logo_texto_hero.svg"
-                  alt="CFL 404 Berisso"
-                  className="h-full w-full object-cover block"
-                />
-              </div>
-
-              <div className="flex flex-col leading-tight min-w-0 transition-all duration-200">
-                <span className="text-[11px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight truncate">
-                  Centro de
-                </span>
-                <span className="text-[11px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight truncate">
-                  Formación Laboral
-                </span>
-                <span className="text-[11px] font-bold text-[#166193] dark:text-[#37A6DE] uppercase tracking-wide font-nunito leading-tight truncate">
-                  Nº404 · Berisso
-                </span>
-              </div>
+          <div
+            title="Centro de Formación Laboral Nº404 · Berisso"
+            className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden"
+          >
+            <BrandMark />
+            <div className="flex flex-col leading-tight min-w-0">
+              <span className="text-[11px] font-bold text-white uppercase tracking-wide font-nunito leading-tight truncate">
+                Centro de
+              </span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wide font-nunito leading-tight truncate">
+                Formación Laboral
+              </span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wide font-nunito leading-tight truncate">
+                Nº404 · Berisso
+              </span>
             </div>
-
-            {onToggle && (
-              <Tooltip text="Comprimir menú" position="bottom">
-                <button
-                  type="button"
-                  onClick={onToggle}
-                  title="Comprimir barra lateral"
-                  aria-label="Comprimir barra lateral"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                >
-                  <PanelLeftClose size={18} strokeWidth={2} />
-                </button>
-              </Tooltip>
-            )}
-          </>
+          </div>
         ) : (
-          onToggle ? (
-            <Tooltip text="Expandir menú" position="right">
-              <button
-                type="button"
-                onClick={onToggle}
-                title="Expandir barra lateral"
-                aria-label="Expandir barra lateral"
-                className="p-2 rounded-lg text-slate-500 hover:text-[#166193] dark:text-slate-400 dark:hover:text-[#37A6DE] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center justify-center"
-              >
-                <PanelLeftOpen size={20} strokeWidth={2} />
-              </button>
-            </Tooltip>
-          ) : (
-            <div className="h-9 w-9 rounded-full overflow-hidden shrink-0 dark:bg-white dark:p-0.5">
-              <img
-                src="/logo_texto_hero.svg"
-                alt="CFL 404 Berisso"
-                className="h-full w-full object-cover block"
-              />
-            </div>
-          )
+          <BrandMark className="h-9 w-9" />
         )}
       </div>
 
-      {/* ── Navigation Links ── */}
       <nav
-        className="flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto overflow-x-hidden"
+        className={`flex-1 py-3 flex flex-col overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          open ? 'gap-0.5 items-stretch px-2' : 'gap-1 items-center px-0'
+        }`}
         aria-label="Menú principal"
       >
-        {/* Sección label — solo visible en modo expandido */}
         <p
-          className={`px-4 mb-2 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-nunito transition-all duration-200 ${
-            open ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden mb-0'
+          className={`px-4 mb-2 text-[11px] font-semibold text-white/50 uppercase tracking-wider font-nunito ${
+            open ? 'opacity-100' : 'hidden'
           }`}
         >
           Menú
@@ -169,17 +162,18 @@ export default function Sidebar({ isOpen = true, onToggle }) {
             key={item.label}
             text={open ? '' : item.label}
             position="right"
+            className={open ? 'flex w-full' : 'flex w-full justify-center'}
           >
             <NavLink
               to={item.path}
-              title={item.title}
+              title={open ? item.title : undefined}
               className={({ isActive }) =>
-                `mx-2 px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm font-nunito transition-colors ${
-                  open ? '' : 'justify-center'
+                `rounded-lg flex items-center text-sm font-nunito transition-colors ${
+                  open ? 'px-3 py-2.5 gap-3 w-full' : 'h-10 w-10 justify-center'
                 } ${
                   isActive
-                    ? 'bg-slate-100 dark:bg-slate-800 text-[#166193] dark:text-[#37A6DE] font-semibold'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200 font-normal'
+                    ? 'bg-white/15 text-white font-semibold'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white font-normal'
                 }`
               }
             >
@@ -191,20 +185,75 @@ export default function Sidebar({ isOpen = true, onToggle }) {
                     className="shrink-0"
                     aria-hidden="true"
                   />
-                  {/* Label — visible solo en modo expandido */}
-                  <span
-                    className={`truncate transition-all duration-200 ${
-                      open ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
+                  {open && <span className="truncate">{item.label}</span>}
                 </>
               )}
             </NavLink>
           </Tooltip>
         ))}
       </nav>
+
+      <footer
+        className={`shrink-0 border-t border-white/10 ${open ? 'px-4 py-3' : 'px-2 py-3'}`}
+        aria-label="Información legal"
+      >
+        {open ? (
+          <>
+            <nav className="flex items-center gap-2 text-[11px] font-semibold">
+              <Link
+                to="/terminos-condiciones"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                TyC
+              </Link>
+              <span className="text-white/30" aria-hidden="true">
+                ·
+              </span>
+              <Link
+                to="/privacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                Privacidad
+              </Link>
+            </nav>
+            <p className="mt-1.5 text-[10px] text-white/45 font-nunito leading-snug">
+              © {YEAR} CFL 404. Todos los derechos reservados.
+            </p>
+          </>
+        ) : (
+          <div className="flex w-full flex-col items-center gap-2">
+            <Tooltip text="Términos y condiciones" position="right">
+              <Link
+                to="/terminos-condiciones"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Términos y condiciones"
+                className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <Scale size={16} strokeWidth={1.8} />
+              </Link>
+            </Tooltip>
+            <Tooltip text="Privacidad" position="right">
+              <Link
+                to="/privacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Política de privacidad"
+                className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <Shield size={16} strokeWidth={1.8} />
+              </Link>
+            </Tooltip>
+            <Tooltip text={`© ${YEAR} CFL 404`} position="right">
+              <span className="text-[10px] font-bold text-white/45 select-none">©</span>
+            </Tooltip>
+          </div>
+        )}
+      </footer>
     </aside>
   )
 }

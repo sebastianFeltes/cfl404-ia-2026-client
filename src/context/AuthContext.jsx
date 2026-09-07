@@ -4,7 +4,6 @@ import {
   PATCH,
   POST,
   clearAuthToken,
-  getAuthToken,
   isRememberedSession,
   persistUser,
   readStoredUser,
@@ -29,19 +28,17 @@ function normalizeUser(payload) {
     fotoUrl: payload.fotoUrl || payload.profilePhotoUrl || '',
     tipo: payload.tipo || payload.type || '',
     emailVerificado: payload.emailVerificado ?? payload.emailVerified ?? false,
+    aceptaTerminos: Boolean(payload.aceptaTerminos ?? payload.acceptedTerms),
   };
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => getAuthToken());
+  const [token, setToken] = useState(null);
   const [user, setUser] = useState(() => normalizeUser(readStoredUser()));
   const [remember, setRemember] = useState(() => isRememberedSession());
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mientras se revalida el token guardado no se puede decidir si el usuario
-  // está autenticado; las rutas privadas esperan a que termine.
-  const [isLoading, setIsLoading] = useState(() => Boolean(getAuthToken()));
-
-  const isAuthenticated = Boolean(token && user);
+  const isAuthenticated = Boolean(user);
 
   const applySession = useCallback((jwt, userPayload, rememberSession) => {
     const nextUser = normalizeUser(userPayload);
@@ -49,19 +46,19 @@ export function AuthProvider({ children }) {
     setAuthToken(jwt, { remember: rememberSession });
     persistUser(nextUser, { remember: rememberSession });
     setRemember(rememberSession);
-    setToken(jwt);
+    setToken(Boolean(nextUser) ? 'session' : null);
     setUser(nextUser);
 
     return nextUser;
   }, []);
 
   const logout = useCallback(() => {
+    POST('/api/auth/logout').catch(() => {})
     clearAuthToken();
     setToken(null);
     setUser(null);
   }, []);
 
-  // Cierre de sesión automático cuando la API responde 401 (token vencido o revocado).
   useEffect(() => {
     setOnUnauthorized(() => {
       setToken(null);
@@ -70,15 +67,7 @@ export function AuthProvider({ children }) {
     return () => setOnUnauthorized(null);
   }, []);
 
-  // Al montar, revalida contra el servidor el token que quedó en storage.
-  // Si el servidor lo rechaza, la sesión se descarta.
   useEffect(() => {
-    const storedToken = getAuthToken();
-    if (!storedToken) {
-      setIsLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     (async () => {
@@ -86,12 +75,11 @@ export function AuthProvider({ children }) {
         const data = await GET('/api/auth/me');
         if (cancelled) return;
         const nextUser = normalizeUser(data.user ?? data);
-        const nextToken = data.token ?? data.accessToken ?? storedToken;
         const rememberSession = isRememberedSession();
-
-        setAuthToken(nextToken, { remember: rememberSession });
         persistUser(nextUser, { remember: rememberSession });
-        setToken(nextToken);
+        setRemember(rememberSession);
+        setAuthToken(null, { remember: rememberSession });
+        setToken('session');
         setUser(nextUser);
       } catch {
         if (cancelled) return;
@@ -109,43 +97,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback((jwt, userPayload, { remember: rememberSession = true } = {}) => {
-    if (!jwt) {
-      throw new Error('No se recibió un token JWT del servidor');
-    }
     applySession(jwt, userPayload, rememberSession);
     return true;
   }, [applySession]);
 
-  /**
-   * Canjea el ID token de Google Identity Services por el JWT de la plataforma.
-   * El servidor verifica la firma de Google antes de emitir la sesión.
-   */
   const loginWithGoogle = useCallback(async (credential, { remember: rememberSession = true } = {}) => {
     if (!credential) {
       throw new Error('Google no devolvió una credencial válida');
     }
 
     const data = await POST('/api/auth/google', { credential });
-    const jwt = data.token ?? data.accessToken;
-
-    if (!jwt) {
-      throw new Error('El servidor no devolvió un token de sesión');
-    }
-
-    const nextUser = applySession(jwt, data.user ?? data, rememberSession);
+    const nextUser = applySession(data.token, data.user ?? data, rememberSession);
     return { user: nextUser, isNewAccount: Boolean(data.isNewAccount), message: data.message };
   }, [applySession]);
 
-  /** Acceso rápido con las cuentas de prueba del seed (solo entorno de desarrollo). */
   const loginAsDemo = useCallback(async (accountType = 'alumno', { remember: rememberSession = true } = {}) => {
     const data = await POST('/api/auth/dev-login', { accountType });
-    const jwt = data.token ?? data.accessToken;
-
-    if (!jwt) {
-      throw new Error('El servidor no devolvió un token de sesión');
-    }
-
-    return applySession(jwt, data.user ?? data, rememberSession);
+    return applySession(data.token, data.user ?? data, rememberSession);
   }, [applySession]);
 
   const updateUser = useCallback(async (updatedFields) => {
@@ -154,6 +122,7 @@ export function AuthProvider({ children }) {
       lastName: updatedFields.apellidos ?? updatedFields.lastName,
       dni: updatedFields.dni,
       profilePhotoUrl: updatedFields.fotoUrl ?? updatedFields.profilePhotoUrl,
+      acceptedTerms: updatedFields.aceptaTerminos ?? updatedFields.acceptedTerms,
     }
 
     const data = await PATCH('/api/auth/me', payload)

@@ -1,16 +1,30 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle, Trash2, X } from 'lucide-react'
 import Tooltip from '../Tooltip'
 
 function InstructorDeleteModal({ instructor, isOpen, onClose, onConfirm }) {
+  // Lock body scroll when modal is active
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
   if (!isOpen || !instructor) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-roboto">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-custom-gris-oscuro/60 dark:bg-slate-950/80 backdrop-blur-xs transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal Box */}
@@ -87,7 +101,8 @@ function InstructorDeleteModal({ instructor, isOpen, onClose, onConfirm }) {
           </Tooltip>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

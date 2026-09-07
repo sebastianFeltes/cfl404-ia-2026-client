@@ -93,7 +93,7 @@ function Cooperadora() {
         <div className="flex-grow bg-gray-50 pb-16 font-roboto">
 
             {/* ── Banner Superior ────────────────────────────────────────── */}
-            <div className="bg-gradient-to-r from-custom-azul-oscuro via-[#1d74ad] to-custom-celeste text-white py-10 px-4 text-center">
+            <div className="bg-custom-azul-oscuro text-white py-10 px-4 text-center">
                 <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
                     <p className="text-white text-base sm:text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in">
                         Apoyá la educación pública y gratuita de Berisso colaborando con nuestra Asociación Cooperadora.

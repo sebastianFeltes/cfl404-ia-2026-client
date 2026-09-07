@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Calendar, LayoutGrid, List, CheckCircle, Clock } from 'lucide-react';
+import { Search, Filter, Calendar, Clock } from 'lucide-react';
 import { CATEGORIES } from '../data/coursesData';
 
 export default function CourseFilters({
@@ -9,8 +9,6 @@ export default function CourseFilters({
   setSelectedStage,
   selectedCategory,
   setSelectedCategory,
-  quotaFilter,
-  setQuotaFilter,
   totalResults
 }) {
   return (
@@ -41,7 +39,7 @@ export default function CourseFilters({
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-gray-200 hover:bg-gray-300 rounded-full w-5 h-5 flex items-center justify-center font-bold text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-gray-200 hover:bg-gray-300 rounded-full w-5 h-5 flex items-center justify-center font-bold text-gray-600 cursor-pointer"
             >
               ✕
             </button>
@@ -49,17 +47,18 @@ export default function CourseFilters({
         </div>
       </div>
 
-      {/* Stage Selector Tabs (Julio - Diciembre VS Marzo - Julio) */}
-      <div className="pt-2 border-t border-gray-100">
+      {/* Stage Selector Tabs (Etapas calculadas según fecha de inicio: Primera mitad del año VS Segunda mitad del año) */}
+      <div className="pt-2 border-t border-gray-100 font-['Nunito']">
         <label className="block text-xs font-bold uppercase tracking-wider text-[#585856] mb-2 font-['Roboto_Flex']">
-          Seleccionar Etapa de Cursada:
+          Seleccionar Etapa de Cursada (Por Fecha de Inicio):
         </label>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           
+          {/* Segunda mitad del año */}
           <button
             onClick={() => setSelectedStage('segunda')}
-            className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all duration-200 ${
+            className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all duration-200 cursor-pointer ${
               selectedStage === 'segunda'
                 ? 'bg-[#166193] text-white border-[#166193] shadow-md ring-2 ring-[#166193]/30'
                 : 'bg-gray-50 text-[#1D1E1C] border-gray-200 hover:bg-gray-100'
@@ -67,23 +66,24 @@ export default function CourseFilters({
           >
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm font-['Roboto_Flex']">Segunda Etapa</span>
+                <span className="font-bold text-sm font-['Roboto_Flex']">Segunda mitad del año</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   selectedStage === 'segunda' ? 'bg-[#FDEA14] text-[#1D1E1C]' : 'bg-emerald-100 text-emerald-800'
                 }`}>
-                  ACTIVA
+                  Julio - Diciembre
                 </span>
               </div>
               <p className={`text-xs mt-1 ${selectedStage === 'segunda' ? 'text-gray-200' : 'text-[#585856]'}`}>
-                Julio - Diciembre 2026 • Inscripción Abierta
+                Cursos que inician en el 2° semestre + Cursos Anuales
               </p>
             </div>
             <Calendar className={`w-5 h-5 shrink-0 ${selectedStage === 'segunda' ? 'text-[#FDEA14]' : 'text-[#166193]'}`} />
           </button>
 
+          {/* Primera mitad del año */}
           <button
             onClick={() => setSelectedStage('primera')}
-            className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all duration-200 ${
+            className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all duration-200 cursor-pointer ${
               selectedStage === 'primera'
                 ? 'bg-[#166193] text-white border-[#166193] shadow-md ring-2 ring-[#166193]/30'
                 : 'bg-gray-50 text-[#1D1E1C] border-gray-200 hover:bg-gray-100'
@@ -91,23 +91,24 @@ export default function CourseFilters({
           >
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm font-['Roboto_Flex']">Primera Etapa</span>
+                <span className="font-bold text-sm font-['Roboto_Flex']">Primera mitad del año</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   selectedStage === 'primera' ? 'bg-gray-200 text-gray-800' : 'bg-gray-200 text-gray-700'
                 }`}>
-                  FINALIZADA
+                  Marzo - Junio
                 </span>
               </div>
               <p className={`text-xs mt-1 ${selectedStage === 'primera' ? 'text-gray-200' : 'text-[#585856]'}`}>
-                Marzo - Julio 2026 • Edición Concluida
+                Cursos que inician en el 1° semestre + Cursos Anuales
               </p>
             </div>
             <Clock className={`w-5 h-5 shrink-0 ${selectedStage === 'primera' ? 'text-[#FDEA14]' : 'text-gray-400'}`} />
           </button>
 
+          {/* Todas las Etapas */}
           <button
             onClick={() => setSelectedStage('todas')}
-            className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all duration-200 ${
+            className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all duration-200 cursor-pointer ${
               selectedStage === 'todas'
                 ? 'bg-[#166193] text-white border-[#166193] shadow-md ring-2 ring-[#166193]/30'
                 : 'bg-gray-50 text-[#1D1E1C] border-gray-200 hover:bg-gray-100'
@@ -116,7 +117,7 @@ export default function CourseFilters({
             <div>
               <span className="font-bold text-sm font-['Roboto_Flex']">Todas las Etapas</span>
               <p className={`text-xs mt-1 ${selectedStage === 'todas' ? 'text-gray-200' : 'text-[#585856]'}`}>
-                Catálogo Completo (15 Cursos)
+                Catálogo completo de capacitaciones del CFP
               </p>
             </div>
             <Filter className={`w-5 h-5 shrink-0 ${selectedStage === 'todas' ? 'text-[#FDEA14]' : 'text-gray-500'}`} />
@@ -125,10 +126,10 @@ export default function CourseFilters({
         </div>
       </div>
 
-      {/* Category Pills & Filters */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2 border-t border-gray-100">
+      {/* Category Pills & Filters (Mantenido INTACTO por requerimiento) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2 border-t border-gray-100 font-['Nunito']">
         
-        {/* Categories */}
+        {/* Área Temática */}
         <div className="space-y-1.5">
           <span className="text-xs font-bold text-[#585856] uppercase tracking-wider font-['Roboto_Flex']">
             Área Temática:
@@ -138,7 +139,7 @@ export default function CourseFilters({
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-['Nunito'] transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-['Nunito'] transition-all cursor-pointer ${
                   selectedCategory === cat
                     ? 'bg-[#37ACDE] text-white shadow-sm'
                     : 'bg-gray-100 text-[#585856] hover:bg-gray-200'
