@@ -2,7 +2,6 @@
 import React from "react";
 import { 
   Search, 
-  Plus, 
   FilterX, 
   LayoutList, 
   LayoutGrid,
@@ -14,9 +13,7 @@ export default function StudentsTopBar({
   filtroEstado,
   setFiltroEstado,
   totalResultados,
-  onNuevo,
   onResetFiltros,
-  puedeEditar = true,
   activeTab = 'alumnos',
   viewMode = 'table',
   setViewMode,
@@ -28,6 +25,7 @@ export default function StudentsTopBar({
     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-custom-gris-claro/10 dark:border-slate-800 p-4 space-y-4 no-print transition-colors">
       <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
         
+        {/* Campo de Búsqueda */}
         <div className="relative w-full lg:w-96">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-custom-gris-claro dark:text-slate-400" />
           <input
@@ -41,6 +39,7 @@ export default function StudentsTopBar({
           />
         </div>
 
+        {/* Selector de Estado */}
         <div className="w-full lg:w-72">
           <select
             value={filtroEstado}
@@ -64,11 +63,12 @@ export default function StudentsTopBar({
           </select>
         </div>
 
+        {/* Botón Limpiar Filtros */}
         {isAnyFilterActive && (
           <button
             onClick={onResetFiltros}
             title="Limpiar filtros activos"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold border border-red-200 dark:border-red-800/60 transition-colors w-full lg:w-auto justify-center cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold border border-red-200 dark:border-red-800/60 transition-colors w-full lg:w-auto justify-center cursor-pointer font-nunito"
             aria-label="Limpiar todos los filtros"
           >
             <FilterX className="h-3.5 w-3.5" />
@@ -76,14 +76,15 @@ export default function StudentsTopBar({
           </button>
         )}
 
-        <span
-          title="Total de registros filtrados"
-          className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-nunito cursor-default whitespace-nowrap"
-        >
-          {totalResultados} {isPostulantesTab ? (totalResultados === 1 ? "postulante" : "postulantes") : (totalResultados === 1 ? "alumno" : "alumnos")}
-        </span>
+        {/* Lado Derecho: Contador y Alternador de Vistas */}
+        <div className="flex items-center gap-2.5 ml-auto lg:ml-0">
+          <span
+            title="Total de registros filtrados"
+            className="text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 font-mono text-slate-600 dark:text-slate-400 font-bold whitespace-nowrap"
+          >
+            {totalResultados} {isPostulantesTab ? (totalResultados === 1 ? "postulante" : "postulantes") : (totalResultados === 1 ? "alumno" : "alumnos")}
+          </span>
 
-        <div className="flex items-center gap-2 ml-auto lg:ml-0">
           {setViewMode && (
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/80">
               <button
@@ -94,7 +95,7 @@ export default function StudentsTopBar({
                 aria-pressed={viewMode === 'table'}
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${
                   viewMode === 'table'
-                    ? 'bg-white dark:bg-slate-900 text-[#166193] dark:text-[#37A6DE] shadow-xs font-bold'
+                    ? 'bg-white dark:bg-slate-900 text-custom-azul-oscuro dark:text-custom-celeste shadow-xs font-bold'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -108,28 +109,13 @@ export default function StudentsTopBar({
                 aria-pressed={viewMode === 'grid'}
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${
                   viewMode === 'grid'
-                    ? 'bg-white dark:bg-slate-900 text-[#166193] dark:text-[#37A6DE] shadow-xs font-bold'
+                    ? 'bg-white dark:bg-slate-900 text-custom-azul-oscuro dark:text-custom-celeste shadow-xs font-bold'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 <LayoutGrid size={15} />
               </button>
             </div>
-          )}
-
-          {puedeEditar && (
-            <button
-              onClick={onNuevo}
-              title={isPostulantesTab ? "Registrar un nuevo alumno postulante" : "Registrar un nuevo alumno en la institución"}
-              className={`flex items-center gap-1.5 h-9 px-3.5 text-white rounded-lg text-xs font-bold font-nunito transition-colors cursor-pointer shadow-xs ${
-                isPostulantesTab 
-                  ? 'bg-[#37A6DE] hover:bg-[#2c91c4] dark:bg-[#37A6DE] dark:hover:bg-[#2c91c4]' 
-                  : 'bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa]'
-              }`}
-            >
-              <Plus size={15} strokeWidth={2.5} className="text-[#FDEA14]" />
-              {isPostulantesTab ? 'Nuevo Postulante' : 'Nuevo Alumno'}
-            </button>
           )}
         </div>
       </div>

@@ -1,9 +1,9 @@
 // Archivo: src/components/StudentCardView.jsx
-import React from 'react'
+import React, { useMemo } from 'react'
 import StudentAvatar from './StudentAvatar'
 import ActionButtons from './ActionButtons'
 import BadgeStatus from './BadgeStatus'
-import { Mail, Phone, BookOpen, Calendar, MapPin, Inbox, Plus, ShieldAlert } from 'lucide-react'
+import { Mail, Phone, BookOpen, Calendar, Inbox, Plus, ShieldAlert, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
 function isPostulanteCheck(student) {
   if (!student) return false
@@ -40,11 +40,39 @@ export default function StudentCardView({
 }) {
   const isPostulantesTab = activeTab === 'postulantes'
   const canCreate = userRole === 'director' || userRole === 'secretaria'
-  const totalPaginas = Math.ceil(totalResultados / itemsPorPagina) || 1
+  const totalPaginas = Math.max(1, Math.ceil(totalResultados / itemsPorPagina))
+  const startIndex = totalResultados === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1
+  const endIndex = Math.min(paginaActual * itemsPorPagina, totalResultados)
   const skeletonCards = Array(6).fill(null)
 
+  const paginationRange = useMemo(() => {
+    if (totalPaginas <= 5) {
+      return Array.from({ length: totalPaginas }, (_, i) => i + 1)
+    }
+    const delta = 1
+    const range = []
+    for (
+      let i = Math.max(2, paginaActual - delta);
+      i <= Math.min(totalPaginas - 1, paginaActual + delta);
+      i++
+    ) {
+      range.push(i)
+    }
+    if (paginaActual - delta > 2) {
+      range.unshift('...')
+    }
+    if (paginaActual + delta < totalPaginas - 1) {
+      range.push('...')
+    }
+    range.unshift(1)
+    if (totalPaginas > 1) {
+      range.push(totalPaginas)
+    }
+    return range
+  }, [paginaActual, totalPaginas])
+
   return (
-    <div className="w-full bg-slate-50/50 dark:bg-slate-900/50 p-5 font-nunito transition-colors duration-200">
+    <div className="w-full bg-slate-50/50 dark:bg-slate-900/50 p-5 font-roboto transition-colors duration-200">
       
       {/* Cartel de Doble Verificación en Pestaña Postulantes */}
       {!isPrintMode && isPostulantesTab && (
@@ -53,10 +81,10 @@ export default function StudentCardView({
             <ShieldAlert size={18} />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wide font-nunito">
               Verificar que los datos sean Reales
             </h4>
-            <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
+            <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed font-nunito">
               Doble verificación obligatoria: corrobora que el postulante haya entregado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID + Email).
             </p>
           </div>
@@ -69,7 +97,7 @@ export default function StudentCardView({
           {skeletonCards.map((_, index) => (
             <div 
               key={`skeleton-card-${index}`} 
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs animate-pulse space-y-4"
+              className="bg-white dark:bg-slate-900 border border-custom-gris-claro/10 dark:border-slate-800 rounded-xl p-5 shadow-xs animate-pulse space-y-4"
             >
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-800" />
@@ -96,7 +124,7 @@ export default function StudentCardView({
             return (
               <div
                 key={student.id}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-[#37A6DE]/50 dark:hover:border-[#37A6DE]/40 rounded-xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+                className="bg-white dark:bg-slate-900 border border-custom-gris-claro/10 dark:border-slate-800 hover:border-custom-celeste/50 dark:hover:border-custom-celeste/40 rounded-xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
               >
                 {/* Header de la Tarjeta */}
                 <div>
@@ -124,7 +152,7 @@ export default function StudentCardView({
                             e.stopPropagation()
                             onView && onView(student.id)
                           }}
-                          className="font-bold text-slate-900 dark:text-slate-100 font-nunito hover:text-[#166193] dark:hover:text-[#37A6DE] cursor-pointer transition-colors leading-snug truncate"
+                          className="font-bold text-slate-900 dark:text-slate-100 font-nunito group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste cursor-pointer transition-colors leading-snug truncate"
                         >
                           {student.first_name} {student.last_name}
                         </h3>
@@ -141,8 +169,8 @@ export default function StudentCardView({
                   <div className="py-3.5 space-y-2.5 text-xs">
                     {/* Curso */}
                     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                      <BookOpen size={14} className="text-[#166193] dark:text-[#37A6DE] shrink-0" />
-                      <span className="font-semibold truncate">
+                      <BookOpen size={14} className="text-custom-azul-oscuro dark:text-custom-celeste shrink-0" />
+                      <span className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste truncate">
                         {student.course_name || 'Sin curso asignado'}
                       </span>
                     </div>
@@ -162,7 +190,7 @@ export default function StudentCardView({
                     {/* Fecha de Inscripción */}
                     <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[11px]">
                       <Calendar size={13} className="text-slate-400 shrink-0" />
-                      <span>{isStudentPostulante ? 'Postulación:' : 'Inscrito:'} {student.enrollment_date || '—'}</span>
+                      <span className="font-nunito">{isStudentPostulante ? 'Postulación:' : 'Inscrito:'} {student.enrollment_date || '—'}</span>
                     </div>
                   </div>
                 </div>
@@ -175,7 +203,7 @@ export default function StudentCardView({
                       e.stopPropagation()
                       onView && onView(student.id)
                     }}
-                    className="text-xs font-bold text-[#166193] dark:text-[#37A6DE] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-xs font-bold font-nunito text-custom-azul-oscuro dark:text-custom-celeste hover:underline cursor-pointer flex items-center gap-1"
                     title="Ver legajo completo del alumno"
                   >
                     Ver Legajo →
@@ -199,7 +227,7 @@ export default function StudentCardView({
 
       {/* Empty State */}
       {!loading && students.length === 0 && (
-        <div className="py-16 px-4 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div className="py-16 px-4 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-900 rounded-xl border border-custom-gris-claro/10 dark:border-slate-800">
           <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 dark:text-slate-500 mb-3 shadow-inner">
             <Inbox className="h-10 w-10" aria-hidden="true" />
           </div>
@@ -214,20 +242,20 @@ export default function StudentCardView({
           <div className="flex items-center gap-2.5">
             <button
               onClick={onResetFilters}
-              className="px-3.5 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-nunito font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Restablecer Filtros
             </button>
             {canCreate && (
               <button
                 onClick={() => onAddStudent && onAddStudent(isPostulantesTab ? 'Postulante' : 'Alumno')}
-                className={`px-3.5 py-1.5 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 text-white rounded-lg text-xs font-nunito font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
                   isPostulantesTab 
-                    ? 'bg-[#37A6DE] hover:bg-[#2c91c4] dark:bg-[#37A6DE] dark:hover:bg-[#2c91c4]' 
-                    : 'bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa]'
+                    ? 'bg-custom-celeste hover:bg-custom-celeste/95' 
+                    : 'bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95'
                 }`}
               >
-                <Plus className="h-3.5 w-3.5 text-[#FDEA14]" />
+                <Plus className="h-3.5 w-3.5 text-custom-amarillo" />
                 {isPostulantesTab ? 'Nuevo Postulante' : 'Nuevo Alumno'}
               </button>
             )}
@@ -235,53 +263,86 @@ export default function StudentCardView({
         </div>
       )}
 
-      {/* Pagination Footer */}
+      {/* Pagination Footer Estilo Cooperadora */}
       {!loading && totalResultados > 0 && !isPrintMode && (
-        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between px-5 py-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 no-print text-xs gap-3">
+        <div className="mt-5 flex flex-col md:flex-row items-center justify-between px-5 py-3 border border-custom-gris-claro/10 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 no-print text-xs gap-4 transition-colors">
           
-          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-            <span>Mostrar</span>
-            <select
-              value={itemsPorPagina}
-              onChange={(e) => {
-                setItemsPorPagina && setItemsPorPagina(Number(e.target.value))
-                setPaginaActual && setPaginaActual(1)
-              }}
-              title="Cantidad de alumnos por página"
-              className="h-7 px-2 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer font-medium"
-            >
-              <option value={6}>6</option>
-              <option value={10}>10</option>
-              <option value={24}>24</option>
-            </select>
-            <span>por página</span>
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-nunito">Mostrar:</span>
+              <div className="relative">
+                <select
+                  value={itemsPorPagina}
+                  onChange={(e) => {
+                    setItemsPorPagina && setItemsPorPagina(Number(e.target.value))
+                    setPaginaActual && setPaginaActual(1)
+                  }}
+                  title="Cantidad por página"
+                  className="h-8 px-2.5 pr-7 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-semibold focus:outline-none appearance-none cursor-pointer transition-colors text-xs font-nunito"
+                >
+                  <option value={6}>6 por página</option>
+                  <option value={12}>12 por página</option>
+                  <option value={24}>24 por página</option>
+                </select>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <span className="hidden md:inline text-slate-300 dark:text-slate-700">|</span>
+
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-nunito">
+              Mostrando <span className="font-bold text-slate-800 dark:text-slate-100">{startIndex} - {endIndex}</span> de <span className="font-bold text-slate-800 dark:text-slate-100">{totalResultados}</span> {isPostulantesTab ? 'postulantes' : 'alumnos'}
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
-            <span>
-              Mostrando <strong>{totalResultados === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1}</strong> a{" "}
-              <strong>{Math.min(paginaActual * itemsPorPagina, totalResultados)}</strong> de{" "}
-              <strong>{totalResultados}</strong> resultados
-            </span>
+          <div className="flex items-center gap-1 font-nunito">
+            <button
+              onClick={() => setPaginaActual && setPaginaActual((p) => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+              title="Página anterior"
+              aria-label="Página anterior"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Anterior</span>
+            </button>
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPaginaActual && setPaginaActual((p) => Math.max(1, p - 1))}
-                disabled={paginaActual === 1}
-                title="Página anterior"
-                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => setPaginaActual && setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
-                disabled={paginaActual === totalPaginas || totalPaginas === 0}
-                title="Página siguiente"
-                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-              >
-                Siguiente
-              </button>
+            <div className="flex items-center gap-1 px-1">
+              {paginationRange.map((page, idx) => {
+                if (page === '...') {
+                  return (
+                    <span key={`dots-${idx}`} className="px-2 text-slate-400 font-bold select-none">
+                      ...
+                    </span>
+                  )
+                }
+                const isActive = page === paginaActual
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setPaginaActual && setPaginaActual(page)}
+                    className={`h-8 min-w-[32px] px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+                      isActive
+                        ? 'bg-custom-azul-oscuro dark:bg-custom-azul-oscuro text-white shadow-xs font-extrabold'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              })}
             </div>
+
+            <button
+              onClick={() => setPaginaActual && setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas || totalPaginas === 0}
+              title="Página siguiente"
+              aria-label="Página siguiente"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs cursor-pointer"
+            >
+              <span className="hidden sm:inline">Siguiente</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}

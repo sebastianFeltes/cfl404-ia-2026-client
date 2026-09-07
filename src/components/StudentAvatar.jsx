@@ -5,12 +5,12 @@ const estadoRing = {
   1: "ring-2 ring-emerald-500 dark:ring-emerald-400",
   activo: "ring-2 ring-emerald-500 dark:ring-emerald-400",
   presente: "ring-2 ring-emerald-500 dark:ring-emerald-400",
-  aspirante: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
-  postulante: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
-  pendiente: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
+  aspirante: "ring-2 ring-custom-celeste",
+  postulante: "ring-2 ring-custom-celeste",
+  pendiente: "ring-2 ring-custom-celeste",
   2: "ring-2 ring-slate-400 dark:ring-slate-500",
   inactivo: "ring-2 ring-slate-400 dark:ring-slate-500",
-  3: "ring-2 ring-[#37A6DE] dark:ring-[#37A6DE]",
+  3: "ring-2 ring-custom-celeste",
   suspendido: "ring-2 ring-amber-500 dark:ring-amber-400",
 };
 
@@ -18,12 +18,12 @@ const estadoDot = {
   1: "bg-emerald-500",
   activo: "bg-emerald-500",
   presente: "bg-emerald-500",
-  aspirante: "bg-[#37A6DE]",
-  postulante: "bg-[#37A6DE]",
-  pendiente: "bg-[#37A6DE]",
+  aspirante: "bg-custom-celeste",
+  postulante: "bg-custom-celeste",
+  pendiente: "bg-custom-celeste",
   2: "bg-slate-400",
   inactivo: "bg-slate-400",
-  3: "bg-[#37A6DE]",
+  3: "bg-custom-celeste",
   suspendido: "bg-amber-500",
 };
 

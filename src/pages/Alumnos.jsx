@@ -7,10 +7,13 @@ import {
   GraduationCap, 
   AlertCircle,
   X,
-  Download
+  Download,
+  RefreshCw,
+  Plus
 } from 'lucide-react'
 import { GET, POST, PUT, DELETE } from '../services/api'
 import StatCard from '../components/StatCard'
+import Tooltip from '../components/Tooltip'
 import DataTable from '../components/DataTable'
 import StudentCardView from '../components/StudentCardView'
 import StudentsTopBar from '../components/StudentsTopBar'
@@ -363,60 +366,104 @@ export default function Alumnos() {
   }
 
   return (
-    <div className="max-w-[1400px] w-full mx-auto font-nunito space-y-6 pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-28 font-roboto relative">
       {loadError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-semibold">
-          {loadError}
+        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-600 dark:text-red-400 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={fetchStudents}
+            className="font-bold underline hover:opacity-80 cursor-pointer"
+          >
+            Reintentar
+          </button>
         </div>
       )}
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#1D1E1C] text-white border border-[#37A6DE] px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-xs font-semibold">
-          <AlertCircle className="h-4 w-4 text-[#FDEA14] shrink-0 animate-pulse" />
+        <div className="fixed top-20 right-6 z-50 bg-custom-gris-oscuro text-white border border-custom-celeste px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-sm font-roboto">
+          <CheckCircle2 className="h-4.5 w-4.5 text-custom-amarillo animate-pulse shrink-0" />
           <span>{toastMessage}</span>
           <button 
             onClick={() => setToastMessage(null)} 
-            className="text-slate-400 hover:text-white ml-2 cursor-pointer"
+            className="text-custom-gris-claro hover:text-white ml-2 cursor-pointer"
             aria-label="Cerrar notificación"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Encabezado de Página */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-1 no-print">
+      {/* Page Header — Estilo Cooperadora */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2 no-print">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 font-roboto transition-colors">
+          <h2 className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight flex items-center gap-2.5">
+            <Users className="h-8 w-8 text-custom-azul-oscuro dark:text-custom-celeste" />
             Alumnos y Matrícula
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+          </h2>
+          <p className="text-sm font-medium text-custom-gris-claro dark:text-slate-400 mt-1">
             Gestión de alumnos regulares matriculados, revisión de postulantes preinscriptos y verificación de documentación.
           </p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          title="Exportar listado a PDF"
-          className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer w-fit"
-          aria-label="Exportar PDF"
-        >
-          <Download className="h-4 w-4" />
-          Exportar PDF
-        </button>
+
+        <div className="flex flex-wrap items-center gap-2.5 no-print">
+          {/* Herramienta: Recargar */}
+          <Tooltip text="Recargar datos desde el servidor" position="bottom">
+            <button
+              onClick={fetchStudents}
+              className="h-9 w-9 flex items-center justify-center border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-xl transition-all cursor-pointer"
+              aria-label="Actualizar datos"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </Tooltip>
+
+          {/* Secundario: Exportar PDF */}
+          <Tooltip text="Exportar listado a PDF" position="bottom">
+            <button
+              onClick={handleExportPDF}
+              className="h-9 px-3.5 flex items-center gap-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-xl text-xs font-nunito font-bold transition-all duration-200 cursor-pointer"
+              aria-label="Exportar PDF"
+            >
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </button>
+          </Tooltip>
+
+          {/* Primario: Nuevo Registro (Único en la página) */}
+          {puedeEditar && (
+            <Tooltip text={activeTab === 'postulantes' ? "Registrar nuevo postulante" : "Registrar nuevo alumno"} position="bottom">
+              <button
+                onClick={() => setIsAddOpen(true)}
+                className={`h-9 px-4 flex items-center gap-2 rounded-xl text-xs font-nunito font-bold transition-all duration-200 shadow-xs cursor-pointer ${
+                  activeTab === 'postulantes'
+                    ? 'bg-custom-celeste hover:bg-custom-celeste/95 text-white'
+                    : 'bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white'
+                }`}
+                aria-label="Nuevo registro"
+              >
+                <Plus className="h-4 w-4 text-custom-amarillo" />
+                {activeTab === 'postulantes' ? 'Nuevo Postulante' : 'Nuevo Alumno'}
+              </button>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
-      {/* KPI Cards — Actualizadas: Total Alumnos, Activos, Presentes, Postulantes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 no-print">
+      {/* KPI Cards — 4 Columnas con Tokens Institucionales */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 no-print">
         <StatCard 
           title="Alumnos Matriculados"
           value={kpis.total}
           icon={Users}
           trend="+8%"
           trendType="up"
-          colorClass="border-[#166193]"
-          iconColorClass="text-[#166193] bg-[#166193]/10"
-          description="con documentación validada"
+          colorClass="border-custom-azul-oscuro"
+          iconColorClass="text-custom-azul-oscuro bg-custom-azul-oscuro/10"
+          description="con legajo validado"
           tooltip="Total general de alumnos regulares inscriptos con legajo completo"
         />
         <StatCard 
@@ -436,8 +483,8 @@ export default function Alumnos() {
           icon={CheckCircle2}
           trend="85%"
           trendType="up"
-          colorClass="border-[#37A6DE]"
-          iconColorClass="text-[#166193] bg-[#37A6DE]/15"
+          colorClass="border-custom-celeste"
+          iconColorClass="text-custom-celeste bg-custom-celeste/10"
           description="asistencia en aula hoy"
           tooltip="Alumnos que registraron presencia en sus respectivas clases"
         />
@@ -447,11 +494,54 @@ export default function Alumnos() {
           icon={GraduationCap}
           trend="Pendientes"
           trendType="neutral"
-          colorClass="border-[#37A6DE]"
-          iconColorClass="text-[#37A6DE] bg-[#37A6DE]/10"
+          colorClass="border-custom-amarillo"
+          iconColorClass="text-yellow-600 bg-custom-amarillo/10"
           description="preinscripciones a revisar"
           tooltip="Personas preinscriptas que deben presentar documentación física para matricularse"
         />
+      </div>
+
+      {/* Navigation Tabs — Estilo Cooperadora */}
+      <div className="border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('alumnos')
+              setPaginaActual(1)
+            }}
+            className={`flex items-center gap-2.5 px-5 py-3 font-nunito font-bold text-sm border-b-2 transition-all cursor-pointer ${
+              activeTab === 'alumnos'
+                ? 'border-custom-azul-oscuro dark:border-custom-celeste text-custom-azul-oscuro dark:text-custom-celeste'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <GraduationCap className="h-4.5 w-4.5" />
+            Alumnos Regulares
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-mono font-bold">
+              {tabCounts.alumnos}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('postulantes')
+              setPaginaActual(1)
+            }}
+            className={`flex items-center gap-2.5 px-5 py-3 font-nunito font-bold text-sm border-b-2 transition-all cursor-pointer ${
+              activeTab === 'postulantes'
+                ? 'border-custom-azul-oscuro dark:border-custom-celeste text-custom-azul-oscuro dark:text-custom-celeste'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Users className="h-4.5 w-4.5" />
+            Postulantes
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-mono font-bold">
+              {tabCounts.postulantes}
+            </span>
+          </button>
+        </div>
       </div>
 
       <StudentsTopBar 
@@ -460,9 +550,7 @@ export default function Alumnos() {
         filtroEstado={filtroEstado}
         setFiltroEstado={setFiltroEstado}
         totalResultados={filteredStudents.length}
-        onNuevo={() => setIsAddOpen(true)}
         onResetFiltros={handleResetFilters}
-        puedeEditar={puedeEditar}
         activeTab={activeTab}
         viewMode={viewMode}
         setViewMode={setViewMode}
