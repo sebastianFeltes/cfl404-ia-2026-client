@@ -17,6 +17,7 @@ import {
   Lock,
   ArrowRight,
   RefreshCw,
+  BarChart2,
 } from 'lucide-react'
 
 import StatCard from '../components/StatCard'
@@ -501,6 +502,19 @@ export default function CooperadoraAdmin() {
               {buffetRecords.length}
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('balance')}
+            className={`flex items-center gap-2.5 px-5 py-3 font-nunito font-bold text-sm border-b-2 transition-all cursor-pointer ${
+              activeTab === 'balance'
+                ? 'border-custom-azul-oscuro dark:border-custom-celeste text-custom-azul-oscuro dark:text-custom-celeste'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <BarChart2 className="h-4.5 w-4.5" />
+            Balance
+          </button>
         </div>
       </div>
 
@@ -620,11 +634,20 @@ export default function CooperadoraAdmin() {
           onSelectStudent={(student) => setSelectedStudentForDrawer(student)}
           currentYear={selectedYear}
         />
-      ) : (
+      ) : activeTab === 'buffet' ? (
         <CooperadoraBuffetTable
           registros={filteredBuffetRecords}
           onOpenNewModal={() => setIsBuffetDrawerOpen(true)}
         />
+      ) : (
+        /* Balance tab placeholder */
+        <div className="flex flex-col items-center justify-center py-24 gap-4 text-slate-400 dark:text-slate-600">
+          <BarChart2 className="h-14 w-14 opacity-30" />
+          <p className="text-lg font-bold text-slate-500 dark:text-slate-500">Sección en desarrollo</p>
+          <p className="text-sm text-slate-400 dark:text-slate-600 max-w-xs text-center">
+            Próximamente podrás ver el balance general de cooperadora y buffet en esta sección.
+          </p>
+        </div>
       )}
 
       {/* Drawer: Student Cooperadora Payment Details & Form */}

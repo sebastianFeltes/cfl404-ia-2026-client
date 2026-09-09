@@ -93,24 +93,8 @@ function AppLayout() {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 font-roboto text-custom-gris-oscuro">
 
-            {/* ── Navbar ── */}
-            {isLegalPage ? (
-                <header className="fixed top-0 left-0 right-0 z-40 bg-custom-azul-oscuro shadow-md">
-                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-center">
-                        <NavLink
-                            to="/"
-                            className="flex items-center active:scale-95 transition-all duration-300"
-                            aria-label="Ir al inicio"
-                        >
-                            <img
-                                src="/logo_texto_hero.svg"
-                                alt="Centro de Formación Laboral Nº 404 / Berisso"
-                                className="h-10 sm:h-12 w-auto object-contain bg-white/10 rounded-full p-0.5 border border-white/20 shadow-sm"
-                            />
-                        </NavLink>
-                    </div>
-                </header>
-            ) : (
+            {/* ── Navbar (solo en páginas no legales) ── */}
+            {!isLegalPage && (
                 <>
                     <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${headerBgClass}`}>
                         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -266,7 +250,7 @@ function AppLayout() {
             )}
 
             {/* ── Contenido de página ── */}
-            <main className="flex-grow flex flex-col pt-16">
+            <main className={`flex-grow flex flex-col ${isLegalPage ? 'pt-0' : 'pt-16'}`}>
                 <Outlet />
             </main>
 

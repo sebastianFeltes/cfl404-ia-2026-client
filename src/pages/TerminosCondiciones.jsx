@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 function TerminosCondiciones() {
     const sections = [
         { id: 'aceptacion', label: 'Aceptación de los términos' },
@@ -10,9 +12,25 @@ function TerminosCondiciones() {
     return (
         <div className="flex-grow bg-gray-50 pb-16 font-roboto">
             {/* Hero / Banner Superior */}
-            <div className="bg-gradient-to-r from-custom-azul-oscuro via-[#1d74ad] to-custom-celeste text-white py-16 px-4 text-center flex flex-col items-center justify-center">
-                <div className="max-w-4xl mx-auto">
-                    <p className="text-white text-base sm:text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in">
+            <div className="relative bg-gradient-to-r from-custom-azul-oscuro via-[#1d74ad] to-custom-celeste text-white py-16 px-4 text-center flex flex-col items-center justify-center">
+                {/* Logo a la izquierda */}
+                <Link
+                    to="/"
+                    className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center active:scale-95 transition-all duration-300"
+                    aria-label="Ir al inicio"
+                >
+                    <img
+                        src="/logo_texto_hero.svg"
+                        alt="Centro de Formación Laboral Nº 404 / Berisso"
+                        className="h-13 sm:h-12 w-auto object-contain bg-white/10 rounded-full p-0.5 border border-white/20 shadow-sm hover:bg-white/20 transition-all"
+                    />
+                </Link>
+
+                <div className="max-w-4xl mx-auto pt-6 sm:pt-0">
+                    <h1 className="font-nunito font-extrabold text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-4">
+                        Términos y Condiciones
+                    </h1>
+                    <p className="text-white/90 text-base sm:text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed animate-fade-in">
                         Leé atentamente los términos y condiciones que regulan el uso de nuestro sitio web y los servicios que ofrece el CFL 404.
                     </p>
                 </div>
@@ -24,16 +42,6 @@ function TerminosCondiciones() {
                 {/* Card Principal */}
                 <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-gray-100 mb-10">
 
-                    {/* Encabezado + Fecha */}
-                    <div className="text-center mb-8">
-                        <h2 className="font-nunito font-extrabold text-2xl sm:text-3xl text-custom-azul-oscuro tracking-tight">
-                            Términos y Condiciones
-                        </h2>
-                        <div className="h-1 w-16 bg-custom-celeste mx-auto mt-2 rounded-full" />
-                        <p className="text-xs text-custom-gris-claro mt-3">
-                            Última actualización: 19 de agosto de 2026
-                        </p>
-                    </div>
 
                     {/* Índice de Navegación */}
                     <nav className="mb-10 p-5 bg-gray-50 rounded-2xl border border-gray-100">
@@ -126,6 +134,11 @@ function TerminosCondiciones() {
                     </div>
 
                 </section>
+                
+                {/* Fecha de última actualización debajo de la card */}
+                <p className="text-center text-xs text-custom-gris-claro">
+                    Última actualización: 19 de agosto de 2026
+                </p>
             </div>
         </div>
     )
