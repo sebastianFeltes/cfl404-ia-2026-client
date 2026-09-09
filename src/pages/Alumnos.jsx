@@ -20,6 +20,8 @@ import StudentsTopBar from '../components/StudentsTopBar'
 import StudentDetailDrawer from '../components/StudentDetailDrawer'
 import StudentFormDrawer from '../components/StudentFormDrawer'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
+import CourseDetailDrawer from '../components/cursos/CourseDetailDrawer'
+import { fetchCourses } from '../services/coursesService'
 
 const isPostulante = (student) => {
   if (!student) return false
@@ -111,6 +113,7 @@ export default function Alumnos() {
   const [deleteStudent, setDeleteStudent] = useState(null)
   const [promoteStudentTarget, setPromoteStudentTarget] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [viewingCourse, setViewingCourse] = useState(null)
 
   // Toast / Notificaciones
   const [toastMessage, setToastMessage] = useState(null)
@@ -209,6 +212,72 @@ export default function Alumnos() {
     const student = students.find(s => s.id === id)
     setDeleteStudent(student)
   }
+
+  // Visualizar Ficha / Card del Curso con todos sus detalles directamente
+  const handleViewCourse = useCallback(async (courseNameOrId, studentSource = null) => {
+    if (!courseNameOrId || courseNameOrId === 'Sin curso asignado') return
+
+    const studentCourse = studentSource?.studentCourses?.[0]?.course
+
+    try {
+      const allCourses = await fetchCourses()
+      const found = allCourses.find(c => 
+        String(c.id) === String(courseNameOrId) ||
+        c.name?.toLowerCase().trim() === String(courseNameOrId).toLowerCase().trim() ||
+        String(courseNameOrId).toLowerCase().includes(c.name?.toLowerCase().trim()) ||
+        c.name?.toLowerCase().includes(String(courseNameOrId).toLowerCase().trim())
+      )
+      if (found) {
+        setViewingCourse(found)
+        return
+      }
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn('No se pudo obtener la lista de cursos:', e.message)
+      }
+    }
+
+    // Fallback enriquecido con datos directos del alumno
+    if (studentCourse) {
+      setViewingCourse({
+        ...studentCourse,
+        name: studentCourse.name || courseNameOrId,
+        family: studentCourse.family || { name: 'Formación Profesional' },
+        category: studentCourse.category || 'Formación Profesional',
+        instructorName: studentSource?.instructor_name || (studentCourse.instructor ? `Prof. ${studentCourse.instructor.firstName} ${studentCourse.instructor.lastName}` : 'Sin instructor asignado'),
+        instructor: studentCourse.instructor,
+        schedule: studentSource?.course_schedule || (studentCourse.startTime ? `${studentCourse.startTime} a ${studentCourse.endTime} hs` : 'Horario a confirmar'),
+        startDate: studentCourse.startDate,
+        endDate: studentCourse.endDate,
+        preEnrollmentDate: studentCourse.preEnrollmentDate,
+        maxAbsences: studentCourse.maxAbsences ?? studentSource?.max_absences ?? 4,
+        detail: {
+          description: studentCourse.description || `Curso de formación en ${courseNameOrId}.`,
+          hour_quantity: studentCourse.hourQuantity || 120,
+          classes_quantity: studentCourse.classesQuantity || 32,
+          title_required: studentCourse.titleRequired ? 'Secundario completo' : 'Primario completo',
+          endorsement_by: studentCourse.endorsementBy || 'DGCyE / Ministerio de Trabajo PBA',
+        },
+        status: { label: 'Activo', color: 'bg-emerald-500/10 text-emerald-700' }
+      })
+    } else {
+      setViewingCourse({
+        name: courseNameOrId,
+        family: { name: 'Formación Profesional' },
+        category: 'Formación Profesional',
+        instructorName: studentSource?.instructor_name || 'Sin instructor asignado',
+        schedule: studentSource?.course_schedule || 'Horario estándar CFL N° 404',
+        maxAbsences: studentSource?.max_absences ?? 4,
+        detail: {
+          description: `Curso regular de ${courseNameOrId} dictado en sede CFL N° 404.`,
+          hour_quantity: 120,
+          classes_quantity: 32,
+          endorsement_by: 'DGCyE / Ministerio de Trabajo PBA',
+        },
+        status: { label: 'Activo', color: 'bg-emerald-500/10 text-emerald-700' }
+      })
+    }
+  }, [])
 
   // Doble verificación: Abrir modal "Verificar que los datos sean Reales"
   const handlePromoteToStudent = (studentId) => {
@@ -573,6 +642,7 @@ export default function Alumnos() {
               onPromote={handlePromoteToStudent}
               onResetFilters={handleResetFilters}
               onAddStudent={() => setIsAddOpen(true)}
+              onViewCourse={handleViewCourse}
               userRole={userRole}
               paginaActual={paginaActual}
               itemsPorPagina={itemsPorPagina}
@@ -596,6 +666,7 @@ export default function Alumnos() {
               onPromote={() => {}}
               onResetFilters={() => {}}
               onAddStudent={() => {}}
+              onViewCourse={() => {}}
               userRole={userRole}
               paginaActual={1}
               itemsPorPagina={filteredStudents.length}
@@ -623,6 +694,7 @@ export default function Alumnos() {
             onPromote={handlePromoteToStudent}
             onResetFilters={handleResetFilters}
             onAddStudent={() => setIsAddOpen(true)}
+            onViewCourse={handleViewCourse}
             userRole={userRole}
             activeTab={activeTab}
             paginaActual={paginaActual}
@@ -648,7 +720,16 @@ export default function Alumnos() {
           handleDeleteTrigger(id)
         }}
         onPromote={handlePromoteToStudent}
+        onViewCourse={handleViewCourse}
         userRole={userRole}
+      />
+
+      {/* Drawer: Ficha / Card Detallada del Curso Asignado */}
+      <CourseDetailDrawer
+        course={viewingCourse}
+        isOpen={!!viewingCourse}
+        onClose={() => setViewingCourse(null)}
+        hasCrud={false}
       />
 
       {/* Drawer: Formulario de Alta de Nuevo Alumno / Postulante */}

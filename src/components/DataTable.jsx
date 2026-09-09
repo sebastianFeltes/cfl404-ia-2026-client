@@ -28,6 +28,7 @@ function DataTable({
   onPromote,
   onResetFilters,
   onAddStudent,
+  onViewCourse,
   userRole = 'director',
   // Paginación
   paginaActual = 1,
@@ -224,15 +225,18 @@ function DataTable({
                     <td className="py-3 px-4">
                       <div>
                         {student.course_name && student.course_name !== 'Sin curso asignado' ? (
-                          <Link
-                            to={`/admin/cursos?search=${encodeURIComponent(student.course_name)}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste hover:underline hover:text-[#37A6DE] transition-colors truncate flex items-center gap-1 group/curso"
-                            title={`Ir al curso ${student.course_name}`}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onViewCourse && onViewCourse(student.course_name, student)
+                            }}
+                            className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste hover:underline hover:text-[#37A6DE] transition-colors truncate flex items-center gap-1 group/curso cursor-pointer text-left"
+                            title={`Ver detalles del curso ${student.course_name}`}
                           >
                             <span className="truncate max-w-[200px]">{student.course_name}</span>
                             <ExternalLink size={11} className="opacity-0 group-hover/curso:opacity-100 transition-opacity shrink-0 text-custom-celeste" />
-                          </Link>
+                          </button>
                         ) : (
                           <div className="font-nunito text-xs text-slate-400 italic truncate">
                             Sin curso asignado

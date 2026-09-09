@@ -37,6 +37,7 @@ export default function StudentDetailDrawer({
   onDelete, 
   onPromote,
   onExport,
+  onViewCourse,
   userRole = 'director'
 }) {
   const isPostulante = Boolean(student?.is_aspirante) || 
@@ -216,9 +217,9 @@ export default function StudentDetailDrawer({
                   icon={BookOpen} 
                   label={isPostulante ? "Curso Elegido" : "Curso Asignado"} 
                   value={details.course_name} 
-                  title="Ir al curso correspondiente" 
+                  title="Ver detalles del curso correspondiente" 
                   highlight
-                  href={details.course_name && details.course_name !== 'Sin curso asignado' ? `/admin/cursos?search=${encodeURIComponent(details.course_name)}` : null}
+                  onClick={details.course_name && details.course_name !== 'Sin curso asignado' ? () => onViewCourse && onViewCourse(details.course_name, student) : null}
                 />
 
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
@@ -445,13 +446,29 @@ export default function StudentDetailDrawer({
   )
 }
 
-function DataRow({ icon: Icon, label, value, title, highlight = false, href = null }) {
+function DataRow({ icon: Icon, label, value, title, highlight = false, href = null, onClick = null }) {
   return (
     <dd title={title} className="flex items-start gap-2.5 w-full cursor-default">
       <Icon className="w-3.5 h-3.5 text-custom-azul-oscuro dark:text-custom-celeste mt-0.5 shrink-0" strokeWidth={2} />
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-bold text-custom-gris-claro dark:text-slate-400 uppercase tracking-wider font-nunito leading-tight">{label}</p>
-        {href ? (
+        {onClick ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick()
+            }}
+            className={`text-xs mt-0.5 leading-tight truncate flex items-center gap-1 hover:underline hover:text-[#37A6DE] transition-colors group/row cursor-pointer text-left ${
+              highlight 
+                ? 'font-bold font-nunito text-custom-azul-oscuro dark:text-custom-celeste' 
+                : 'font-semibold text-slate-800 dark:text-slate-200'
+            }`}
+          >
+            <span className="truncate">{value || '—'}</span>
+            <ExternalLink size={11} className="shrink-0 text-custom-celeste opacity-80 group-hover/row:opacity-100 group-hover/row:translate-x-0.5 transition-all" />
+          </button>
+        ) : href ? (
           <Link
             to={href}
             className={`text-xs mt-0.5 leading-tight truncate flex items-center gap-1 hover:underline hover:text-[#37A6DE] transition-colors group/row ${

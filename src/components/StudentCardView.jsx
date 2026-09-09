@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ExternalLink,
   Pencil,
-  UserCheck
+  UserCheck,
+  Eye
 } from 'lucide-react'
 
 function isPostulanteCheck(student) {
@@ -43,6 +44,7 @@ export default function StudentCardView({
   onPromote,
   onResetFilters,
   onAddStudent,
+  onViewCourse,
   userRole = 'director',
   activeTab = 'alumnos',
   paginaActual = 1,
@@ -178,19 +180,22 @@ export default function StudentCardView({
 
                   {/* Info Content */}
                   <div className="py-3.5 space-y-2.5 text-xs">
-                    {/* Curso con Hipervínculo */}
+                    {/* Curso con Hipervínculo para ver Ficha del Curso */}
                     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 min-w-0">
                       <BookOpen size={14} className="text-custom-azul-oscuro dark:text-custom-celeste shrink-0" />
                       {student.course_name && student.course_name !== 'Sin curso asignado' ? (
-                        <Link
-                          to={`/admin/cursos?search=${encodeURIComponent(student.course_name)}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste hover:underline hover:text-[#37A6DE] transition-colors truncate flex items-center gap-1 group/curso"
-                          title={`Ver curso ${student.course_name}`}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onViewCourse && onViewCourse(student.course_name, student)
+                          }}
+                          className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste hover:underline hover:text-[#37A6DE] transition-colors truncate flex items-center gap-1 group/curso cursor-pointer text-left"
+                          title={`Ver detalles del curso ${student.course_name}`}
                         >
                           <span className="truncate">{student.course_name}</span>
                           <ExternalLink size={11} className="opacity-0 group-hover/curso:opacity-100 transition-opacity shrink-0 text-custom-celeste" />
-                        </Link>
+                        </button>
                       ) : (
                         <span className="font-nunito text-xs text-slate-400 italic truncate">
                           Sin curso asignado
@@ -219,48 +224,46 @@ export default function StudentCardView({
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between no-print">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onView && onView(student.id)
-                    }}
-                    className="text-xs font-bold font-nunito text-custom-azul-oscuro dark:text-custom-celeste hover:underline cursor-pointer flex items-center gap-1"
-                    title="Ver legajo completo del alumno"
-                  >
-                    Ver Legajo →
-                  </button>
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1.5 no-print" onClick={(e) => e.stopPropagation()}>
+                  {/* Ver detalles (Ojo) */}
+                  <Tooltip text={isStudentPostulante ? "Ver ficha de postulación" : "Ver detalles del alumno"} position="top">
+                    <button
+                      type="button"
+                      onClick={() => onView && onView(student.id)}
+                      className="p-1.5 text-custom-celeste hover:text-custom-azul-oscuro hover:bg-custom-celeste/10 rounded-lg transition-all duration-150 cursor-pointer"
+                      aria-label={isStudentPostulante ? "Ver ficha de postulación" : "Ver detalles"}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
 
-                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    {/* Matricular (solo postulantes) */}
-                    {isStudentPostulante && canEdit && onPromote && (
-                      <Tooltip text="Aprobar y Matricular como Alumno" position="top">
-                        <button
-                          type="button"
-                          onClick={() => onPromote(student.id)}
-                          className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all cursor-pointer"
-                          aria-label={`Matricular a ${student.first_name}`}
-                        >
-                          <UserCheck className="h-4 w-4" />
-                        </button>
-                      </Tooltip>
-                    )}
+                  {/* Matricular (solo postulantes) */}
+                  {isStudentPostulante && canEdit && onPromote && (
+                    <Tooltip text="Aprobar y Matricular como Alumno" position="top">
+                      <button
+                        type="button"
+                        onClick={() => onPromote(student.id)}
+                        className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all cursor-pointer"
+                        aria-label={`Matricular a ${student.first_name}`}
+                      >
+                        <UserCheck className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  )}
 
-                    {/* Editar */}
-                    {canEdit && onEdit && (
-                      <Tooltip text="Editar alumno" position="top">
-                        <button
-                          type="button"
-                          onClick={() => onEdit(student.id)}
-                          className="p-1.5 text-custom-gris-claro hover:text-custom-gris-oscuro hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
-                          aria-label={`Editar a ${student.first_name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      </Tooltip>
-                    )}
-                  </div>
+                  {/* Editar */}
+                  {canEdit && onEdit && (
+                    <Tooltip text="Editar alumno" position="top">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(student.id)}
+                        className="p-1.5 text-custom-gris-claro hover:text-custom-gris-oscuro hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                        aria-label={`Editar a ${student.first_name}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
             )
