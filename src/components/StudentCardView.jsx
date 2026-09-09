@@ -1,9 +1,23 @@
 // Archivo: src/components/StudentCardView.jsx
 import React, { useMemo } from 'react'
+import { Link } from 'react-router'
 import StudentAvatar from './StudentAvatar'
-import ActionButtons from './ActionButtons'
-import BadgeStatus from './BadgeStatus'
-import { Mail, Phone, BookOpen, Calendar, Inbox, Plus, ShieldAlert, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import Tooltip from './Tooltip'
+import { 
+  Mail, 
+  Phone, 
+  BookOpen, 
+  Calendar, 
+  Inbox, 
+  Plus, 
+  ShieldAlert, 
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronDown,
+  ExternalLink,
+  Pencil,
+  UserCheck
+} from 'lucide-react'
 
 function isPostulanteCheck(student) {
   if (!student) return false
@@ -40,6 +54,7 @@ export default function StudentCardView({
 }) {
   const isPostulantesTab = activeTab === 'postulantes'
   const canCreate = userRole === 'director' || userRole === 'secretaria'
+  const canEdit = userRole === 'director' || userRole === 'secretaria'
   const totalPaginas = Math.max(1, Math.ceil(totalResultados / itemsPorPagina))
   const startIndex = totalResultados === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1
   const endIndex = Math.min(paginaActual * itemsPorPagina, totalResultados)
@@ -128,51 +143,59 @@ export default function StudentCardView({
               >
                 {/* Header de la Tarjeta */}
                 <div>
-                  <div className="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="cursor-pointer"
+                  <div className="flex items-center gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                    <div 
+                      className="cursor-pointer shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onView && onView(student.id)
+                      }}
+                      title="Ver legajo completo"
+                    >
+                      <StudentAvatar
+                        src={student.profile_photo_url}
+                        nombre={student.first_name}
+                        apellido={student.last_name}
+                        estado={isStudentPostulante ? 'postulante' : student.status_id}
+                        size="md"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 
                         onClick={(e) => {
                           e.stopPropagation()
                           onView && onView(student.id)
                         }}
-                        title="Ver legajo completo"
+                        className="font-bold text-slate-900 dark:text-slate-100 font-nunito group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste cursor-pointer transition-colors leading-snug truncate"
                       >
-                        <StudentAvatar
-                          src={student.profile_photo_url}
-                          nombre={student.first_name}
-                          apellido={student.last_name}
-                          estado={isStudentPostulante ? 'postulante' : student.status_id}
-                          size="md"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onView && onView(student.id)
-                          }}
-                          className="font-bold text-slate-900 dark:text-slate-100 font-nunito group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste cursor-pointer transition-colors leading-snug truncate"
-                        >
-                          {student.first_name} {student.last_name}
-                        </h3>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-                          DNI: {student.dni || '—'}
-                        </p>
-                      </div>
+                        {student.first_name} {student.last_name}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                        DNI: {student.dni || '—'}
+                      </p>
                     </div>
-
-                    <BadgeStatus status={isStudentPostulante ? 'postulante' : student.status_id} />
                   </div>
 
                   {/* Info Content */}
                   <div className="py-3.5 space-y-2.5 text-xs">
-                    {/* Curso */}
-                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    {/* Curso con Hipervínculo */}
+                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 min-w-0">
                       <BookOpen size={14} className="text-custom-azul-oscuro dark:text-custom-celeste shrink-0" />
-                      <span className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste truncate">
-                        {student.course_name || 'Sin curso asignado'}
-                      </span>
+                      {student.course_name && student.course_name !== 'Sin curso asignado' ? (
+                        <Link
+                          to={`/admin/cursos?search=${encodeURIComponent(student.course_name)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste hover:underline hover:text-[#37A6DE] transition-colors truncate flex items-center gap-1 group/curso"
+                          title={`Ver curso ${student.course_name}`}
+                        >
+                          <span className="truncate">{student.course_name}</span>
+                          <ExternalLink size={11} className="opacity-0 group-hover/curso:opacity-100 transition-opacity shrink-0 text-custom-celeste" />
+                        </Link>
+                      ) : (
+                        <span className="font-nunito text-xs text-slate-400 italic truncate">
+                          Sin curso asignado
+                        </span>
+                      )}
                     </div>
 
                     {/* Email */}
@@ -209,15 +232,35 @@ export default function StudentCardView({
                     Ver Legajo →
                   </button>
 
-                  <ActionButtons
-                    studentId={student.id}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onPromote={onPromote}
-                    isPostulante={isStudentPostulante}
-                    userRole={userRole}
-                  />
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {/* Matricular (solo postulantes) */}
+                    {isStudentPostulante && canEdit && onPromote && (
+                      <Tooltip text="Aprobar y Matricular como Alumno" position="top">
+                        <button
+                          type="button"
+                          onClick={() => onPromote(student.id)}
+                          className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all cursor-pointer"
+                          aria-label={`Matricular a ${student.first_name}`}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
+                    )}
+
+                    {/* Editar */}
+                    {canEdit && onEdit && (
+                      <Tooltip text="Editar alumno" position="top">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(student.id)}
+                          className="p-1.5 text-custom-gris-claro hover:text-custom-gris-oscuro hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                          aria-label={`Editar a ${student.first_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
+                    )}
+                  </div>
                 </div>
               </div>
             )

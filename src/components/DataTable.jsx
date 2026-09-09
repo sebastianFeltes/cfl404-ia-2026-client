@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
+import { Link } from 'react-router'
 import StudentAvatar from './StudentAvatar'
 import ActionButtons from './ActionButtons'
-import { Inbox, Plus, ChevronLeft, ChevronRight, ChevronDown, ShieldAlert } from 'lucide-react'
+import { Inbox, Plus, ChevronLeft, ChevronRight, ChevronDown, ShieldAlert, ExternalLink } from 'lucide-react'
 
 function isPostulanteCheck(student) {
   if (!student) return false
@@ -222,9 +223,21 @@ function DataTable({
                     {/* Curso Asignado / Solicitado */}
                     <td className="py-3 px-4">
                       <div>
-                        <div className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste truncate">
-                          {student.course_name || 'Sin curso asignado'}
-                        </div>
+                        {student.course_name && student.course_name !== 'Sin curso asignado' ? (
+                          <Link
+                            to={`/admin/cursos?search=${encodeURIComponent(student.course_name)}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="font-nunito font-bold text-xs text-custom-azul-oscuro dark:text-custom-celeste hover:underline hover:text-[#37A6DE] transition-colors truncate flex items-center gap-1 group/curso"
+                            title={`Ir al curso ${student.course_name}`}
+                          >
+                            <span className="truncate max-w-[200px]">{student.course_name}</span>
+                            <ExternalLink size={11} className="opacity-0 group-hover/curso:opacity-100 transition-opacity shrink-0 text-custom-celeste" />
+                          </Link>
+                        ) : (
+                          <div className="font-nunito text-xs text-slate-400 italic truncate">
+                            Sin curso asignado
+                          </div>
+                        )}
                         <div className="text-[10px] text-slate-400 dark:text-slate-500 font-nunito mt-0.5">
                           {isStudentPostulante ? 'Postulación: ' : 'Inscripción: '}
                           {student.enrollment_date || '—'}
