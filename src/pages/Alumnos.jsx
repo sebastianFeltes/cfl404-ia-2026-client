@@ -218,10 +218,10 @@ export default function Alumnos() {
     setPromoteStudentTarget(student)
   }
 
-  // Confirmación definitiva: Matricular y Generar Token de Asistencia (ID + Email)
+  // Confirmación definitiva: Matricular y Generar Token de Asistencia (ID)
   const handleConfirmPromote = async (student) => {
     if (!student) return
-    const token = `CFL404-ATT-${student.id}-${btoa(unescape(encodeURIComponent(student.email || student.id))).slice(0, 16)}`
+    const token = `CFL404-ATT-${student.id}`
     const updated = {
       ...student,
       status: 'Activo',
@@ -723,9 +723,9 @@ export default function Alumnos() {
                 <span className="font-semibold text-[#166193] dark:text-[#37A6DE]">{promoteStudentTarget.course_name}</span>
               </div>
               <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800 text-[11px]">
-                <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">Token de Asistencia a Generar (ID + Email):</span>
+                <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">Token de Asistencia a Generar (ID del Alumno):</span>
                 <span className="font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-800 block text-slate-600 dark:text-slate-300 truncate">
-                  {`CFL404-ATT-${promoteStudentTarget.id}-${btoa(unescape(encodeURIComponent(promoteStudentTarget.email || promoteStudentTarget.id))).slice(0, 16)}`}
+                  {promoteStudentTarget.attendance_token || `CFL404-ATT-${promoteStudentTarget.id}`}
                 </span>
               </div>
             </div>

@@ -85,7 +85,7 @@ export default function StudentCardView({
               Verificar que los datos sean Reales
             </h4>
             <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed font-nunito">
-              Doble verificación obligatoria: corrobora que el postulante haya entregado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID + Email).
+              Doble verificación obligatoria: corrobora que el postulante haya entregado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID del Alumno).
             </p>
           </div>
         </div>

@@ -46,9 +46,9 @@ export default function StudentDetailDrawer({
   const [showQrModal, setShowQrModal] = useState(false)
   const [copiedToken, setCopiedToken] = useState(false)
 
-  // Token de asistencia generado a partir del ID y Email del alumno
+  // Token de asistencia generado a partir del ID del alumno
   const attendanceToken = student 
-    ? `CFL404-ATT-${student.id}-${btoa(unescape(encodeURIComponent(student.email || student.id))).slice(0, 16)}` 
+    ? (student.attendance_token || `CFL404-ATT-${student.id}`) 
     : ''
   const qrUrl = student 
     ? `http://localhost:5173/admin/asistencia/scan?token=${encodeURIComponent(attendanceToken)}&id=${student.id}` 
@@ -244,7 +244,7 @@ export default function StudentDetailDrawer({
                     Verificar que los datos sean Reales
                   </p>
                   <p>
-                    Doble verificación (digital y física): corrobora que el postulante haya presentado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID + Email).
+                    Doble verificación (digital y física): corrobora que el postulante haya presentado físicamente la documentación requerida antes de matricularlo. Recién al confirmar su pase a alumno regular se generará su <strong>Token de Asistencia</strong> (ID del Alumno).
                   </p>
                 </div>
               )}
@@ -350,7 +350,7 @@ export default function StudentDetailDrawer({
                 {/* Token Box */}
                 <div className="text-left space-y-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-nunito">
-                    Token de Asistencia (ID + Email)
+                    Token de Asistencia (ID del Alumno)
                   </span>
                   <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono">
                     <span className="truncate text-slate-600 dark:text-slate-300">{attendanceToken}</span>
