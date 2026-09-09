@@ -356,6 +356,13 @@ export default function Alumnos() {
         is_aspirante: data.role_name === 'Postulante' || data.status_id === 3,
       }
 
+      const existingStudent = students.find(s => s.id === data.id)
+      const isEmailChanged = Boolean(
+        existingStudent?.email && 
+        data.email && 
+        existingStudent.email.trim().toLowerCase() !== data.email.trim().toLowerCase()
+      )
+
       try {
         const cleanDni = data.dni ? String(data.dni).replace(/[\.\s-]/g, '') : undefined
         await PUT('/api/v1/alumnos', {
@@ -363,11 +370,19 @@ export default function Alumnos() {
           dni: cleanDni,
         }, data.id)
         await fetchStudents()
-        showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
+        if (isEmailChanged) {
+          showToast(`¡Acceso actualizado! "${data.first_name} ${data.last_name}" ahora ingresará con "${data.email}". Todos sus datos y legajo permanecen consistentes.`)
+        } else {
+          showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
+        }
       } catch (err) {
         // Modo local / fallback en caso de que la API esté fuera de línea
         setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedFields } : s))
-        showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado exitosamente.`)
+        if (isEmailChanged) {
+          showToast(`¡Acceso actualizado! "${data.first_name} ${data.last_name}" ahora ingresará con "${data.email}". Todos sus datos y legajo permanecen consistentes.`)
+        } else {
+          showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado exitosamente.`)
+        }
       }
 
       // Sincronizar con el drawer de vista si está abierto

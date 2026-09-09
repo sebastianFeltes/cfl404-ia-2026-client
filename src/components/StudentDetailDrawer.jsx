@@ -199,7 +199,7 @@ export default function StudentDetailDrawer({
                 <DataRow icon={MapPin} label="Dirección de Residencia" value={details.address} title="Domicilio del alumno" />
                 <DataRow icon={Phone} label="Teléfono Principal" value={details.phone} title="Teléfono primario" />
                 <DataRow icon={Phone} label="Teléfono de Emergencia / Alternativo" value={details.extra_phone} title="Contacto alternativo" />
-                <DataRow icon={Mail} label="Correo Electrónico" value={details.email} title="Email del estudiante" />
+                <DataRow icon={Mail} label="Correo Electrónico (Acceso al Sistema)" value={details.email} title="Email del estudiante para inicio de sesión en la plataforma" />
                 {details.extra_email !== '—' && (
                   <DataRow icon={Mail} label="Email Alternativo" value={details.extra_email} title="Email complementario" />
                 )}

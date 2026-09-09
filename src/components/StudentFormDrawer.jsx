@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react'
-import { X, Save, UserPlus, Pencil, MapPin, Phone, Mail, Calendar, User, Globe, UserX } from 'lucide-react'
+import { 
+  X, 
+  Save, 
+  UserPlus, 
+  Pencil, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  Calendar, 
+  User, 
+  Globe, 
+  UserX,
+  ShieldAlert,
+  CheckCircle2,
+  ArrowRight
+} from 'lucide-react'
 
 const INITIAL_FORM_STATE = {
   first_name: '',
@@ -22,6 +37,7 @@ const INITIAL_FORM_STATE = {
 
 function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userRole, initialRole = 'Alumno' }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
+  const [showEmailChangeConfirm, setShowEmailChangeConfirm] = useState(false)
   const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
 
   // Update form data when student prop changes (Edit vs Add)
@@ -57,6 +73,16 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
     }
   }, [student, isOpen, initialRole])
 
+  useEffect(() => {
+    setShowEmailChangeConfirm(false)
+  }, [isOpen, student])
+
+  const isEmailChanged = Boolean(
+    student?.id && 
+    student?.email && 
+    formData.email?.trim().toLowerCase() !== student.email.trim().toLowerCase()
+  )
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -68,7 +94,20 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
   const handleSubmit = (e) => {
     e.preventDefault()
     if (isReadOnly) return
+
+    // Al editar el email de un alumno existente, advertir y solicitar confirmación de cambio de acceso
+    if (isEmailChanged && !showEmailChangeConfirm) {
+      setShowEmailChangeConfirm(true)
+      return
+    }
+
     onSubmit(formData)
+    setShowEmailChangeConfirm(false)
+  }
+
+  const handleConfirmEmailChange = () => {
+    onSubmit(formData)
+    setShowEmailChangeConfirm(false)
   }
 
   return (
@@ -263,9 +302,16 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
               Contacto y Emergencia
             </h3>
 
-            {/* Field: Email Principal y Alternativo */}
+            {/* Field: Email Principal (Acceso al Sistema) */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-custom-gris-claro dark:text-slate-400 uppercase tracking-wider font-nunito">Email Principal</label>
+              <label className="text-[10px] font-bold text-custom-gris-claro dark:text-slate-400 uppercase tracking-wider font-nunito flex items-center justify-between">
+                <span>Email Principal (Acceso al Sistema)</span>
+                {student?.id && (
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal lowercase">
+                    cuenta de inicio de sesión
+                  </span>
+                )}
+              </label>
               <input 
                 type="email" 
                 name="email"
@@ -273,9 +319,41 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
                 onChange={handleChange}
                 disabled={isReadOnly}
                 required
-                className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste transition-colors"
+                className={`w-full p-2 border rounded-lg text-xs font-semibold focus:outline-none transition-colors ${
+                  isEmailChanged 
+                    ? 'border-amber-400 dark:border-amber-600 bg-amber-50/40 dark:bg-amber-950/20 text-slate-900 dark:text-slate-100 focus:border-amber-500' 
+                    : 'border-custom-gris-claro/20 dark:border-slate-700 bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 focus:border-custom-azul-oscuro dark:focus:border-custom-celeste'
+                }`}
                 placeholder="Ej: juan.perez@gmail.com"
               />
+
+              {/* Cartel Informativo al Editar el Email de un Alumno */}
+              {isEmailChanged && (
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/70 rounded-xl space-y-2 text-xs animate-fadeIn">
+                  <div className="flex items-start gap-2 text-amber-800 dark:text-amber-200">
+                    <ShieldAlert size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-extrabold text-[11px] uppercase tracking-wide font-nunito">
+                        Aviso de Cambio de Acceso al Sistema
+                      </h4>
+                      <p className="text-[11px] text-amber-900/90 dark:text-amber-300 font-nunito mt-0.5 leading-relaxed">
+                        Al cambiar este correo, <strong>se modificará la cuenta con la que el alumno ingresa a la plataforma</strong> (por ejemplo, si perdió el acceso a su cuenta de Google o cambió de casilla).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-lg border border-amber-200/60 dark:border-amber-900/60 text-[10px] space-y-1 font-nunito text-slate-600 dark:text-slate-300">
+                    <div className="flex items-center gap-1.5 font-mono">
+                      <span className="text-slate-400 line-through truncate max-w-[150px]">{student.email}</span>
+                      <ArrowRight size={11} className="text-amber-500 shrink-0" />
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[150px]">{formData.email}</span>
+                    </div>
+                    <p className="text-[10px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                      🛡️ <strong>Consistencia asegurada:</strong> Todos los datos de su legajo, asistencias registradas y cursos asignados quedan guardados y vinculados al nuevo email, evitando que pierda su historial académico.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -410,6 +488,71 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
           </div>
         </form>
       </section>
+
+      {/* Modal de Confirmación al Cambiar el Email de Acceso */}
+      {showEmailChangeConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-nunito animate-fadeIn">
+          <div 
+            className="fixed inset-0 bg-slate-950/65 backdrop-blur-xs transition-opacity"
+            onClick={() => setShowEmailChangeConfirm(false)}
+          />
+          <div className="relative bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/80 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl z-10 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 shrink-0">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-tight">
+                  ¿Confirmar cambio de acceso del alumno?
+                </h3>
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold mt-0.5">
+                  Actualización de Cuenta y Consistencia de Legajo
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Vas a cambiar el correo de inicio de sesión de <strong>{student?.first_name} {student?.last_name}</strong>:
+            </p>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-950/80 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400 uppercase font-bold">Email Anterior:</span>
+                <span className="font-mono text-slate-500 line-through truncate max-w-[200px]">{student?.email}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-700 dark:text-slate-300 uppercase font-bold">Nuevo Email:</span>
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 truncate max-w-[200px]">{formData.email}</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
+              <CheckCircle2 size={15} className="shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+              <p className="leading-snug">
+                <strong>Datos seguros y consistentes:</strong> Si el alumno perdió el acceso a su cuenta Google anterior, este cambio le permitirá ingresar con su nueva cuenta sin perder sus asistencias, calificaciones ni su legajo histórico.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowEmailChangeConfirm(false)}
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Volver y Revisar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEmailChange}
+                className="flex-1 py-2.5 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Save size={14} className="text-custom-amarillo" />
+                Confirmar y Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
