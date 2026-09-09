@@ -19,7 +19,10 @@ import {
   QrCode,
   ShieldAlert,
   Copy,
-  Check
+  Check,
+  GraduationCap,
+  DoorOpen,
+  AlertCircle
 } from 'lucide-react'
 import StudentAvatar from './StudentAvatar'
 import BadgeStatus from './BadgeStatus'
@@ -75,7 +78,12 @@ export default function StudentDetailDrawer({
     nacionality: student.nacionality || student.studentDetail?.nacionality || 'Argentina',
     academic_level: student.academic_level || student.studentDetail?.academicLevel || 'Secundario Completo',
     enrollment_date: student.enrollment_date || student.createdAt || '10/03/2026',
-    course_name: student.course_name || 'Sin curso asignado',
+    course_name: student.course_name || student.course || 'Sin curso asignado',
+    instructor_name: student.instructor_name || (student.course_name && student.course_name !== 'Sin curso asignado' ? 'Prof. Carlos Benítez' : 'A designar'),
+    course_schedule: student.course_schedule || (student.course_name && student.course_name !== 'Sin curso asignado' ? '17:30 a 20:45 hs' : 'A confirmar'),
+    classroom_name: student.classroom_name || (student.course_name && student.course_name !== 'Sin curso asignado' ? 'Aula 1 (Planta Baja)' : 'Sin aula asignada'),
+    course_days: student.course_days || (student.course_name && student.course_name !== 'Sin curso asignado' ? 'Lunes, Miércoles y Viernes' : 'A coordinar'),
+    max_absences: student.max_absences ?? 5,
     attendance_status: student.is_present ? 'Presente en aula' : (student.asistencia || 'Regular'),
     has_dni_copy: student.dni_copy ?? true,
     has_form_copy: student.form_copy ?? true,
@@ -209,16 +217,56 @@ export default function StudentDetailDrawer({
                   title="Curso solicitado o asignado" 
                   highlight
                 />
+
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                  <DataRow 
+                    icon={GraduationCap} 
+                    label="Docente a Cargo" 
+                    value={details.instructor_name} 
+                    title="Instructor responsable del curso" 
+                  />
+                  <DataRow 
+                    icon={DoorOpen} 
+                    label="Aula Asignada" 
+                    value={details.classroom_name} 
+                    title="Espacio físico asignado en sede" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                  <DataRow 
+                    icon={Calendar} 
+                    label="Días de Cursada" 
+                    value={details.course_days} 
+                    title="Días de clase presencial" 
+                  />
+                  <DataRow 
+                    icon={Clock} 
+                    label="Horario" 
+                    value={details.course_schedule} 
+                    title="Franja horaria del curso" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                  <DataRow 
+                    icon={AlertCircle} 
+                    label="Inasistencias Máx." 
+                    value={details.max_absences ? `Hasta ${details.max_absences} faltas` : 'Régimen estándar'} 
+                    title="Límite máximo de faltas permitidas" 
+                  />
                   <DataRow 
                     icon={Clock} 
                     label={isPostulante ? "Fecha de Postulación" : "Fecha Inscripción"} 
                     value={details.enrollment_date} 
                     title="Fecha de registro inicial" 
                   />
+                </div>
+
+                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
                   <DataRow 
                     icon={Award} 
-                    label="Nivel Educativo" 
+                    label="Nivel Educativo Declarado" 
                     value={details.academic_level} 
                     title="Nivel de formación alcanzado" 
                   />
