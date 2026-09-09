@@ -101,12 +101,17 @@ export function AuthProvider({ children }) {
     return true;
   }, [applySession]);
 
-  const loginWithGoogle = useCallback(async (credential, { remember: rememberSession = true } = {}) => {
+  const loginWithGoogle = useCallback(async (credential, { remember: rememberSession = true, acceptedTerms = false } = {}) => {
     if (!credential) {
       throw new Error('Google no devolvió una credencial válida');
     }
 
-    const data = await POST('/api/auth/google', { credential });
+    const payload = { credential };
+    if (acceptedTerms) {
+      payload.acceptedTerms = true;
+    }
+
+    const data = await POST('/api/auth/google', payload);
     const nextUser = applySession(data.token, data.user ?? data, rememberSession);
     return { user: nextUser, isNewAccount: Boolean(data.isNewAccount), message: data.message };
   }, [applySession]);

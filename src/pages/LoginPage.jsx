@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate, useLocation, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { GoogleLogin } from '@react-oauth/google';
-import { ShieldCheck, AlertTriangle, UserCheck, ChevronDown } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, UserCheck, ChevronDown, ExternalLink } from 'lucide-react';
 import fotoSoldando from '../assets/hombre_soldando.PNG';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -27,6 +27,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   const [rememberMe, setRememberMe] = useState(true);
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showDevAccess, setShowDevAccess] = useState(false);
@@ -48,11 +49,19 @@ export default function LoginPage() {
   }
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (!acceptedTerms) {
+      setErrorMsg('Debés aceptar los términos y condiciones antes de registrarte o ingresar.');
+      return;
+    }
+
     setErrorMsg('');
     setIsSubmitting(true);
 
     try {
-      await loginWithGoogle(credentialResponse.credential, { remember: rememberMe });
+      await loginWithGoogle(credentialResponse.credential, {
+        remember: rememberMe,
+        acceptedTerms,
+      });
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setErrorMsg(err.message || 'No pudimos validar tu cuenta de Google.');
@@ -156,6 +165,34 @@ export default function LoginPage() {
                     useOneTap={false}
                   />
                 )}
+              </div>
+
+              {/* Checkbox de Términos y Condiciones y declaración jurada */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-slate-300 transition-colors text-left">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => {
+                      setAcceptedTerms(e.target.checked);
+                      if (e.target.checked) setErrorMsg('');
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded text-custom-celeste focus:ring-custom-celeste border-slate-300 cursor-pointer accent-[#37ACDE] shrink-0"
+                  />
+                  <span className="text-xs text-custom-gris-oscuro leading-relaxed">
+                    Acepto los{' '}
+                    <Link
+                      to="/terminos-condiciones"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-custom-azul-oscuro hover:text-custom-celeste underline inline-flex items-center gap-0.5"
+                    >
+                      Términos y Condiciones
+                      <ExternalLink className="w-3 h-3 inline ml-0.5" />
+                    </Link>{' '}
+                    y declaro bajo juramento que mis datos son veraces.
+                  </span>
+                </label>
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer select-none justify-center">
