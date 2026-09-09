@@ -115,7 +115,7 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
               ) : (
                 <>
                   <LogIn className="w-4 h-4" />
-                  Ingresar
+                  Inscribirme
                 </>
               )}
             </Link>
@@ -168,7 +168,7 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  Ingresar con Google
+                  Inscribirme con Google
                 </>
               )}
             </Link>

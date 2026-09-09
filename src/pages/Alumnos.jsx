@@ -207,7 +207,7 @@ export default function Alumnos() {
     const student = students.find(s => s.id === studentId)
     if (!student) return
     try {
-      const cleanDni = student.dni ? String(student.dni).replace(/[\.\s-]/g, '') : undefined
+      const cleanDni = student.dni ? String(student.dni).replace(/[.\s-]/g, '') : undefined
       await PUT('/api/v1/alumnos', {
         first_name: student.first_name,
         last_name: student.last_name,
@@ -233,7 +233,7 @@ export default function Alumnos() {
     if (data.id) {
       // Edición
       try {
-        const cleanDni = data.dni ? String(data.dni).replace(/[\.\s-]/g, '') : undefined
+        const cleanDni = data.dni ? String(data.dni).replace(/[.\s-]/g, '') : undefined
         await PUT('/api/v1/alumnos', {
           first_name: data.first_name,
           last_name: data.last_name,
@@ -254,7 +254,7 @@ export default function Alumnos() {
     } else {
       // Creación
       try {
-        const cleanDni = String(data.dni || '').replace(/[\.\s-]/g, '').trim()
+        const cleanDni = String(data.dni || '').replace(/[.\s-]/g, '').trim()
         const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
         const payload = {
           first_name: data.first_name?.trim(),
