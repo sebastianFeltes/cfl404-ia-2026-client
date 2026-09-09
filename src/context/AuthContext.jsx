@@ -16,6 +16,8 @@ const AuthContext = createContext(null);
 function normalizeUser(payload) {
   if (!payload || typeof payload !== 'object') return null;
 
+  const detail = payload.detail || payload.userDetail || {};
+
   return {
     id: payload.id ?? null,
     nombres: payload.nombres || payload.firstName || '',
@@ -29,6 +31,15 @@ function normalizeUser(payload) {
     tipo: payload.tipo || payload.type || '',
     emailVerificado: payload.emailVerificado ?? payload.emailVerified ?? false,
     aceptaTerminos: Boolean(payload.aceptaTerminos ?? payload.acceptedTerms),
+    // Datos de user_detail
+    telefono: payload.telefono ?? payload.phone ?? detail.phone ?? '',
+    direccion: payload.direccion ?? payload.address ?? detail.address ?? '',
+    nacionalidad: payload.nacionalidad ?? payload.nacionality ?? detail.nacionality ?? '',
+    genero: payload.genero ?? payload.gender ?? detail.gender ?? '',
+    nivelEducacion: payload.nivelEducacion ?? payload.academicLevel ?? payload.academic_level ?? detail.academicLevel ?? '',
+    telefonoSecundario: payload.telefonoSecundario ?? payload.extraPhone ?? payload.extra_phone ?? detail.extraPhone ?? '',
+    fechaNacimiento: payload.fechaNacimiento ?? payload.dob ?? detail.dob ?? '',
+    detail,
   };
 }
 
@@ -123,6 +134,13 @@ export function AuthProvider({ children }) {
       dni: updatedFields.dni,
       profilePhotoUrl: updatedFields.fotoUrl ?? updatedFields.profilePhotoUrl,
       acceptedTerms: updatedFields.aceptaTerminos ?? updatedFields.acceptedTerms,
+      phone: updatedFields.telefono ?? updatedFields.phone,
+      address: updatedFields.direccion ?? updatedFields.address,
+      nacionality: updatedFields.nacionalidad ?? updatedFields.nacionality,
+      gender: updatedFields.genero ?? updatedFields.gender,
+      academicLevel: updatedFields.nivelEducacion ?? updatedFields.academicLevel,
+      extraPhone: updatedFields.telefonoSecundario ?? updatedFields.extraPhone,
+      dob: updatedFields.fechaNacimiento ?? updatedFields.dob,
     }
 
     const data = await PATCH('/api/auth/me', payload)

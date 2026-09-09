@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router'
-import { Menu, X, Home, Building2, GraduationCap, Users, Mail, LogIn } from 'lucide-react'
+import { Menu, X, Home, Building2, GraduationCap, Users, Mail, LogIn, User } from 'lucide-react'
 import Footer from '../components/Footer'
 import AvisoConsentimiento from '../components/AvisoConsentimiento'
+import { useAuth } from '../context/AuthContext'
 
 /**
  * AppLayout — layout público del sitio institucional del CFL 404.
@@ -15,6 +16,7 @@ function AppLayout() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
 
+    const { isAuthenticated } = useAuth()
     const location = useLocation()
     const navigate = useNavigate()
     const isHome = location.pathname === '/'
@@ -113,24 +115,27 @@ function AppLayout() {
             ) : (
                 <>
                     <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${headerBgClass}`}>
-                        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
-                            {/* Logo (Fades in cuando showLogo es true) */}
-                            <NavLink
-                                to="/"
-                                onClick={handleLogoClick}
-                                className={`flex items-center active:scale-95 transition-all duration-300 ${
-                                    showLogo ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                                }`}
-                            >
-                                <img
-                                    src="/logo_texto_hero.svg"
-                                    alt="Centro de Formación Laboral Nº 404 / Berisso"
-                                    className="h-10 sm:h-12 w-auto object-contain bg-white/10 rounded-full p-0.5 border border-white/20 shadow-sm"
-                                />
-                            </NavLink>
+                            {/* Logo */}
+                            <div className="flex items-center">
+                                <NavLink
+                                    to="/"
+                                    onClick={handleLogoClick}
+                                    className={`flex items-center transition-all duration-300 active:scale-95 ${
+                                        showLogo ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
+                                    }`}
+                                    aria-label="Ir al inicio"
+                                >
+                                    <img
+                                        src="/logo_texto_hero.svg"
+                                        alt="Centro de Formación Laboral Nº 404 / Berisso"
+                                        className="h-10 sm:h-12 w-auto object-contain bg-white/10 rounded-full p-0.5 border border-white/20 shadow-sm hover:scale-105 transition-transform"
+                                    />
+                                </NavLink>
+                            </div>
 
-                            {/* Desktop Navigation */}
+                            {/* Desktop Nav */}
                             <nav className="hidden md:flex items-center gap-1">
                                 {navItems.map((item) => (
                                     <NavLink
@@ -139,9 +144,8 @@ function AppLayout() {
                                         end={item.end}
                                         onClick={(e) => handleNavClick(e, item)}
                                         className={({ isActive }) => {
-                                            // Para 'cursos' y 'contactos', marcamos activo si estamos en Home y en esa sección
                                             const active = item.key === 'cursos' || item.key === 'contactos' ? false : isActive
-                                            return `flex items-center gap-2 font-nunito font-semibold text-sm transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-white/15 ${
+                                            return `flex items-center gap-2 font-nunito font-semibold text-sm transition-all duration-200 py-1.5 px-3 rounded-lg ${
                                                 active
                                                     ? 'text-custom-amarillo bg-white/10'
                                                     : 'text-white/85 hover:text-white'
@@ -153,22 +157,39 @@ function AppLayout() {
                                     </NavLink>
                                 ))}
 
-                                {/* Separador + link Login */}
+                                {/* Separador + link Login / Mi Perfil */}
                                 <div className="w-px h-5 bg-white/25 mx-2" />
-                                <NavLink
-                                    to="/login"
-                                    onClick={closeMenu}
-                                    className={({ isActive }) =>
-                                        `flex items-center gap-2 font-nunito font-bold text-sm transition-all duration-200 py-1.5 px-4 rounded-lg border ${
-                                            isActive
-                                                ? 'bg-custom-amarillo text-custom-gris-oscuro border-custom-amarillo'
-                                                : 'text-white border-white/30 hover:bg-white/15 hover:border-white/50'
-                                        }`
-                                    }
-                                >
-                                    <LogIn className="w-4 h-4" />
-                                    Ingresar
-                                </NavLink>
+                                {!isAuthenticated ? (
+                                    <NavLink
+                                        to="/login"
+                                        onClick={closeMenu}
+                                        className={({ isActive }) =>
+                                            `flex items-center gap-2 font-nunito font-bold text-sm transition-all duration-200 py-1.5 px-4 rounded-lg border ${
+                                                isActive
+                                                    ? 'bg-custom-amarillo text-custom-gris-oscuro border-custom-amarillo'
+                                                    : 'text-white border-white/30 hover:bg-white/15 hover:border-white/50'
+                                            }`
+                                        }
+                                    >
+                                        <LogIn className="w-4 h-4" />
+                                        Ingresar
+                                    </NavLink>
+                                ) : (
+                                    <NavLink
+                                        to="/perfil"
+                                        onClick={closeMenu}
+                                        className={({ isActive }) =>
+                                            `flex items-center gap-2 font-nunito font-bold text-sm transition-all duration-200 py-1.5 px-4 rounded-lg border ${
+                                                isActive
+                                                    ? 'bg-custom-amarillo text-custom-gris-oscuro border-custom-amarillo'
+                                                    : 'text-white border-white/30 hover:bg-white/15 hover:border-white/50'
+                                            }`
+                                        }
+                                    >
+                                        <User className="w-4 h-4" />
+                                        Mi Perfil
+                                    </NavLink>
+                                )}
                             </nav>
 
                             {/* Mobile Hamburger */}
@@ -236,22 +257,39 @@ function AppLayout() {
                                     </NavLink>
                                 ))}
 
-                                {/* Login */}
+                                {/* Login / Mi Perfil */}
                                 <div className="border-t border-white/10 mt-2 pt-3">
-                                    <NavLink
-                                        to="/login"
-                                        onClick={closeMenu}
-                                        className={({ isActive }) =>
-                                            `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
-                                                isActive
-                                                    ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
-                                                    : 'bg-white/10 hover:bg-white/20 text-white'
-                                            }`
-                                        }
-                                    >
-                                        <LogIn className="w-5 h-5 flex-shrink-0" />
-                                        Ingresar al sistema
-                                    </NavLink>
+                                    {!isAuthenticated ? (
+                                        <NavLink
+                                            to="/login"
+                                            onClick={closeMenu}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
+                                                    isActive
+                                                        ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
+                                                        : 'bg-white/10 hover:bg-white/20 text-white'
+                                                }`
+                                            }
+                                        >
+                                            <LogIn className="w-5 h-5 flex-shrink-0" />
+                                            Ingresar al sistema
+                                        </NavLink>
+                                    ) : (
+                                        <NavLink
+                                            to="/perfil"
+                                            onClick={closeMenu}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-4 font-nunito font-bold text-base p-3 rounded-xl transition-all active:scale-[0.98] ${
+                                                    isActive
+                                                        ? 'bg-custom-amarillo text-custom-gris-oscuro shadow-lg'
+                                                        : 'bg-white/10 hover:bg-white/20 text-white'
+                                                }`
+                                            }
+                                        >
+                                            <User className="w-5 h-5 flex-shrink-0" />
+                                            Mi Perfil
+                                        </NavLink>
+                                    )}
                                 </div>
                             </nav>
 
