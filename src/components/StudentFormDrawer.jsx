@@ -456,7 +456,7 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
             </div>
           </div>
 
-          {/* Footer Submit Actions — "Dar de Baja" a la izquierda y "Guardar Cambios" a la derecha */}
+          {/* Footer Submit Actions — "Dar de Baja" a la izquierda, y a la derecha "Cancelar" junto a "Guardar Cambios" */}
           <div className="p-4 border-t border-custom-gris-claro/10 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 flex items-center justify-between gap-3 shrink-0">
             {student && (userRole === 'director' || userRole === 'secretaria') ? (
               <button
@@ -473,18 +473,28 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
               </button>
             ) : <div />}
 
-            <button
-              type="submit"
-              disabled={isReadOnly}
-              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-nunito font-bold transition-all cursor-pointer ml-auto ${
-                isReadOnly 
-                  ? 'bg-custom-gris-claro text-white opacity-50 cursor-not-allowed' 
-                  : 'bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white shadow-xs'
-              }`}
-            >
-              <Save className="h-4 w-4 text-custom-amarillo" />
-              {student ? 'Guardar Cambios' : (formData.role_name === 'Postulante' ? 'Registrar Postulante' : 'Guardar Alumno')}
-            </button>
+            <div className="flex items-center gap-2.5 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-nunito font-bold transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                disabled={isReadOnly}
+                className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-nunito font-bold transition-all cursor-pointer ${
+                  isReadOnly 
+                    ? 'bg-custom-gris-claro text-white opacity-50 cursor-not-allowed' 
+                    : 'bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white shadow-xs'
+                }`}
+              >
+                <Save className="h-4 w-4 text-custom-amarillo" />
+                {student ? 'Guardar Cambios' : (formData.role_name === 'Postulante' ? 'Registrar Postulante' : 'Guardar Alumno')}
+              </button>
+            </div>
           </div>
         </form>
       </section>

@@ -23,7 +23,8 @@ import {
   GraduationCap,
   DoorOpen,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Pencil
 } from 'lucide-react'
 import { Link } from 'react-router'
 import StudentAvatar from './StudentAvatar'
@@ -132,14 +133,26 @@ export default function StudentDetailDrawer({
           >
         {/* Header con estilo Cooperadora */}
         <div className="p-6 bg-custom-azul-oscuro text-white relative shrink-0">
-          <button
-            onClick={onClose}
-            title="Cerrar panel de detalles"
-            aria-label="Cerrar"
-            className="absolute top-4 right-4 p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-          >
-            <X size={20} strokeWidth={2} />
-          </button>
+          <div className="absolute top-4 right-4 flex items-center gap-1">
+            {canEdit && onEdit && (
+              <button
+                onClick={() => onEdit(student.id)}
+                title="Editar datos del alumno"
+                aria-label="Editar datos"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+              >
+                <Pencil size={18} strokeWidth={2} />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              title="Cerrar panel de detalles"
+              aria-label="Cerrar"
+              className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+            >
+              <X size={20} strokeWidth={2} />
+            </button>
+          </div>
 
           <div className="flex items-center gap-4 mt-1">
             <div title={estadoTextos[student.status_id] || 'Estado'}>
