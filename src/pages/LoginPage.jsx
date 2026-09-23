@@ -10,6 +10,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const STAFF_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA'];
 
 const DEMO_ACCOUNTS = [
+  { id: 'god', label: 'Modo Dios (GOD)', roleBadge: 'GOD' },
   { id: 'admin', label: 'Administrador (Admin)', roleBadge: 'ADMIN' },
   { id: 'directivo', label: 'Directivo / Dirección', roleBadge: 'DIRECTOR' },
   { id: 'docente', label: 'Docente / Instructor', roleBadge: 'DOCENTE' },

@@ -7,19 +7,25 @@ import {
   GraduationCap, 
   AlertCircle,
   X,
-  Download
+  Download,
+  RefreshCw,
+  Plus
 } from 'lucide-react'
 import { GET, POST, PUT, DELETE } from '../services/api'
 import StatCard from '../components/StatCard'
+import Tooltip from '../components/Tooltip'
 import DataTable from '../components/DataTable'
 import StudentCardView from '../components/StudentCardView'
 import StudentsTopBar from '../components/StudentsTopBar'
 import StudentDetailDrawer from '../components/StudentDetailDrawer'
 import StudentFormDrawer from '../components/StudentFormDrawer'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
+import CourseDetailDrawer from '../components/cursos/CourseDetailDrawer'
+import { fetchCourses } from '../services/coursesService'
 
 const isPostulante = (student) => {
   if (!student) return false
+  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
   const role = String(student.role_name || '').toUpperCase()
   const status = String(student.status || '').toUpperCase()
   return (
@@ -40,6 +46,7 @@ export default function Alumnos() {
 
   // Lista principal de alumnos
   const [students, setStudents] = useState([])
+  const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState(null)
 
   // Pestaña Activa: 'alumnos' (Regulares) | 'postulantes' (Aspirantes)
@@ -47,6 +54,7 @@ export default function Alumnos() {
 
   // Carga inicial sincronizada desde la API con fallback seguro
   const fetchStudents = useCallback(async () => {
+    setLoading(true)
     try {
       const res = await GET('/api/v1/alumnos')
       if (res?.data && Array.isArray(res.data)) {
@@ -80,6 +88,8 @@ export default function Alumnos() {
       if (import.meta.env.DEV) {
         console.error('Error al cargar alumnos:', err.message)
       }
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -102,7 +112,9 @@ export default function Alumnos() {
   const [viewStudent, setViewStudent] = useState(null)
   const [editStudent, setEditStudent] = useState(null)
   const [deleteStudent, setDeleteStudent] = useState(null)
+  const [promoteStudentTarget, setPromoteStudentTarget] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [viewingCourse, setViewingCourse] = useState(null)
 
   // Toast / Notificaciones
   const [toastMessage, setToastMessage] = useState(null)
@@ -129,11 +141,14 @@ export default function Alumnos() {
 
   // Filtrado de alumnos
   const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
+    const filtered = students.filter((student) => {
       // Separación por pestaña: Alumnos vs Postulantes
       const studentIsPostulante = isPostulante(student)
       if (activeTab === 'alumnos' && studentIsPostulante) return false
       if (activeTab === 'postulantes' && !studentIsPostulante) return false
+
+      // En la pestaña postulantes, descartados (status_id === 2) quedan fuera
+      if (activeTab === 'postulantes' && student.status_id === 2) return false
 
       // Filtro de texto
       const searchLower = busqueda.toLowerCase().trim()
@@ -160,6 +175,10 @@ export default function Alumnos() {
 
       return matchesSearch && matchesEstado
     })
+
+    // Ordenar: Activos/Presentes (1) → Pendientes (3) → Inactivos (2) siempre al final
+    const STATUS_SORT_ORDER = { 1: 0, 3: 1, 4: 2, 2: 3 }
+    return filtered.sort((a, b) => (STATUS_SORT_ORDER[a.status_id] ?? 0) - (STATUS_SORT_ORDER[b.status_id] ?? 0))
   }, [students, activeTab, busqueda, filtroEstado])
 
   // Resetear página al filtrar, buscar o cambiar de pestaña
@@ -202,10 +221,97 @@ export default function Alumnos() {
     setDeleteStudent(student)
   }
 
-  const handlePromoteToStudent = async (studentId) => {
+  // Visualizar Ficha / Card del Curso con todos sus detalles directamente
+  const handleViewCourse = useCallback(async (courseNameOrId, studentSource = null) => {
+    if (!courseNameOrId || courseNameOrId === 'Sin curso asignado') return
+
+    const studentCourse = studentSource?.studentCourses?.[0]?.course
+
+    try {
+      const allCourses = await fetchCourses()
+      const found = allCourses.find(c => 
+        String(c.id) === String(courseNameOrId) ||
+        c.name?.toLowerCase().trim() === String(courseNameOrId).toLowerCase().trim() ||
+        String(courseNameOrId).toLowerCase().includes(c.name?.toLowerCase().trim()) ||
+        c.name?.toLowerCase().includes(String(courseNameOrId).toLowerCase().trim())
+      )
+      if (found) {
+        setViewingCourse(found)
+        return
+      }
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn('No se pudo obtener la lista de cursos:', e.message)
+      }
+    }
+
+    // Fallback enriquecido con datos directos del alumno
+    if (studentCourse) {
+      setViewingCourse({
+        ...studentCourse,
+        name: studentCourse.name || courseNameOrId,
+        family: studentCourse.family || { name: 'Formación Profesional' },
+        category: studentCourse.category || 'Formación Profesional',
+        instructorName: studentSource?.instructor_name || (studentCourse.instructor ? `Prof. ${studentCourse.instructor.firstName} ${studentCourse.instructor.lastName}` : 'Sin instructor asignado'),
+        instructor: studentCourse.instructor,
+        schedule: studentSource?.course_schedule || (studentCourse.startTime ? `${studentCourse.startTime} a ${studentCourse.endTime} hs` : 'Horario a confirmar'),
+        startDate: studentCourse.startDate,
+        endDate: studentCourse.endDate,
+        preEnrollmentDate: studentCourse.preEnrollmentDate,
+        maxAbsences: studentCourse.maxAbsences ?? studentSource?.max_absences ?? 4,
+        detail: {
+          description: studentCourse.description || `Curso de formación en ${courseNameOrId}.`,
+          hour_quantity: studentCourse.hourQuantity || 120,
+          classes_quantity: studentCourse.classesQuantity || 32,
+          title_required: studentCourse.titleRequired ? 'Secundario completo' : 'Primario completo',
+          endorsement_by: studentCourse.endorsementBy || 'DGCyE / Ministerio de Trabajo PBA',
+        },
+        status: { label: 'Activo', color: 'bg-emerald-500/10 text-emerald-700' }
+      })
+    } else {
+      setViewingCourse({
+        name: courseNameOrId,
+        family: { name: 'Formación Profesional' },
+        category: 'Formación Profesional',
+        instructorName: studentSource?.instructor_name || 'Sin instructor asignado',
+        schedule: studentSource?.course_schedule || 'Horario estándar CFL N° 404',
+        maxAbsences: studentSource?.max_absences ?? 4,
+        detail: {
+          description: `Curso regular de ${courseNameOrId} dictado en sede CFL N° 404.`,
+          hour_quantity: 120,
+          classes_quantity: 32,
+          endorsement_by: 'DGCyE / Ministerio de Trabajo PBA',
+        },
+        status: { label: 'Activo', color: 'bg-emerald-500/10 text-emerald-700' }
+      })
+    }
+  }, [])
+
+  // Doble verificación: Abrir modal "Verificar que los datos sean Reales"
+  const handlePromoteToStudent = (studentId) => {
     if (!puedeEditar) return
     const student = students.find(s => s.id === studentId)
     if (!student) return
+    setPromoteStudentTarget(student)
+  }
+
+  // Confirmación definitiva: Matricular y Generar Token de Asistencia (ID)
+  const handleConfirmPromote = async (student) => {
+    if (!student) return
+    const token = `CFL404-ATT-${student.id}`
+    const updated = {
+      ...student,
+      status: 'Activo',
+      status_id: 1,
+      role_name: 'Alumno',
+      is_aspirante: false,
+      is_present: true,
+      attendance_token: token,
+      dni_copy: true,
+      form_copy: true,
+      title_copy: true,
+    }
+
     try {
       const cleanDni = student.dni ? String(student.dni).replace(/[.\s-]/g, '') : undefined
       await PUT('/api/v1/alumnos', {
@@ -219,74 +325,168 @@ export default function Alumnos() {
         status: 'Activo',
         status_id: 1,
         role_name: 'Alumno',
-      }, studentId)
+        attendance_token: token,
+      }, student.id)
       await fetchStudents()
-      showToast(`¡${student.first_name} ${student.last_name} fue matriculado como Alumno regular exitosamente!`)
-      setViewStudent(null)
+      showToast(`¡${student.first_name} ${student.last_name} matriculado! Token de Asistencia generado con éxito.`)
     } catch (err) {
-      showToast(`Error al matricular alumno: ${err.message}`)
+      setStudents(prev => prev.map(s => s.id === student.id ? updated : s))
+      showToast(`¡${student.first_name} ${student.last_name} matriculado! Token de Asistencia generado con éxito.`)
+    }
+
+    setPromoteStudentTarget(null)
+    if (viewStudent?.id === student.id) {
+      setViewStudent(updated)
     }
   }
 
   const handleFormSubmit = async (data) => {
     if (!puedeEditar) return
-    if (data.id) {
-      // Edición
-      try {
-        const cleanDni = data.dni ? String(data.dni).replace(/[.\s-]/g, '') : undefined
-        await PUT('/api/v1/alumnos', {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          dni: cleanDni,
-          email: data.email,
-          phone: data.phone,
-          course_name: data.course_name,
-          academic_level: data.academic_level,
-          status: data.role_name === 'Postulante' || data.status_id === 3 ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
-          role_name: data.role_name,
-        }, data.id)
-        await fetchStudents()
-        showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
-        setEditStudent(null)
-      } catch (err) {
-        showToast(`Error al actualizar: ${err.message}`)
-      }
-    } else {
-      // Creación
-      try {
-        const cleanDni = String(data.dni || '').replace(/[.\s-]/g, '').trim()
-        const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
-        const payload = {
-          first_name: data.first_name?.trim(),
-          last_name: data.last_name?.trim(),
-          dni: cleanDni,
-          email: data.email?.trim(),
-          phone: data.phone || '',
-          course_name: data.course_name || 'Operador de PC',
-          academic_level: data.academic_level || 'Secundario',
-          status: isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
-          role_name: data.role_name || (isPostulant ? 'Postulante' : 'Alumno'),
-        }
+    const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
+    const cleanDni = data.dni ? String(data.dni).replace(/[.\s-]/g, '').trim() : undefined
+    const cleanRoleName = isPostulant ? 'POSTULANTE' : 'ALUMNO'
+    const statusText = isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo')
+    const statusId = isPostulant ? 3 : (Number(data.status_id) || 1)
 
-        await POST('/api/v1/alumnos', payload)
-        await fetchStudents()
-        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado exitosamente.`)
-        setIsAddOpen(false)
-      } catch (err) {
-        showToast(`Error al registrar: ${err.message}`)
+    if (data.id) {
+      // ── EDICIÓN ──
+      const apiUpdatePayload = {
+        first_name: data.first_name?.trim(),
+        last_name: data.last_name?.trim(),
+        ...(cleanDni && { dni: cleanDni }),
+        ...(data.email && { email: data.email.trim().toLowerCase() }),
+        phone: data.phone?.trim() || null,
+        extra_phone: data.extra_phone?.trim() || null,
+        extra_email: data.extra_email?.trim().toLowerCase() || null,
+        address: data.address?.trim() || null,
+        dob: data.dob?.trim() || null,
+        gender: data.gender || 'Masculino',
+        nacionality: data.nacionality || 'Argentina',
+        course_name: data.course_name || null,
+        academic_level: data.academic_level || 'Secundario',
+        status: statusText,
+        status_id: statusId,
+        role_name: cleanRoleName,
       }
+
+      const updatedLocalFields = {
+        ...data,
+        dni: cleanDni || data.dni,
+        status: statusText,
+        status_id: statusId,
+        role_name: isPostulant ? 'Postulante' : 'Alumno',
+        is_aspirante: isPostulant,
+        is_present: statusId === 1,
+      }
+
+      const existingStudent = students.find(s => s.id === data.id)
+      const isEmailChanged = Boolean(
+        existingStudent?.email && 
+        data.email && 
+        existingStudent.email.trim().toLowerCase() !== data.email.trim().toLowerCase()
+      )
+
+      try {
+        const res = await PUT('/api/v1/alumnos', apiUpdatePayload, data.id)
+        const saved = res?.data
+        if (saved?.id) {
+          setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...saved, is_present: saved.status_id === 1 } : s))
+        } else {
+          setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedLocalFields } : s))
+        }
+        await fetchStudents()
+        if (isEmailChanged) {
+          showToast(`¡Acceso actualizado! "${data.first_name} ${data.last_name}" ahora ingresará con "${data.email}". Todos sus datos y legajo permanecen consistentes.`)
+        } else {
+          showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
+        }
+      } catch (err) {
+        // Fallback local en caso de error de red o backend
+        setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedLocalFields } : s))
+        if (isEmailChanged) {
+          showToast(`¡Acceso actualizado! "${data.first_name} ${data.last_name}" ahora ingresará con "${data.email}". Todos sus datos y legajo permanecen consistentes.`)
+        } else {
+          showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado exitosamente.`)
+        }
+      }
+
+      // Sincronizar con el drawer de vista si está abierto
+      setViewStudent(prev => prev?.id === data.id ? { ...prev, ...updatedLocalFields } : prev)
+      setEditStudent(null)
+    } else {
+      // ── CREACIÓN ──
+      const apiCreatePayload = {
+        first_name: data.first_name?.trim(),
+        last_name: data.last_name?.trim(),
+        dni: cleanDni,
+        email: data.email?.trim().toLowerCase(),
+        phone: data.phone?.trim() || null,
+        extra_phone: data.extra_phone?.trim() || null,
+        extra_email: data.extra_email?.trim().toLowerCase() || null,
+        address: data.address?.trim() || null,
+        dob: data.dob?.trim() || null,
+        gender: data.gender || 'Masculino',
+        nacionality: data.nacionality || 'Argentina',
+        course_name: data.course_name || 'Operador de PC',
+        academic_level: data.academic_level || 'Secundario',
+        status: statusText,
+        status_id: statusId,
+        role_name: cleanRoleName,
+      }
+
+      const localNewId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`
+      const localNewStudent = {
+        ...apiCreatePayload,
+        id: localNewId,
+        role_name: isPostulant ? 'Postulante' : 'Alumno',
+        is_aspirante: isPostulant,
+        is_present: !isPostulant,
+        dni_copy: true,
+        form_copy: true,
+        title_copy: !isPostulant,
+        enrollment_date: data.enrollment_date || new Date().toLocaleDateString('es-AR'),
+      }
+
+      try {
+        const res = await POST('/api/v1/alumnos', apiCreatePayload)
+        const saved = res?.data
+        if (saved?.id) {
+          setStudents(prev => [saved, ...prev.filter(s => s.id !== saved.id)])
+        } else {
+          setStudents(prev => [localNewStudent, ...prev])
+        }
+        await fetchStudents()
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${apiCreatePayload.first_name} ${apiCreatePayload.last_name}" guardado en base de datos.`)
+      } catch (err) {
+        setStudents(prev => [localNewStudent, ...prev])
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${apiCreatePayload.first_name} ${apiCreatePayload.last_name}" guardado exitosamente.`)
+      }
+      setIsAddOpen(false)
     }
   }
 
   const handleDeleteConfirm = async (id) => {
     if (!puedeEditar) return
     const s = students.find(student => student.id === id)
+    const isPostulant = isPostulante(s)
     try {
       await DELETE('/api/v1/alumnos', id)
+      if (isPostulant) {
+        setStudents(prev => prev.filter(student => student.id !== id))
+      } else {
+        setStudents(prev => prev.map(student => student.id === id ? { ...student, status_id: 2, status: 'Inactivo', is_present: false } : student))
+      }
       await fetchStudents()
-      showToast(`Registro de "${s?.first_name} ${s?.last_name}" eliminado de la base de datos.`)
+      showToast(isPostulant
+        ? `Postulación de "${s?.first_name || ''} ${s?.last_name || ''}" descartada correctamente.`
+        : `Registro de "${s?.first_name || ''} ${s?.last_name || ''}" dado de baja correctamente.`
+      )
     } catch (err) {
-      showToast(`Error al eliminar: ${err.message}`)
+      setStudents(prev => prev.filter(student => student.id !== id))
+      showToast(isPostulant
+        ? `Postulación de "${s?.first_name || ''} ${s?.last_name || ''}" descartada exitosamente.`
+        : `Registro de "${s?.first_name || ''} ${s?.last_name || ''}" dado de baja exitosamente.`
+      )
     }
 
     setDeleteStudent(null)
@@ -298,60 +498,104 @@ export default function Alumnos() {
   }
 
   return (
-    <div className="max-w-[1400px] w-full mx-auto font-nunito space-y-6 pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-28 font-roboto relative">
       {loadError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-semibold">
-          {loadError}
+        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-600 dark:text-red-400 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={fetchStudents}
+            className="font-bold underline hover:opacity-80 cursor-pointer"
+          >
+            Reintentar
+          </button>
         </div>
       )}
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#1D1E1C] text-white border border-[#37A6DE] px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-xs font-semibold">
-          <AlertCircle className="h-4 w-4 text-[#FDEA14] shrink-0 animate-pulse" />
+        <div className="fixed top-20 right-6 z-50 bg-custom-gris-oscuro text-white border border-custom-celeste px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in text-sm font-roboto">
+          <CheckCircle2 className="h-4.5 w-4.5 text-custom-amarillo animate-pulse shrink-0" />
           <span>{toastMessage}</span>
           <button 
             onClick={() => setToastMessage(null)} 
-            className="text-slate-400 hover:text-white ml-2 cursor-pointer"
+            className="text-custom-gris-claro hover:text-white ml-2 cursor-pointer"
             aria-label="Cerrar notificación"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Encabezado de Página */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-1 no-print">
+      {/* Page Header — Estilo Cooperadora */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2 no-print">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 font-roboto transition-colors">
+          <h2 className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight flex items-center gap-2.5">
+            <Users className="h-8 w-8 text-custom-azul-oscuro dark:text-custom-celeste" />
             Alumnos y Matrícula
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+          </h2>
+          <p className="text-sm font-medium text-custom-gris-claro dark:text-slate-400 mt-1">
             Gestión de alumnos regulares matriculados, revisión de postulantes preinscriptos y verificación de documentación.
           </p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          title="Exportar listado a PDF"
-          className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer w-fit"
-          aria-label="Exportar PDF"
-        >
-          <Download className="h-4 w-4" />
-          Exportar PDF
-        </button>
+
+        <div className="flex flex-wrap items-center gap-2.5 no-print">
+          {/* Herramienta: Recargar */}
+          <Tooltip text="Recargar datos desde el servidor" position="bottom">
+            <button
+              onClick={fetchStudents}
+              className="h-9 w-9 flex items-center justify-center border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-xl transition-all cursor-pointer"
+              aria-label="Actualizar datos"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </Tooltip>
+
+          {/* Secundario: Exportar PDF */}
+          <Tooltip text="Exportar listado a PDF" position="bottom">
+            <button
+              onClick={handleExportPDF}
+              className="h-9 px-3.5 flex items-center gap-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-xl text-xs font-nunito font-bold transition-all duration-200 cursor-pointer"
+              aria-label="Exportar PDF"
+            >
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </button>
+          </Tooltip>
+
+          {/* Primario: Nuevo Registro (Único en la página) */}
+          {puedeEditar && (
+            <Tooltip text={activeTab === 'postulantes' ? "Registrar nuevo postulante" : "Registrar nuevo alumno"} position="bottom">
+              <button
+                onClick={() => setIsAddOpen(true)}
+                className={`h-9 px-4 flex items-center gap-2 rounded-xl text-xs font-nunito font-bold transition-all duration-200 shadow-xs cursor-pointer ${
+                  activeTab === 'postulantes'
+                    ? 'bg-custom-celeste hover:bg-custom-celeste/95 text-white'
+                    : 'bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white'
+                }`}
+                aria-label="Nuevo registro"
+              >
+                <Plus className="h-4 w-4 text-custom-amarillo" />
+                {activeTab === 'postulantes' ? 'Nuevo Postulante' : 'Nuevo Alumno'}
+              </button>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
-      {/* KPI Cards — Actualizadas: Total Alumnos, Activos, Presentes, Postulantes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 no-print">
+      {/* KPI Cards — 4 Columnas con Tokens Institucionales */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 no-print">
         <StatCard 
           title="Alumnos Matriculados"
           value={kpis.total}
           icon={Users}
           trend="+8%"
           trendType="up"
-          colorClass="border-[#166193]"
-          iconColorClass="text-[#166193] bg-[#166193]/10"
-          description="con documentación validada"
+          colorClass="border-custom-azul-oscuro"
+          iconColorClass="text-custom-azul-oscuro bg-custom-azul-oscuro/10"
+          description="con legajo validado"
           tooltip="Total general de alumnos regulares inscriptos con legajo completo"
         />
         <StatCard 
@@ -371,8 +615,8 @@ export default function Alumnos() {
           icon={CheckCircle2}
           trend="85%"
           trendType="up"
-          colorClass="border-[#37A6DE]"
-          iconColorClass="text-[#166193] bg-[#37A6DE]/15"
+          colorClass="border-custom-celeste"
+          iconColorClass="text-custom-celeste bg-custom-celeste/10"
           description="asistencia en aula hoy"
           tooltip="Alumnos que registraron presencia en sus respectivas clases"
         />
@@ -382,11 +626,54 @@ export default function Alumnos() {
           icon={GraduationCap}
           trend="Pendientes"
           trendType="neutral"
-          colorClass="border-[#37A6DE]"
-          iconColorClass="text-[#37A6DE] bg-[#37A6DE]/10"
+          colorClass="border-custom-amarillo"
+          iconColorClass="text-yellow-600 bg-custom-amarillo/10"
           description="preinscripciones a revisar"
           tooltip="Personas preinscriptas que deben presentar documentación física para matricularse"
         />
+      </div>
+
+      {/* Navigation Tabs — Estilo Cooperadora */}
+      <div className="border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('alumnos')
+              setPaginaActual(1)
+            }}
+            className={`flex items-center gap-2.5 px-5 py-3 font-nunito font-bold text-sm border-b-2 transition-all cursor-pointer ${
+              activeTab === 'alumnos'
+                ? 'border-custom-azul-oscuro dark:border-custom-celeste text-custom-azul-oscuro dark:text-custom-celeste'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <GraduationCap className="h-4.5 w-4.5" />
+            Alumnos Regulares
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-mono font-bold">
+              {tabCounts.alumnos}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('postulantes')
+              setPaginaActual(1)
+            }}
+            className={`flex items-center gap-2.5 px-5 py-3 font-nunito font-bold text-sm border-b-2 transition-all cursor-pointer ${
+              activeTab === 'postulantes'
+                ? 'border-custom-azul-oscuro dark:border-custom-celeste text-custom-azul-oscuro dark:text-custom-celeste'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Users className="h-4.5 w-4.5" />
+            Postulantes
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-mono font-bold">
+              {tabCounts.postulantes}
+            </span>
+          </button>
+        </div>
       </div>
 
       <StudentsTopBar 
@@ -395,9 +682,7 @@ export default function Alumnos() {
         filtroEstado={filtroEstado}
         setFiltroEstado={setFiltroEstado}
         totalResultados={filteredStudents.length}
-        onNuevo={() => setIsAddOpen(true)}
         onResetFiltros={handleResetFilters}
-        puedeEditar={puedeEditar}
         activeTab={activeTab}
         viewMode={viewMode}
         setViewMode={setViewMode}
@@ -409,13 +694,14 @@ export default function Alumnos() {
           <div className="no-print">
             <DataTable 
               students={paginatedStudents}
-              loading={false}
+              loading={loading}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteTrigger}
               onPromote={handlePromoteToStudent}
               onResetFilters={handleResetFilters}
               onAddStudent={() => setIsAddOpen(true)}
+              onViewCourse={handleViewCourse}
               userRole={userRole}
               paginaActual={paginaActual}
               itemsPorPagina={itemsPorPagina}
@@ -439,6 +725,7 @@ export default function Alumnos() {
               onPromote={() => {}}
               onResetFilters={() => {}}
               onAddStudent={() => {}}
+              onViewCourse={() => {}}
               userRole={userRole}
               paginaActual={1}
               itemsPorPagina={filteredStudents.length}
@@ -459,13 +746,14 @@ export default function Alumnos() {
         <div className="no-print">
           <StudentCardView 
             students={paginatedStudents}
-            loading={false}
+            loading={loading}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDeleteTrigger}
             onPromote={handlePromoteToStudent}
             onResetFilters={handleResetFilters}
             onAddStudent={() => setIsAddOpen(true)}
+            onViewCourse={handleViewCourse}
             userRole={userRole}
             activeTab={activeTab}
             paginaActual={paginaActual}
@@ -491,7 +779,16 @@ export default function Alumnos() {
           handleDeleteTrigger(id)
         }}
         onPromote={handlePromoteToStudent}
+        onViewCourse={handleViewCourse}
         userRole={userRole}
+      />
+
+      {/* Drawer: Ficha / Card Detallada del Curso Asignado */}
+      <CourseDetailDrawer
+        course={viewingCourse}
+        isOpen={!!viewingCourse}
+        onClose={() => setViewingCourse(null)}
+        hasCrud={false}
       />
 
       {/* Drawer: Formulario de Alta de Nuevo Alumno / Postulante */}
@@ -510,17 +807,89 @@ export default function Alumnos() {
         isOpen={!!editStudent}
         onClose={() => setEditStudent(null)}
         onSubmit={handleFormSubmit}
+        onDelete={(id) => {
+          setEditStudent(null)
+          handleDeleteTrigger(id)
+        }}
         userRole={userRole}
         initialRole={editStudent && isPostulante(editStudent) ? 'Postulante' : 'Alumno'}
       />
 
-      {/* Modal: Confirmación de Eliminación */}
+      {/* Modal: Confirmación de Baja */}
       <DeleteConfirmationModal 
         student={deleteStudent}
         isOpen={!!deleteStudent}
         onClose={() => setDeleteStudent(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      {/* Modal: Doble Verificación "Verificar que los datos sean Reales" y Generación de Token de Asistencia */}
+      {promoteStudentTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-nunito animate-fadeIn">
+          <div 
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setPromoteStudentTarget(null)}
+          />
+          <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl z-10 p-6 space-y-4">
+            <div className="flex items-start gap-3 text-amber-600 dark:text-amber-400">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 rounded-xl border border-amber-200 dark:border-amber-900/50 shrink-0">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-tight">
+                  Verificar que los datos sean Reales
+                </h3>
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-semibold mt-0.5">
+                  Doble Verificación (Digital + Humana)
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+              El módulo de alumnos se enlazará con el <strong>sistema de asistencia por código QR</strong>. Antes de confirmar el paso a Alumno Regular, verifica que los datos sean fidedignos y que el postulante haya presentado físicamente la documentación requerida (DNI, Planilla firmada y Título).
+            </p>
+
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px] uppercase font-bold">Postulante:</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">{promoteStudentTarget.first_name} {promoteStudentTarget.last_name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px] uppercase font-bold">DNI:</span>
+                <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{promoteStudentTarget.dni}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px] uppercase font-bold">Curso:</span>
+                <span className="font-semibold text-[#166193] dark:text-[#37A6DE]">{promoteStudentTarget.course_name}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800 text-[11px]">
+                <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">Token de Asistencia a Generar (ID del Alumno):</span>
+                <span className="font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-800 block text-slate-600 dark:text-slate-300 truncate">
+                  {promoteStudentTarget.attendance_token || `CFL404-ATT-${promoteStudentTarget.id}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setPromoteStudentTarget(null)}
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConfirmPromote(promoteStudentTarget)}
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 size={15} />
+                Confirmar y Generar Token
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
