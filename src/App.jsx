@@ -27,6 +27,7 @@ import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
 import CooperadoraAdmin from './pages/CooperadoraAdmin'
 
+const DASHBOARD_ALLOWED_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA', 'INSTRUCTOR', 'ALUMNO', 'POSTULANTE']
 const STAFF_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
 const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
 
@@ -110,12 +111,19 @@ function AppRoutes() {
       </Route>
 
       <Route element={
-        <RoleRoute allowedRoles={STAFF_ROLES}>
+        <RoleRoute allowedRoles={DASHBOARD_ALLOWED_ROLES}>
           <DashboardLayout />
         </RoleRoute>
       }>
         <Route path='admin' element={<Navigate to="/admin/dashboard" replace />} />
         <Route path='admin/dashboard' element={<Dashboard />} />
+      </Route>
+
+      <Route element={
+        <RoleRoute allowedRoles={STAFF_ROLES}>
+          <DashboardLayout />
+        </RoleRoute>
+      }>
         <Route path='admin/asistencia' element={<Asistencia />} />
         <Route path='admin/instructores' element={<Instructores />} />
         <Route path='admin/alumnos' element={<Alumnos />} />

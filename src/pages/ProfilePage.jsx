@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import NotificationToast from '../components/NotificationToast';
-import { Pencil, Camera, Shield, Lock, AlertCircle, Info, ExternalLink, CheckCircle, CheckCircle2 } from 'lucide-react';
+import { Pencil, Camera, Shield, Lock, AlertCircle, Info, ExternalLink, CheckCircle, CheckCircle2, User } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -14,6 +14,18 @@ export default function ProfilePage() {
   const [estado, setEstado] = useState(user?.estado || '');
   const [fotoUrl, setFotoUrl] = useState(user?.fotoUrl || '');
   const [aceptaTerminos, setAceptaTerminos] = useState(true);
+
+  // Campos de user_detail
+  const [telefono, setTelefono] = useState(user?.telefono || user?.detail?.phone || '');
+  const [telefonoSecundario, setTelefonoSecundario] = useState(user?.telefonoSecundario || user?.detail?.extraPhone || '');
+  const [direccion, setDireccion] = useState(user?.direccion || user?.detail?.address || '');
+  const [nacionalidad, setNacionalidad] = useState(user?.nacionalidad || user?.detail?.nacionality || 'Argentina');
+  const [genero, setGenero] = useState(user?.genero || user?.detail?.gender || '');
+  const [nivelEducacion, setNivelEducacion] = useState(user?.nivelEducacion || user?.detail?.academicLevel || 'Secundario');
+  const [fechaNacimiento, setFechaNacimiento] = useState(
+    user?.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : (user?.detail?.dob ? user.detail.dob.split('T')[0] : '')
+  );
+
   const [editingField, setEditingField] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'success' });
@@ -36,6 +48,15 @@ export default function ProfilePage() {
     setEstado(user.estado || '');
     setFotoUrl(user.fotoUrl || '');
     setAceptaTerminos(Boolean(user.aceptaTerminos));
+    setTelefono(user.telefono || user.detail?.phone || '');
+    setTelefonoSecundario(user.telefonoSecundario || user.detail?.extraPhone || '');
+    setDireccion(user.direccion || user.detail?.address || '');
+    setNacionalidad(user.nacionalidad || user.detail?.nacionality || 'Argentina');
+    setGenero(user.genero || user.detail?.gender || '');
+    setNivelEducacion(user.nivelEducacion || user.detail?.academicLevel || 'Secundario');
+    setFechaNacimiento(
+      user.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : (user.detail?.dob ? user.detail.dob.split('T')[0] : '')
+    );
   }, [user]);
 
   const triggerToast = (message, type = 'success') => {
@@ -65,11 +86,18 @@ export default function ProfilePage() {
       return;
     }
     persistProfile({
-      nombres: isNombresLocked ? user.nombres : nombres,
-      apellidos: isApellidosLocked ? user.apellidos : apellidos,
-      dni: isDniLocked ? user.dni : dni,
+      nombres: isNombresLocked ? user?.nombres : nombres,
+      apellidos: isApellidosLocked ? user?.apellidos : apellidos,
+      dni: isDniLocked ? user?.dni : dni,
       fotoUrl,
       aceptaTerminos,
+      telefono,
+      telefonoSecundario,
+      direccion,
+      nacionalidad,
+      genero,
+      nivelEducacion,
+      fechaNacimiento: fechaNacimiento || null,
     });
   };
 
@@ -89,6 +117,13 @@ export default function ProfilePage() {
       dni: isDniLocked ? user?.dni : dni,
       fotoUrl,
       aceptaTerminos,
+      telefono,
+      telefonoSecundario,
+      direccion,
+      nacionalidad,
+      genero,
+      nivelEducacion,
+      fechaNacimiento: fechaNacimiento || null,
     });
   };
 
@@ -97,6 +132,15 @@ export default function ProfilePage() {
     setApellidos(user?.apellidos || '');
     setDni(user?.dni || '');
     setFotoUrl(user?.fotoUrl || '');
+    setTelefono(user?.telefono || user?.detail?.phone || '');
+    setTelefonoSecundario(user?.telefonoSecundario || user?.detail?.extraPhone || '');
+    setDireccion(user?.direccion || user?.detail?.address || '');
+    setNacionalidad(user?.nacionalidad || user?.detail?.nacionality || 'Argentina');
+    setGenero(user?.genero || user?.detail?.gender || '');
+    setNivelEducacion(user?.nivelEducacion || user?.detail?.academicLevel || 'Secundario');
+    setFechaNacimiento(
+      user?.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : (user?.detail?.dob ? user.detail.dob.split('T')[0] : '')
+    );
     setEditingField(null);
     triggerToast('Se cancelaron las modificaciones.', 'error');
   };
@@ -115,29 +159,56 @@ export default function ProfilePage() {
       dni: isDniLocked ? user?.dni : dni,
       fotoUrl: nextPhoto,
       aceptaTerminos,
+      telefono,
+      telefonoSecundario,
+      direccion,
+      nacionalidad,
+      genero,
+      nivelEducacion,
+      fechaNacimiento: fechaNacimiento || null,
     });
   };
+
+  const initialPhone = user?.telefono || user?.detail?.phone || '';
+  const initialExtraPhone = user?.telefonoSecundario || user?.detail?.extraPhone || '';
+  const initialAddress = user?.direccion || user?.detail?.address || '';
+  const initialNacionality = user?.nacionalidad || user?.detail?.nacionality || 'Argentina';
+  const initialGender = user?.genero || user?.detail?.gender || '';
+  const initialAcademic = user?.nivelEducacion || user?.detail?.academicLevel || 'Secundario';
+  const initialDob = user?.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : (user?.detail?.dob ? user.detail.dob.split('T')[0] : '');
 
   const hasUnsavedChanges = Boolean(
     (!isNombresLocked && nombres !== (user?.nombres || '')) ||
     (!isApellidosLocked && apellidos !== (user?.apellidos || '')) ||
     (!isDniLocked && dni !== (user?.dni || '')) ||
+    telefono !== initialPhone ||
+    telefonoSecundario !== initialExtraPhone ||
+    direccion !== initialAddress ||
+    nacionalidad !== initialNacionality ||
+    genero !== initialGender ||
+    nivelEducacion !== initialAcademic ||
+    fechaNacimiento !== initialDob ||
     editingField !== null
   );
 
   return (
-    <div className="max-w-4xl mx-auto font-nunito">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12 font-roboto">
       <ToastNotification toast={toast} setToast={setToast} />
 
-      <form onSubmit={handleSaveChanges} className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-200 space-y-8">
-        <div className="border-b border-slate-100 pb-4">
-          <h2 className="text-2xl font-extrabold text-custom-gris-oscuro font-roboto">
-            Configuración del Perfil
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2">
+        <div>
+          <h2 className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight flex items-center gap-2.5">
+            <User className="h-8 w-8 text-custom-azul-oscuro dark:text-custom-celeste" />
+            Configuración de Perfil
           </h2>
-          <p className="text-sm text-custom-gris-claro mt-1">
+          <p className="text-sm font-medium text-custom-gris-claro dark:text-slate-400 mt-1">
             Los datos personales registrados son confidenciales y oficiales en la base del CFL 404.
           </p>
         </div>
+      </div>
+
+      <form onSubmit={handleSaveChanges} className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-200 space-y-8 font-nunito">
 
         <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
           <div className="relative group">
@@ -182,7 +253,7 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-custom-gris-oscuro uppercase tracking-wide font-roboto">
-              Datos Personales
+              Datos Personales y de Contacto
             </h3>
           </div>
 
@@ -240,6 +311,72 @@ export default function ProfilePage() {
               placeholder="Todavía no cargado (completar)"
               showLockWarning={!isPostulante}
             />
+            <FieldBox
+              label="Número de Teléfono (Principal)"
+              value={telefono}
+              isEditing={editingField === 'telefono'}
+              onEdit={() => setEditingField('telefono')}
+              onChange={setTelefono}
+              placeholder="Ej: 221 123-4567"
+              showLockWarning={false}
+            />
+            <FieldBox
+              label="Número Secundario (Alternativo)"
+              value={telefonoSecundario}
+              isEditing={editingField === 'telefonoSecundario'}
+              onEdit={() => setEditingField('telefonoSecundario')}
+              onChange={setTelefonoSecundario}
+              placeholder="Ej: 221 987-6543"
+              showLockWarning={false}
+            />
+            <FieldBox
+              label="Dirección de Residencia"
+              value={direccion}
+              isEditing={editingField === 'direccion'}
+              onEdit={() => setEditingField('direccion')}
+              onChange={setDireccion}
+              placeholder="Ej: Calle 123 N° 456, Berisso"
+              showLockWarning={false}
+            />
+            <FieldBox
+              label="Nacionalidad"
+              value={nacionalidad}
+              isEditing={editingField === 'nacionalidad'}
+              onEdit={() => setEditingField('nacionalidad')}
+              onChange={setNacionalidad}
+              placeholder="Ej: Argentina"
+              showLockWarning={false}
+            />
+            <FieldBox
+              label="Género"
+              value={genero}
+              isEditing={editingField === 'genero'}
+              onEdit={() => setEditingField('genero')}
+              onChange={setGenero}
+              placeholder="Sin especificar"
+              options={['Masculino', 'Femenino', 'No binario', 'Otro', 'Prefiero no decirlo']}
+              showLockWarning={false}
+            />
+            <FieldBox
+              label="Nivel de Educación"
+              value={nivelEducacion}
+              isEditing={editingField === 'nivelEducacion'}
+              onEdit={() => setEditingField('nivelEducacion')}
+              onChange={setNivelEducacion}
+              placeholder="Seleccionar nivel alcanzado"
+              options={['Primario incompleto', 'Primario completo', 'Secundario incompleto', 'Secundario completo', 'Terciario en curso', 'Terciario graduado', 'Universitario en curso', 'Universitario graduado']}
+              showLockWarning={false}
+            />
+            <FieldBox
+              label="Fecha de Nacimiento"
+              type="date"
+              value={fechaNacimiento}
+              isEditing={editingField === 'fechaNacimiento'}
+              onEdit={() => setEditingField('fechaNacimiento')}
+              onChange={setFechaNacimiento}
+              placeholder="AAAA-MM-DD"
+              showLockWarning={false}
+            />
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-bold text-custom-gris-oscuro">
@@ -278,16 +415,16 @@ export default function ProfilePage() {
             </label>
           </div>
 
-          {/* Botón para aceptar que completaste los datos (mismo estilo que botón Imprimir / PDF) */}
+          {/* Botón para aceptar que completaste los datos */}
           <div className="flex items-center justify-center pt-1">
             <button
               type="button"
               onClick={handleConfirmData}
               disabled={isSaving}
               title="Aceptar y confirmar los datos completados"
-              className="flex items-center gap-1.5 h-9 px-4 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium font-nunito transition-colors cursor-pointer shadow-sm bg-white hover:border-slate-300 disabled:opacity-60"
+              className="flex items-center gap-2 h-10 px-5 bg-custom-azul-oscuro hover:bg-[#1f7ebf] text-white rounded-xl text-sm font-bold font-nunito transition-colors duration-200 cursor-pointer shadow-md hover:shadow active:scale-[0.98] disabled:opacity-60"
             >
-              <CheckCircle size={15} strokeWidth={2} className="text-emerald-600 shrink-0" />
+              <CheckCircle size={17} strokeWidth={2.2} className="text-white shrink-0" />
               <span>Aceptar datos completados</span>
             </button>
           </div>
@@ -347,6 +484,8 @@ function FieldBox({
   isLocked = false,
   showLockWarning = true,
   lockReason = 'Dato registrado y verificado. No se puede modificar desde el perfil.',
+  options = null,
+  type = 'text',
 }) {
   return (
     <div className={`p-3.5 rounded-xl border flex flex-col justify-between transition-colors ${isLocked
@@ -366,14 +505,28 @@ function FieldBox({
       <div className="flex items-center justify-between gap-2">
         {isEditing && !readOnly && !isLocked ? (
           <div className="w-full">
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-white border border-custom-celeste rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-custom-celeste text-custom-gris-oscuro font-medium"
-              placeholder={placeholder}
-              autoFocus
-            />
+            {options ? (
+              <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-white border border-custom-celeste rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-custom-celeste text-custom-gris-oscuro font-medium"
+                autoFocus
+              >
+                <option value="">-- Seleccionar --</option>
+                {options.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-white border border-custom-celeste rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-custom-celeste text-custom-gris-oscuro font-medium"
+                placeholder={placeholder}
+                autoFocus
+              />
+            )}
             {showLockWarning && (
               <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3 shrink-0" />
