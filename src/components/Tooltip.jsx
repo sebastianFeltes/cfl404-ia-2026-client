@@ -2,11 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 /**
- * Tooltip — se renderiza en document.body con position:fixed para no quedar
- * recortado por overflow ni debajo del aside (que crea su propio stacking context).
+ * Tooltip — renderizado en document.body con position:fixed para no quedar
+ * recortado por overflow ni debajo del aside.
+ *
+ * Correcciones:
+ * - El tooltip se OCULTA al scroll/resize (evita "float" visual).
+ * - Los listeners se registran una sola vez (no dentro de un efecto que depende de `rect`).
+ * - Se usa un ref para `isHovered` para evitar stale-closures.
+ * - Se cierra si el trigger queda fuera del viewport.
  *
  * Soporta posición: top | bottom | left | right.
  */
+
 const GAP = 8
 
 const originClass = {
@@ -43,7 +50,7 @@ function styleFromRect(rect, position) {
         left: rect.right + GAP,
         transform: 'translateY(-50%)',
       }
-    default:
+    default: // top
       return {
         top: rect.top - GAP,
         left: rect.left + rect.width / 2,
@@ -54,30 +61,44 @@ function styleFromRect(rect, position) {
 
 function Tooltip({ text, position = 'top', children, className = '' }) {
   const triggerRef = useRef(null)
+  const isHoveredRef = useRef(false)
   const [rect, setRect] = useState(null)
 
-  const show = useCallback(() => {
+  const computeRect = useCallback(() => {
     const el = triggerRef.current
-    if (!el) return
-    setRect(el.getBoundingClientRect())
+    if (!el) return null
+    return el.getBoundingClientRect()
   }, [])
 
-  const hide = useCallback(() => setRect(null), [])
+  const show = useCallback(() => {
+    isHoveredRef.current = true
+    const r = computeRect()
+    if (r) setRect(r)
+  }, [computeRect])
 
+  const hide = useCallback(() => {
+    isHoveredRef.current = false
+    setRect(null)
+  }, [])
+
+  // Ocultar el tooltip en scroll o resize — evita que quede "flotando"
   useEffect(() => {
-    if (!rect) return
-    const sync = () => {
-      const el = triggerRef.current
-      if (!el) return
-      setRect(el.getBoundingClientRect())
+    const handleDismiss = () => {
+      if (isHoveredRef.current) {
+        // Si el trigger aún está en pantalla podríamos re-posicionarlo,
+        // pero lo más seguro y limpio es ocultarlo al scrollear.
+        isHoveredRef.current = false
+        setRect(null)
+      }
     }
-    window.addEventListener('scroll', sync, true)
-    window.addEventListener('resize', sync)
+
+    window.addEventListener('scroll', handleDismiss, true)
+    window.addEventListener('resize', handleDismiss)
     return () => {
-      window.removeEventListener('scroll', sync, true)
-      window.removeEventListener('resize', sync)
+      window.removeEventListener('scroll', handleDismiss, true)
+      window.removeEventListener('resize', handleDismiss)
     }
-  }, [rect])
+  }, []) // ← vacío: se registra solo una vez, sin fugas
 
   if (!text) return children
 

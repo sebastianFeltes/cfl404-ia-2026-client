@@ -10,6 +10,7 @@ import {
   Wallet,
   Scale,
   Shield,
+  Settings2,
 } from 'lucide-react'
 import Tooltip from './Tooltip'
 import { useAuth } from '../context/AuthContext'
@@ -17,6 +18,7 @@ import { canonicalRole } from '../utils/roles'
 
 const ADMIN_NAV_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
 const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+const CONFIG_ROLES = ['GOD', 'DIRECTOR', 'REGENTE']
 const YEAR = new Date().getFullYear()
 
 const navItems = [
@@ -59,6 +61,13 @@ const cooperadoraItem = {
   title: 'Gestión de pagos de cooperadora y buffet',
 }
 
+const configItem = {
+  label: 'Configuración',
+  icon: Settings2,
+  path: '/admin/configuracion',
+  title: 'Ajustes del sistema, cooperadora y patrocinadores',
+}
+
 function BrandMark({ className = 'h-9 w-9' }) {
   return (
     <div className={`${className} rounded-full overflow-hidden shrink-0 bg-white`}>
@@ -77,9 +86,14 @@ export default function Sidebar({ isOpen = true, onToggle }) {
   const role = canonicalRole(user?.rol)
   const canSeeAdmin = ADMIN_NAV_ROLES.includes(role)
   const canAccessCooperadora = COOPERADORA_ROLES.includes(role)
+  const canAccessConfig = CONFIG_ROLES.includes(role)
 
   const visibleNavItems = canSeeAdmin
-    ? (canAccessCooperadora ? [...navItems, cooperadoraItem] : navItems)
+    ? [
+        ...navItems,
+        ...(canAccessCooperadora ? [cooperadoraItem] : []),
+        ...(canAccessConfig ? [configItem] : []),
+      ]
     : []
 
   return (
