@@ -70,6 +70,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
 
+    const safetyTimer = setTimeout(() => {
+      if (!cancelled) {
+        setIsLoading(false);
+      }
+    }, 4000);
+
     (async () => {
       try {
         const data = await GET('/api/auth/me');
@@ -87,12 +93,14 @@ export function AuthProvider({ children }) {
         setToken(null);
         setUser(null);
       } finally {
+        clearTimeout(safetyTimer);
         if (!cancelled) setIsLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
+      clearTimeout(safetyTimer);
     };
   }, []);
 

@@ -1,7 +1,18 @@
+// Archivo: src/components/cooperadora/CooperadoraBuffetDrawer.jsx
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Save, DollarSign, Calendar, FileText, AlertCircle, ShoppingBag, ArrowDownLeft, ArrowUpRight, Loader2 } from 'lucide-react'
-import Tooltip from '../Tooltip'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  X,
+  Save,
+  DollarSign,
+  Calendar,
+  FileText,
+  AlertCircle,
+  ShoppingBag,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Loader2,
+} from 'lucide-react'
 
 const INITIAL_BUFFET_STATE = {
   fecha: new Date().toISOString().split('T')[0],
@@ -70,242 +81,216 @@ export default function CooperadoraBuffetDrawer({
 
   const esIngreso = formData.tipo === 'ingreso'
 
-  if (!isOpen) return null
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Overlay coincidente con InstructorDrawer */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 bg-slate-900/20 dark:bg-slate-950/50 backdrop-blur-sm"
+          />
 
-  const drawerContent = (
-    <div className="fixed inset-0 z-[100] pointer-events-none font-roboto">
-      {/* Full screen Backdrop overlay with blur */}
-      <div
-        className={`fixed inset-0 z-[100] bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Drawer slide-over container */}
-      <section
-        className={`fixed inset-y-0 right-0 z-[101] w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-custom-gris-claro/10 dark:border-slate-800 flex flex-col h-full transition-transform duration-300 ease-in-out transform pointer-events-auto ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        aria-labelledby="buffet-drawer-title"
-        aria-hidden={!isOpen}
-      >
-        {/* Header with theme colors */}
-        <div className="p-6 bg-slate-900 dark:bg-slate-900 text-white relative shrink-0 border-b border-slate-800">
-          <div className="absolute top-4 right-4">
-            <Tooltip text="Cerrar formulario" position="left">
+          {/* Panel coincidente con InstructorDrawer */}
+          <motion.aside
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 h-full w-[460px] max-w-full z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200 font-nunito"
+            aria-label="Panel de Buffet"
+          >
+            {/* Cabecera coincidente con InstructorDrawer */}
+            <div className="bg-white dark:bg-slate-900 px-8 pt-8 pb-5 border-b border-slate-100 dark:border-slate-800/80 relative shrink-0">
               <button
                 onClick={onClose}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-                aria-label="Cerrar formulario de buffet"
+                title="Cerrar panel"
+                aria-label="Cerrar"
+                className="absolute top-6 right-6 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md p-1 transition-all focus:outline-none cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                <X size={20} strokeWidth={2} />
               </button>
-            </Tooltip>
-          </div>
 
-          <div className="flex items-center gap-3 mt-1">
-            <div className="p-2.5 bg-custom-azul-oscuro rounded-lg text-white shadow-md">
-              <ShoppingBag className="h-5 w-5 text-custom-amarillo" />
-            </div>
-            <div>
-              <h2 id="buffet-drawer-title" className="font-nunito font-extrabold text-lg leading-tight text-white">
-                Nuevo Registro de Buffet
-              </h2>
-              <p className="text-xs text-custom-gris-claro dark:text-slate-400 font-semibold mt-0.5">
-                Ingresos o gastos de la cantina institucional
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Scrollable Form Body with vertical fill */}
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-between space-y-6 text-xs">
-          <div className="space-y-4">
-            {formError && (
-              <div className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{formError}</span>
+              <div className="flex items-center gap-4">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xs shrink-0 border ${
+                  esIngreso
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400'
+                }`}>
+                  <ShoppingBag size={24} strokeWidth={2} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-roboto leading-tight">
+                    Movimiento de Buffet
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-nunito mt-0.5">
+                    Ingresos por ventas o gastos de la cantina institucional
+                  </p>
+                </div>
               </div>
-            )}
 
-            <form id="form-buffet" onSubmit={handleSubmit} className="space-y-4">
-              {/* Tipo de Movimiento (Ingreso vs Gasto) */}
-              <div>
-                <label className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1.5">
-                  Tipo de Registro <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className={`flex items-center justify-center gap-1.5 p-3 rounded-xl border text-center font-bold cursor-pointer transition-all ${
+              {/* Selector de Tipo (Ingreso vs Egreso) coincidente con InstructorDrawer */}
+              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg mt-5 border border-slate-200/60 dark:border-slate-700/60 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFormData((p) => ({ ...p, tipo: 'ingreso' }))}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-medium font-nunito transition-all cursor-pointer ${
                     formData.tipo === 'ingreso'
-                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="tipo"
-                      value="ingreso"
-                      checked={formData.tipo === 'ingreso'}
-                      onChange={handleChange}
-                      className="sr-only"
-                    />
-                    <ArrowDownLeft className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>+ Ingreso / Venta</span>
-                  </label>
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-semibold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <ArrowDownLeft size={15} />
+                  <span>+ Ingreso / Venta</span>
+                </button>
 
-                  <label className={`flex items-center justify-center gap-1.5 p-3 rounded-xl border text-center font-bold cursor-pointer transition-all ${
+                <button
+                  type="button"
+                  onClick={() => setFormData((p) => ({ ...p, tipo: 'egreso' }))}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-medium font-nunito transition-all cursor-pointer ${
                     formData.tipo === 'egreso'
-                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="tipo"
-                      value="egreso"
-                      checked={formData.tipo === 'egreso'}
-                      onChange={handleChange}
-                      className="sr-only"
-                    />
-                    <ArrowUpRight className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    <span>- Gasto / Insumo</span>
-                  </label>
-                </div>
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs font-semibold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <ArrowUpRight size={15} />
+                  <span>- Gasto / Insumo</span>
+                </button>
               </div>
-
-              {/* Fecha */}
-              <div>
-                <label htmlFor="buffet-fecha" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                  Fecha del Movimiento <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="date"
-                    id="buffet-fecha"
-                    name="fecha"
-                    required
-                    value={formData.fecha}
-                    onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {/* Monto */}
-              <div>
-                <label htmlFor="buffet-monto" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                  Monto ($) <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                  <input
-                    type="number"
-                    id="buffet-monto"
-                    name="monto"
-                    min="1"
-                    step="100"
-                    required
-                    value={formData.monto}
-                    onChange={handleChange}
-                    placeholder="15000"
-                    className="w-full pl-8 pr-3 py-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-mono font-bold text-sm focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste"
-                  />
-                </div>
-              </div>
-
-              {/* Detalle */}
-              <div>
-                <label htmlFor="buffet-detalle" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                  Detalle / Concepto <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="buffet-detalle"
-                  name="detalle"
-                  required
-                  value={formData.detalle}
-                  onChange={handleChange}
-                  placeholder="Ej. Venta de café y medialunas turno mañana"
-                  className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste"
-                />
-              </div>
-
-              {/* Observaciones */}
-              <div>
-                <label htmlFor="buffet-observaciones" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                  Observaciones adicionales (opcional)
-                </label>
-                <textarea
-                  id="buffet-observaciones"
-                  name="observaciones"
-                  rows={3}
-                  value={formData.observaciones}
-                  onChange={handleChange}
-                  placeholder="Comentarios adicionales o número de ticket/factura..."
-                  className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste resize-none"
-                />
-              </div>
-            </form>
-          </div>
-
-          {/* Movement Preview Box */}
-          <div className={`p-4 rounded-2xl border transition-colors ${
-            esIngreso
-              ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60'
-              : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
-          }`}>
-            <div className="flex items-center justify-between text-xs">
-              <span className={`font-bold uppercase tracking-wider text-[10px] ${
-                esIngreso ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
-              }`}>
-                Impacto en Caja Buffet:
-              </span>
-              <span className={`font-mono font-extrabold text-base ${
-                esIngreso ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'
-              }`}>
-                {formData.monto ? (esIngreso ? '+' : '-') + '$' + Number(formData.monto).toLocaleString('es-AR') : '$0'}
-              </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-              {formData.detalle ? formData.detalle : 'Completá el detalle para registrar el movimiento.'}
-            </p>
-          </div>
-        </div>
 
-        {/* Footer with Submit button */}
-        <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0">
-          <Tooltip text="Cancelar y cerrar" position="top">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-          </Tooltip>
-
-          <Tooltip text="Registrar movimiento en la caja del buffet" position="top">
-            <button
-              type="submit"
-              form="form-buffet"
-              disabled={isSubmitting}
-              className="flex items-center gap-1.5 px-5 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 text-custom-amarillo animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 text-custom-amarillo" />
+            {/* Contenido con scroll coincidente con InstructorDrawer */}
+            <div className="flex-1 overflow-y-auto px-8 pb-8 font-nunito space-y-4 pt-4">
+              {formError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+                  <AlertCircle size={15} className="shrink-0" />
+                  <span>{formError}</span>
+                </div>
               )}
-              {isSubmitting ? 'Guardando...' : 'Guardar Movimiento'}
-            </button>
-          </Tooltip>
-        </div>
-      </section>
-    </div>
-  )
 
-  if (typeof document === 'undefined') return null
-  return createPortal(drawerContent, document.body)
+              <form id="form-buffet" onSubmit={handleSubmit} className="space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                  Datos del Registro
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="buffet-fecha" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Fecha
+                    </label>
+                    <input
+                      type="date"
+                      id="buffet-fecha"
+                      name="fecha"
+                      required
+                      value={formData.fecha}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#166193] cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="buffet-monto" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Monto ($)
+                    </label>
+                    <input
+                      type="number"
+                      id="buffet-monto"
+                      name="monto"
+                      min="1"
+                      step="any"
+                      required
+                      value={formData.monto}
+                      onChange={handleChange}
+                      placeholder="15000"
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#166193]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="buffet-detalle" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                    Detalle / Concepto
+                  </label>
+                  <input
+                    type="text"
+                    id="buffet-detalle"
+                    name="detalle"
+                    required
+                    value={formData.detalle}
+                    onChange={handleChange}
+                    placeholder="Ej. Venta de café y medialunas turno mañana"
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#166193]"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="buffet-observaciones" className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                    Observaciones adicionales (opcional)
+                  </label>
+                  <textarea
+                    id="buffet-observaciones"
+                    name="observaciones"
+                    rows={3}
+                    value={formData.observaciones}
+                    onChange={handleChange}
+                    placeholder="Comentarios adicionales o número de ticket/factura..."
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#166193] resize-none"
+                  />
+                </div>
+
+                {/* Box Preview */}
+                <div className={`p-3.5 rounded-lg border flex items-center justify-between text-xs ${
+                  esIngreso
+                    ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60'
+                    : 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
+                }`}>
+                  <span className={`font-semibold uppercase tracking-wider text-[11px] ${
+                    esIngreso ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
+                  }`}>
+                    Impacto en Caja Buffet:
+                  </span>
+                  <span className={`font-mono font-bold text-sm ${
+                    esIngreso ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'
+                  }`}>
+                    {formData.monto ? (esIngreso ? '+' : '-') + '$' + Number(formData.monto).toLocaleString('es-AR') : '$0'}
+                  </span>
+                </div>
+              </form>
+            </div>
+
+            {/* Footer con botones coincidentes con InstructorDrawer */}
+            <div className="px-8 py-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5 shrink-0 font-nunito">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="h-9 px-4 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                form="form-buffet"
+                disabled={isSubmitting}
+                className="h-9 px-5 flex items-center justify-center gap-2 rounded-lg bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa] text-white text-xs font-medium transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Save size={14} strokeWidth={2} />
+                )}
+                Guardar Movimiento
+              </button>
+            </div>
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
+  )
 }

@@ -59,3 +59,42 @@ export async function createBuffetMovement(payload) {
 export async function deleteBuffetMovement(id) {
   return await DELETE('/api/v1/cooperadora/buffet', id)
 }
+
+/**
+ * Obtener todos los movimientos generales de Cooperadora (gastos, donaciones, etc.)
+ * @param {Object} [filters] - { year }
+ */
+export async function getCooperadoraMovements(filters = {}) {
+  const params = new URLSearchParams()
+  if (filters.year) params.append('year', filters.year)
+
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return await GET(`/api/v1/cooperadora/movimientos${query}`)
+}
+
+/**
+ * Registrar un nuevo movimiento general de Cooperadora (gasto, donación, etc.)
+ * @param {Object} payload - { fecha, monto, tipo, detalle, observaciones }
+ */
+export async function createCooperadoraMovement(payload) {
+  return await POST('/api/v1/cooperadora/movimientos', payload)
+}
+
+/**
+ * Eliminar un movimiento general de Cooperadora por ID
+ * @param {string} id - ID del movimiento
+ */
+export async function deleteCooperadoraMovement(id) {
+  return await DELETE('/api/v1/cooperadora/movimientos', id)
+}
+
+/**
+ * Obtener el reporte de balance contable consolidado (cuotas + buffet + movimientos)
+ * @param {number} year - Ciclo lectivo
+ */
+export async function getCooperadoraBalance(year) {
+  const params = new URLSearchParams()
+  if (year) params.append('year', year)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return await GET(`/api/v1/cooperadora/balance${query}`)
+}

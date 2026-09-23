@@ -1,7 +1,26 @@
+// Archivo: src/components/cooperadora/CooperadoraPagoDrawer.jsx
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Save, CheckCircle, Clock, Calendar, User, DollarSign, FileText, AlertCircle, Search, ChevronDown, Check, Trash2, Loader2 } from 'lucide-react'
-import Tooltip from '../Tooltip'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  X,
+  Save,
+  CheckCircle,
+  Clock,
+  Calendar,
+  User as UserIcon,
+  DollarSign,
+  FileText,
+  AlertCircle,
+  Search,
+  Check,
+  Trash2,
+  Loader2,
+  GraduationCap,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Tag,
+  BookOpen,
+} from 'lucide-react'
 
 export const MESES = [
   { id: 1, name: 'Enero', short: 'Ene' },
@@ -22,27 +41,93 @@ export default function CooperadoraPagoDrawer({
   student,
   isOpen,
   onClose,
+  initialTab = 'alumno',
   payments = {},
   onSavePayment,
   onDeletePayment,
+  onSaveCoopMovement,
   currentYear = new Date().getFullYear(),
   studentsList = [],
   onSelectStudent,
 }) {
   const MIN_FEE = 2000
-
   const currentMonthIndex = new Date().getMonth() + 1
+
+  // Pestaña activa: 'alumno' | 'ingreso_vario' | 'gastos'
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  // ── Estado Tab 1: Alumno ──
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex)
   const [amount, setAmount] = useState(2000)
   const [notes, setNotes] = useState('')
-  const [formError, setFormError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isChangingStudent, setIsChangingStudent] = useState(false)
   const [studentSearch, setStudentSearch] = useState('')
 
-  const studentPayments = student ? (payments[student.id] || {}) : {}
+  // ── Estado Tab 2: Ingreso Vario ──
+  const [varioFecha, setVarioFecha] = useState(new Date().toISOString().split('T')[0])
+  const [varioMonto, setVarioMonto] = useState('')
+  const [varioCategory, setVarioCategory] = useState('donacion')
+  const [varioDetalle, setVarioDetalle] = useState('')
+  const [varioObservaciones, setVarioObservaciones] = useState('')
 
-  // Calcular distribución de cuotas localmente para preview
+  // ── Estado Tab 3: Gastos Cooperadora ──
+  const [gastoFecha, setGastoFecha] = useState(new Date().toISOString().split('T')[0])
+  const [gastoMonto, setGastoMonto] = useState('')
+  const [gastoCategory, setGastoCategory] = useState('gasto')
+  const [gastoDetalle, setGastoDetalle] = useState('')
+  const [gastoObservaciones, setGastoObservaciones] = useState('')
+
+  // ── Estado común ──
+  const [formError, setFormError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const effectiveStudent = student || (studentsList.length > 0 ? studentsList[0] : null)
+  const studentPayments = effectiveStudent ? (payments[effectiveStudent.id] || {}) : {}
+
+  // Reiniciar estado al abrir el drawer o cambiar initialTab
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab || 'alumno')
+      setFormError('')
+      setIsSubmitting(false)
+      setIsChangingStudent(false)
+      setStudentSearch('')
+
+      // Reset ingreso vario
+      setVarioFecha(new Date().toISOString().split('T')[0])
+      setVarioMonto('')
+      setVarioCategory('donacion')
+      setVarioDetalle('')
+      setVarioObservaciones('')
+
+      // Reset gastos
+      setGastoFecha(new Date().toISOString().split('T')[0])
+      setGastoMonto('')
+      setGastoCategory('gasto')
+      setGastoDetalle('')
+      setGastoObservaciones('')
+    }
+  }, [isOpen, initialTab])
+
+  // Ajustar mes seleccionado al cambiar de alumno
+  useEffect(() => {
+    if (isOpen && effectiveStudent) {
+      const currentStudentPayments = payments[effectiveStudent.id] || {}
+      const firstUnpaid = MESES.find(m => !currentStudentPayments[m.id]?.pagado)?.id || currentMonthIndex
+      setSelectedMonth(firstUnpaid)
+
+      const existingPago = currentStudentPayments[firstUnpaid]
+      if (existingPago?.pagado) {
+        setAmount(existingPago.monto || 2000)
+        setNotes(existingPago.notas || '')
+      } else {
+        setAmount(2000)
+        setNotes('')
+      }
+    }
+  }, [effectiveStudent?.id, isOpen])
+
+  // Calcular distribución multi-mes
   const calcDistribution = (startMonth, totalAmount) => {
     const fullMonths = Math.floor(totalAmount / MIN_FEE)
     if (fullMonths <= 1) return [{ month: Math.min(startMonth, 12), amount: totalAmount }]
@@ -70,7 +155,6 @@ export default function CooperadoraPagoDrawer({
     ? calcDistribution(selectedMonth, Number(amount))
     : []
 
-  // Actualizar valores de monto y notas cuando se selecciona un mes
   const handleSelectMonth = (monthId) => {
     setSelectedMonth(monthId)
     const existingPago = studentPayments[monthId]
@@ -84,42 +168,13 @@ export default function CooperadoraPagoDrawer({
     setFormError('')
   }
 
-  // Reset form when student changes or drawer opens
-  useEffect(() => {
-    if (student && isOpen) {
-      const currentStudentPayments = payments[student.id] || {}
-      const firstUnpaid = MESES.find(m => !currentStudentPayments[m.id]?.pagado)?.id || currentMonthIndex
-      setSelectedMonth(firstUnpaid)
-
-      const existingPago = currentStudentPayments[firstUnpaid]
-      if (existingPago?.pagado) {
-        setAmount(existingPago.monto || 2000)
-        setNotes(existingPago.notas || '')
-      } else {
-        setAmount(2000)
-        setNotes('')
-      }
-
-      setFormError('')
-      setIsChangingStudent(false)
-      setStudentSearch('')
-      setIsSubmitting(false)
-    }
-  }, [student, isOpen, payments, currentMonthIndex])
-
-  if (!student && !isOpen) return null
-
-  const totalPaidMonths = Object.keys(studentPayments).filter(m => studentPayments[m]?.pagado).length
-  const totalPaidAmount = Object.values(studentPayments).reduce(
-    (acc, p) => acc + (p?.pagado ? Number(p.monto || 0) : 0),
-    0
-  )
-
-  const isSelectedMonthAlreadyPaid = Boolean(studentPayments[selectedMonth]?.pagado)
-  const currentPaidRecord = studentPayments[selectedMonth]
-
-  const handleSubmit = async (e) => {
+  // Submit Tab 1: Alumno
+  const handleSubmitAlumno = async (e) => {
     e.preventDefault()
+    if (!effectiveStudent) {
+      setFormError('Por favor selecciona un alumno de la lista.')
+      return
+    }
     if (!amount || Number(amount) < 2000) {
       setFormError('El pago mínimo de cooperadora debe ser de $2.000.')
       return
@@ -129,13 +184,14 @@ export default function CooperadoraPagoDrawer({
       setIsSubmitting(true)
       setFormError('')
       await onSavePayment({
-        studentId: student.id,
+        studentId: effectiveStudent.id,
         month: Number(selectedMonth),
         amount: Number(amount),
         year: currentYear,
         date: new Date().toISOString().split('T')[0],
         notes: notes.trim(),
       })
+      onClose()
     } catch (err) {
       setFormError(err.message || 'Error al guardar el pago de cooperadora')
     } finally {
@@ -143,8 +199,76 @@ export default function CooperadoraPagoDrawer({
     }
   }
 
-  const handleDelete = async () => {
-    if (!currentPaidRecord?.id) return
+  // Submit Tab 2: Ingreso Vario
+  const handleSubmitVario = async (e) => {
+    e.preventDefault()
+    if (!varioMonto || Number(varioMonto) <= 0) {
+      setFormError('El monto del ingreso debe ser mayor a 0.')
+      return
+    }
+    if (!varioDetalle.trim()) {
+      setFormError('Por favor ingresá el detalle o concepto del ingreso vario.')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      setFormError('')
+      if (onSaveCoopMovement) {
+        await onSaveCoopMovement({
+          fecha: varioFecha,
+          monto: Number(varioMonto),
+          tipo: 'ingreso',
+          category: varioCategory,
+          detalle: varioDetalle.trim(),
+          observaciones: varioObservaciones.trim(),
+        })
+      }
+      onClose()
+    } catch (err) {
+      setFormError(err.message || 'Error al registrar el ingreso extraordinario')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Submit Tab 3: Gastos Cooperadora
+  const handleSubmitGasto = async (e) => {
+    e.preventDefault()
+    if (!gastoMonto || Number(gastoMonto) <= 0) {
+      setFormError('El monto del gasto debe ser mayor a 0.')
+      return
+    }
+    if (!gastoDetalle.trim()) {
+      setFormError('Por favor ingresá el detalle o concepto del gasto de cooperadora.')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      setFormError('')
+      if (onSaveCoopMovement) {
+        await onSaveCoopMovement({
+          fecha: gastoFecha,
+          monto: Number(gastoMonto),
+          tipo: 'egreso',
+          category: gastoCategory,
+          detalle: gastoDetalle.trim(),
+          observaciones: gastoObservaciones.trim(),
+        })
+      }
+      onClose()
+    } catch (err) {
+      setFormError(err.message || 'Error al registrar el gasto de cooperadora')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Eliminación de pago de alumno
+  const handleDeletePagoAlumno = async () => {
+    const currentPaidRecord = studentPayments[selectedMonth]
+    if (!currentPaidRecord?.id || !effectiveStudent) return
     if (!window.confirm(`¿Estás seguro de eliminar el pago del mes ${MESES.find(m => m.id === selectedMonth)?.name}?`)) {
       return
     }
@@ -152,7 +276,7 @@ export default function CooperadoraPagoDrawer({
     try {
       setIsSubmitting(true)
       setFormError('')
-      await onDeletePayment(currentPaidRecord.id, student.id, selectedMonth)
+      await onDeletePayment(currentPaidRecord.id, effectiveStudent.id, selectedMonth)
       setAmount(2000)
       setNotes('')
     } catch (err) {
@@ -162,7 +286,13 @@ export default function CooperadoraPagoDrawer({
     }
   }
 
-  // Filtered students for dropdown
+  const isSelectedMonthAlreadyPaid = Boolean(studentPayments[selectedMonth]?.pagado)
+  const totalPaidMonths = Object.keys(studentPayments).filter(m => studentPayments[m]?.pagado).length
+  const totalPaidAmount = Object.values(studentPayments).reduce(
+    (acc, p) => acc + (p?.pagado ? Number(p.monto || 0) : 0),
+    0
+  )
+
   const filteredStudents = studentsList.filter((s) => {
     const q = studentSearch.toLowerCase().trim()
     if (!q) return true
@@ -173,381 +303,615 @@ export default function CooperadoraPagoDrawer({
     )
   })
 
-  const drawerContent = (
-    <div className="fixed inset-0 z-[100] pointer-events-none font-roboto">
-      {/* Full screen Backdrop overlay with blur */}
-      <div
-        className={`fixed inset-0 z-[100] bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Overlay coincidente con InstructorDrawer */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 bg-slate-900/20 dark:bg-slate-950/50 backdrop-blur-sm"
+          />
 
-      {/* Drawer slide-over container */}
-      {student && (
-        <section
-          className={`fixed inset-y-0 right-0 z-[101] w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl border-l border-custom-gris-claro/10 dark:border-slate-800 flex flex-col h-full transition-transform duration-300 ease-in-out transform pointer-events-auto ${
-            isOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-          aria-labelledby="pago-drawer-title"
-          aria-hidden={!isOpen}
-        >
-          {/* Header with student details & switcher */}
-          <div className="p-6 bg-custom-azul-oscuro text-white relative shrink-0">
-            <div className="absolute top-4 right-4">
-              <Tooltip text="Cerrar panel" position="left">
-                <button
-                  onClick={onClose}
-                  className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-                  aria-label="Cerrar panel de pagos"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </Tooltip>
-            </div>
+          {/* Panel coincidente con InstructorDrawer */}
+          <motion.aside
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 h-full w-[470px] max-w-full z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200 font-nunito"
+            aria-label="Panel de Cooperadora"
+          >
+            {/* Cabecera coincidente con InstructorDrawer */}
+            <div className="bg-white dark:bg-slate-900 px-8 pt-8 pb-5 border-b border-slate-100 dark:border-slate-800/80 relative shrink-0">
+              <button
+                onClick={onClose}
+                title="Cerrar panel"
+                aria-label="Cerrar"
+                className="absolute top-6 right-6 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md p-1 transition-all focus:outline-none cursor-pointer"
+              >
+                <X size={20} strokeWidth={2} />
+              </button>
 
-            <div className="flex items-start gap-3.5 mt-1">
-              {student.profile_photo_url ? (
-                <img
-                  src={student.profile_photo_url}
-                  alt={`${student.first_name} ${student.last_name}`}
-                  className="h-14 w-14 rounded-full object-cover border-2 border-custom-celeste shadow-md shrink-0 mt-0.5"
-                />
+              {activeTab === 'alumno' && effectiveStudent ? (
+                <div className="flex items-center gap-4">
+                  {effectiveStudent.profile_photo_url ? (
+                    <img
+                      src={effectiveStudent.profile_photo_url}
+                      alt={`${effectiveStudent.first_name} ${effectiveStudent.last_name}`}
+                      className="w-14 h-14 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[#166193] dark:text-sky-400 text-lg font-semibold font-roboto shadow-xs shrink-0">
+                      {effectiveStudent.first_name?.[0] || 'A'}{effectiveStudent.last_name?.[0] || 'L'}
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-roboto leading-tight truncate">
+                        {effectiveStudent.first_name} {effectiveStudent.last_name}
+                      </h2>
+                    </div>
+
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-nunito mt-0.5 leading-tight truncate">
+                      {effectiveStudent.course_name || 'Sin curso asignado'} • DNI: {effectiveStudent.dni || 'S/D'}
+                    </p>
+
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-md px-2 py-0.5 text-xs font-medium">
+                        {totalPaidMonths} / 12 cuotas
+                      </span>
+                      {studentsList.length > 1 && onSelectStudent && (
+                        <button
+                          type="button"
+                          onClick={() => setIsChangingStudent(!isChangingStudent)}
+                          className="text-xs text-[#166193] dark:text-sky-400 hover:underline font-medium cursor-pointer"
+                        >
+                          {isChangingStudent ? 'Ocultar alumnos' : 'Cambiar alumno'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ) : (
-                <div className="h-14 w-14 rounded-full bg-white/15 text-white flex items-center justify-center text-xl font-extrabold font-nunito border border-white/20 shrink-0 mt-0.5">
-                  {student.first_name?.[0] || 'A'}{student.last_name?.[0] || 'L'}
+                <div className="flex items-center gap-4">
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xs shrink-0 border ${
+                    activeTab === 'ingreso_vario'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {activeTab === 'ingreso_vario' ? (
+                      <ArrowDownLeft size={24} strokeWidth={2} />
+                    ) : (
+                      <ArrowUpRight size={24} strokeWidth={2} />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-roboto leading-tight">
+                      {activeTab === 'ingreso_vario' ? 'Ingreso Vario' : 'Gastos de Cooperadora'}
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-nunito mt-0.5">
+                      {activeTab === 'ingreso_vario'
+                        ? 'Donaciones, premios y subsidios institucionales'
+                        : 'Salidas de fondos, compras y mantenimiento'}
+                    </p>
+                  </div>
                 </div>
               )}
 
-              <div className="min-w-0 flex-1 pr-6">
-                <div className="flex items-center gap-2">
-                  <h2 id="pago-drawer-title" className="font-nunito font-extrabold text-xl leading-tight text-white truncate">
-                    {student.first_name} {student.last_name}
-                  </h2>
-                  {studentsList.length > 1 && onSelectStudent && (
-                    <button
-                      type="button"
-                      onClick={() => setIsChangingStudent(!isChangingStudent)}
-                      className="text-[11px] font-bold px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shrink-0"
-                      title="Cambiar alumno seleccionado"
-                    >
-                      {isChangingStudent ? 'Ocultar lista' : 'Cambiar'}
-                    </button>
-                  )}
-                </div>
+              {/* Selector de Pestañas coincidente con diseño de InstructorDrawer */}
+              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg mt-5 border border-slate-200/60 dark:border-slate-700/60 gap-1">
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('alumno'); setFormError(''); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-medium font-nunito transition-all cursor-pointer ${
+                    activeTab === 'alumno'
+                      ? 'bg-white dark:bg-slate-900 text-[#166193] dark:text-sky-400 shadow-xs font-semibold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <GraduationCap size={15} />
+                  <span>Ingreso Alumno</span>
+                </button>
 
-                <div className="flex items-center gap-2 mt-0.5 text-xs text-custom-celeste">
-                  <span className="font-mono font-medium">DNI: {student.dni || 'Sin DNI'}</span>
-                  <span>•</span>
-                  <span className="truncate">{student.course_name || 'Sin curso asignado'}</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('ingreso_vario'); setFormError(''); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-medium font-nunito transition-all cursor-pointer ${
+                    activeTab === 'ingreso_vario'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-semibold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <ArrowDownLeft size={15} />
+                  <span>Ingreso Vario</span>
+                </button>
 
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white">
-                    Ciclo Lectivo {currentYear}
-                  </span>
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    {totalPaidMonths} / 12 cuotas abonadas
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Optional Student Switcher Search Dropdown */}
-            {isChangingStudent && (
-              <div className="mt-4 p-3 bg-slate-900/90 rounded-xl border border-white/10 space-y-2 animate-fade-in">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                    placeholder="Buscar otro alumno por nombre o DNI…"
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-custom-celeste"
-                    autoFocus
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
-                  {filteredStudents.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => {
-                        onSelectStudent(s)
-                        setIsChangingStudent(false)
-                      }}
-                      className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                        s.id === student.id
-                          ? 'bg-custom-celeste/20 text-custom-celeste font-bold'
-                          : 'hover:bg-slate-800 text-slate-200'
-                      }`}
-                    >
-                      <span className="truncate">{s.first_name} {s.last_name}</span>
-                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2">{s.dni}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Scrollable Body filling height */}
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-
-            {/* Resumen Anual de Pagos (Grid de 12 meses) */}
-            <div className="space-y-3 shrink-0">
-              <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
-                <h3 className="text-xs font-bold text-custom-gris-claro dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-custom-celeste" />
-                  Historial de Cuotas {currentYear}
-                </h3>
-                <span className="text-xs font-extrabold text-custom-azul-oscuro dark:text-custom-celeste font-mono">
-                  Total: ${totalPaidAmount.toLocaleString('es-AR')}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('gastos'); setFormError(''); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-medium font-nunito transition-all cursor-pointer ${
+                    activeTab === 'gastos'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs font-semibold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <ArrowUpRight size={15} />
+                  <span>Gastos Coop</span>
+                </button>
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {MESES.map((mes) => {
-                  const pago = studentPayments[mes.id]
-                  const estaPagado = Boolean(pago?.pagado)
-                  const esMesSeleccionado = selectedMonth === mes.id
-
-                  return (
-                    <button
-                      key={mes.id}
-                      type="button"
-                      onClick={() => handleSelectMonth(mes.id)}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between min-h-[72px] ${
-                        esMesSeleccionado
-                          ? 'ring-2 ring-custom-azul-oscuro dark:ring-custom-celeste shadow-sm bg-custom-celeste/5 dark:bg-custom-celeste/10'
-                          : ''
-                      } ${
-                        estaPagado
-                          ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300'
-                          : 'bg-gray-50 dark:bg-slate-950 border-gray-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold font-nunito">{mes.short}</span>
-                        {estaPagado ? (
-                          <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
-                        )}
-                      </div>
-                      <div>
-                        {estaPagado ? (
-                          <>
-                            <p className="text-[11px] font-extrabold font-mono text-emerald-700 dark:text-emerald-300">
-                              ${Number(pago.monto).toLocaleString('es-AR')}
-                            </p>
-                            <p className="text-[9px] text-emerald-600/80 dark:text-emerald-400/70 truncate">
-                              {pago.fecha ? new Date(pago.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) : 'Registrado'}
-                            </p>
-                          </>
-                        ) : (
-                          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                            Pendiente
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Formulario para Cargar / Actualizar Pago */}
-            <div className="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex-1 flex flex-col justify-between space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                  <h4 className="text-xs font-bold text-custom-azul-oscuro dark:text-custom-celeste uppercase tracking-wider flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4 text-custom-amarillo" />
-                    Registrar Pago de Cuota ({MESES.find(m => m.id === selectedMonth)?.name})
-                  </h4>
-                  {isSelectedMonthAlreadyPaid && (
-                    <span className="text-[10px] bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded font-bold">
-                      Mes ya abonado (actualizará monto)
-                    </span>
-                  )}
-                </div>
-
-                {formError && (
-                  <div className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span>{formError}</span>
+              {/* Selector de alumnos desplegable */}
+              {isChangingStudent && activeTab === 'alumno' && (
+                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      placeholder="Buscar por nombre o DNI…"
+                      className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#166193]"
+                      autoFocus
+                    />
                   </div>
-                )}
-
-                <form id="form-cooperadora-pago" onSubmit={handleSubmit} className="space-y-4 text-xs">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Selector de Mes */}
-                    <div>
-                      <label htmlFor="select-mes" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                        Mes a Registrar <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="select-mes"
-                        value={selectedMonth}
-                        onChange={(e) => handleSelectMonth(Number(e.target.value))}
-                        className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-custom-gris-oscuro dark:text-slate-100 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste cursor-pointer"
+                  <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                    {filteredStudents.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          onSelectStudent(s)
+                          setIsChangingStudent(false)
+                        }}
+                        className={`w-full px-2.5 py-1.5 rounded-md text-left text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          s.id === effectiveStudent?.id
+                            ? 'bg-[#166193]/10 text-[#166193] dark:text-sky-400 font-semibold'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}
                       >
-                        {MESES.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name} {studentPayments[m.id]?.pagado ? '(Ya pagado)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        <span className="truncate">{s.first_name} {s.last_name}</span>
+                        <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2">{s.dni}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-                    {/* Monto del Pago */}
-                    <div>
-                      <label htmlFor="input-monto" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                        Monto Abonado ($) <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+            {/* Contenido con scroll coincidente con InstructorDrawer */}
+            <div className="flex-1 overflow-y-auto px-8 pb-8 font-nunito space-y-5">
+              {formError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400 flex items-center gap-2 mt-4">
+                  <AlertCircle size={15} className="shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {/* ══════════════ TAB 1: ALUMNO ══════════════ */}
+              {activeTab === 'alumno' && (
+                <>
+                  {/* Grid de 12 Meses */}
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-6 mb-3 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={13} /> Meses del Ciclo {currentYear}
+                      </span>
+                      <span className="font-mono normal-case font-medium text-slate-500 dark:text-slate-400">
+                        Total: ${totalPaidAmount.toLocaleString('es-AR')}
+                      </span>
+                    </h3>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {MESES.map((mes) => {
+                        const pago = studentPayments[mes.id]
+                        const estaPagado = Boolean(pago?.pagado)
+                        const esMesSeleccionado = selectedMonth === mes.id
+
+                        return (
+                          <button
+                            key={mes.id}
+                            type="button"
+                            onClick={() => handleSelectMonth(mes.id)}
+                            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[64px] ${
+                              esMesSeleccionado
+                                ? 'ring-2 ring-[#166193] dark:ring-sky-500 border-transparent shadow-xs'
+                                : ''
+                            } ${
+                              estaPagado
+                                ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300'
+                                : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold">{mes.short}</span>
+                              {estaPagado ? (
+                                <CheckCircle size={13} className="text-emerald-600 dark:text-emerald-400" />
+                              ) : (
+                                <Clock size={13} className="text-slate-300 dark:text-slate-600" />
+                              )}
+                            </div>
+                            <div>
+                              {estaPagado ? (
+                                <span className="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                                  ${Number(pago.monto).toLocaleString('es-AR')}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">Pendiente</span>
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Formulario */}
+                  <form id="form-coop-alumno" onSubmit={handleSubmitAlumno} className="space-y-4 pt-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                      Datos del Pago
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                          Mes
+                        </label>
+                        <select
+                          value={selectedMonth}
+                          onChange={(e) => handleSelectMonth(Number(e.target.value))}
+                          className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#166193] cursor-pointer"
+                        >
+                          {MESES.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} {studentPayments[m.id]?.pagado ? '(Abonado)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                          Monto ($)
+                        </label>
                         <input
                           type="number"
-                          id="input-monto"
                           min="2000"
                           step="100"
                           required
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
                           placeholder="2000"
-                          className="w-full pl-7 pr-3 py-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-custom-gris-oscuro dark:text-slate-100 font-mono font-bold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste"
+                          className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#166193]"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Observaciones / Notas */}
-                  <div>
-                    <label htmlFor="input-notas" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1">
-                      Observaciones / Comprobante (opcional)
-                    </label>
-                    <div className="relative">
-                      <FileText className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                        Comprobante / Observaciones (opcional)
+                      </label>
                       <textarea
-                        id="input-notas"
-                        rows={3}
+                        rows={2}
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Ej. Transferencia bancaria #48192 o pago en efectivo en secretaría..."
-                        className="w-full pl-9 pr-3 py-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-custom-gris-oscuro dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste resize-none"
+                        placeholder="Ej. Transferencia #9281 o pago en efectivo en secretaría..."
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#166193] resize-none"
+                      />
+                    </div>
+                  </form>
+
+                  {/* Distribución Multi-mes */}
+                  {distributionPreview.length > 1 ? (
+                    <div className="p-3.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 space-y-1.5 text-xs">
+                      <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold">
+                        <Calendar size={13} className="shrink-0" />
+                        <span>Distribución automática en {distributionPreview.length} meses:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {distributionPreview.map((item, idx) => {
+                          const mesName = MESES.find(m => m.id === item.month)?.short || `M${item.month}`
+                          const isPartial = item.amount < MIN_FEE
+                          return (
+                            <div
+                              key={idx}
+                              className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
+                                isPartial
+                                  ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
+                                  : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800'
+                              }`}
+                            >
+                              <span className="font-bold">{mesName}:</span> ${item.amount.toLocaleString('es-AR')}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Cuota {MESES.find(m => m.id === selectedMonth)?.name}:
+                      </span>
+                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                        ${Number(amount || 0).toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ══════════════ TAB 2: INGRESO VARIO ══════════════ */}
+              {activeTab === 'ingreso_vario' && (
+                <form id="form-coop-vario" onSubmit={handleSubmitVario} className="space-y-4 pt-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                    Detalle del Ingreso Extraordinario
+                  </h3>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Tipo de Ingreso Vario
+                    </label>
+                    <select
+                      value={varioCategory}
+                      onChange={(e) => setVarioCategory(e.target.value)}
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="donacion">Donación de Particular o Empresa</option>
+                      <option value="premio">Premio o Reconocimiento</option>
+                      <option value="subsidio">Subsidio Estatal o Institucional</option>
+                      <option value="evento">Recaudación de Evento / Rifa</option>
+                      <option value="otro">Otro Ingreso Extraordinario</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                        Fecha
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={varioFecha}
+                        onChange={(e) => setVarioFecha(e.target.value)}
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                        Monto ($)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="any"
+                        required
+                        value={varioMonto}
+                        onChange={(e) => setVarioMonto(e.target.value)}
+                        placeholder="15000"
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                   </div>
-                </form>
-              </div>
 
-              {/* Distribution Preview */}
-              {distributionPreview.length > 1 ? (
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span className="font-bold text-amber-800 dark:text-amber-300">
-                      Distribución automática en {distributionPreview.length} meses
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Concepto / Detalle
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={varioDetalle}
+                      onChange={(e) => setVarioDetalle(e.target.value)}
+                      placeholder="Ej. Donación de insumos por exalumnos del curso de Electricidad"
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Observaciones adicionales (opcional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={varioObservaciones}
+                      onChange={(e) => setVarioObservaciones(e.target.value)}
+                      placeholder="Número de recibo, donante, observaciones..."
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
+
+                  {/* Impacto */}
+                  <div className="p-3.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold uppercase tracking-wider text-[11px]">
+                      Impacto en Cooperadora:
+                    </span>
+                    <span className="font-mono font-bold text-sm text-emerald-700 dark:text-emerald-300">
+                      {varioMonto ? `+$${Number(varioMonto).toLocaleString('es-AR')}` : '$0'}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {distributionPreview.map((item, idx) => {
-                      const mesName = MESES.find(m => m.id === item.month)?.short || `M${item.month}`
-                      const isPartial = item.amount < MIN_FEE
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg font-mono text-xs ${
-                            isPartial
-                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-300/50'
-                              : 'bg-white dark:bg-slate-800 text-custom-azul-oscuro dark:text-custom-celeste border border-custom-celeste/30'
-                          }`}
-                        >
-                          <span className="font-bold">{mesName}:</span>
-                          <span>${item.amount.toLocaleString('es-AR')}</span>
-                          {isPartial && (
-                            <span className="text-amber-500 dark:text-amber-400 font-bold" title="Monto parcial (menor al mínimo)">*</span>
-                          )}
-                        </div>
-                      )
-                    })}
+                </form>
+              )}
+
+              {/* ══════════════ TAB 3: SALIDAS / GASTOS ══════════════ */}
+              {activeTab === 'gastos' && (
+                <form id="form-coop-gasto" onSubmit={handleSubmitGasto} className="space-y-4 pt-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                    Detalle del Gasto o Salida
+                  </h3>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Categoría del Gasto
+                    </label>
+                    <select
+                      value={gastoCategory}
+                      onChange={(e) => setGastoCategory(e.target.value)}
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                    >
+                      <option value="gasto">Gasto General de Cooperadora</option>
+                      <option value="compra">Compra de Materiales / Equipamiento</option>
+                      <option value="mantenimiento">Reparación o Mantenimiento Edilicio</option>
+                      <option value="servicio">Servicios o Contrataciones</option>
+                      <option value="otro">Otro Egreso</option>
+                    </select>
                   </div>
-                  {distributionPreview[distributionPreview.length - 1].amount < MIN_FEE && (
-                    <p className="mt-1.5 text-amber-600 dark:text-amber-400 text-[11px]">
-                      * El último mes tiene un saldo parcial de ${distributionPreview[distributionPreview.length - 1].amount.toLocaleString('es-AR')} (menor al mínimo de $2.000)
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-custom-celeste/10 dark:bg-custom-celeste/15 border border-custom-celeste/20 text-xs flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-custom-celeste shrink-0" />
-                    <span className="font-medium text-custom-azul-oscuro dark:text-custom-celeste">
-                      Cuota {MESES.find(m => m.id === selectedMonth)?.name}:
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                        Fecha
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={gastoFecha}
+                        onChange={(e) => setGastoFecha(e.target.value)}
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                        Monto ($)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="any"
+                        required
+                        value={gastoMonto}
+                        onChange={(e) => setGastoMonto(e.target.value)}
+                        placeholder="8500"
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-mono font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Concepto / Detalle
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={gastoDetalle}
+                      onChange={(e) => setGastoDetalle(e.target.value)}
+                      placeholder="Ej. Compra de resmas de hojas y tóner para secretaría"
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+                      Observaciones adicionales (opcional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={gastoObservaciones}
+                      onChange={(e) => setGastoObservaciones(e.target.value)}
+                      placeholder="Factura número, proveedor, notas adicionales..."
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none"
+                    />
+                  </div>
+
+                  {/* Impacto */}
+                  <div className="p-3.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between text-xs">
+                    <span className="text-amber-700 dark:text-amber-400 font-semibold uppercase tracking-wider text-[11px]">
+                      Impacto en Cooperadora:
+                    </span>
+                    <span className="font-mono font-bold text-sm text-amber-700 dark:text-amber-300">
+                      {gastoMonto ? `-$${Number(gastoMonto).toLocaleString('es-AR')}` : '$0'}
                     </span>
                   </div>
-                  <span className="font-mono font-extrabold text-custom-azul-oscuro dark:text-custom-celeste text-sm">
-                    ${Number(amount || 0).toLocaleString('es-AR')}
-                  </span>
-                </div>
+                </form>
               )}
             </div>
-          </div>
 
-          {/* Footer Actions */}
-          <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
-            <div>
-              {isSelectedMonthAlreadyPaid && onDeletePayment && (
-                <Tooltip text="Anular / Eliminar este pago del alumno" position="top">
+            {/* Footer con botones coincidentes con InstructorDrawer */}
+            <div className="px-8 py-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 font-nunito">
+              <div>
+                {activeTab === 'alumno' && isSelectedMonthAlreadyPaid && onDeletePayment && (
                   <button
                     type="button"
-                    onClick={handleDelete}
+                    onClick={handleDeletePagoAlumno}
                     disabled={isSubmitting}
-                    className="flex items-center gap-1.5 px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                    className="h-9 px-3 flex items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 size={14} strokeWidth={2} />
                     Eliminar Pago
                   </button>
-                </Tooltip>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="flex items-center gap-3">
-              <Tooltip text="Cerrar sin guardar" position="top">
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                  className="h-9 px-4 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cerrar
                 </button>
-              </Tooltip>
 
-              <Tooltip text="Guardar el pago de cooperadora para este alumno" position="top">
-                <button
-                  type="submit"
-                  form="form-cooperadora-pago"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 text-custom-amarillo animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 text-custom-amarillo" />
-                  )}
-                  {isSubmitting ? 'Guardando...' : 'Guardar Pago'}
-                </button>
-              </Tooltip>
+                {activeTab === 'alumno' && (
+                  <button
+                    type="submit"
+                    form="form-coop-alumno"
+                    disabled={isSubmitting}
+                    className="h-9 px-5 flex items-center justify-center gap-2 rounded-lg bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa] text-white text-xs font-medium transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Save size={14} strokeWidth={2} />
+                    )}
+                    Guardar Pago
+                  </button>
+                )}
+
+                {activeTab === 'ingreso_vario' && (
+                  <button
+                    type="submit"
+                    form="form-coop-vario"
+                    disabled={isSubmitting}
+                    className="h-9 px-5 flex items-center justify-center gap-2 rounded-lg bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa] text-white text-xs font-medium transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Save size={14} strokeWidth={2} />
+                    )}
+                    Guardar Ingreso
+                  </button>
+                )}
+
+                {activeTab === 'gastos' && (
+                  <button
+                    type="submit"
+                    form="form-coop-gasto"
+                    disabled={isSubmitting}
+                    className="h-9 px-5 flex items-center justify-center gap-2 rounded-lg bg-[#166193] hover:bg-[#124f78] dark:bg-[#166193] dark:hover:bg-[#1a74aa] text-white text-xs font-medium transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Save size={14} strokeWidth={2} />
+                    )}
+                    Guardar Gasto
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </motion.aside>
+        </>
       )}
-    </div>
+    </AnimatePresence>
   )
-
-  if (typeof document === 'undefined') return null
-  return createPortal(drawerContent, document.body)
 }

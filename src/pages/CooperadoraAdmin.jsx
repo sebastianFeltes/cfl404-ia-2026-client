@@ -17,12 +17,15 @@ import {
   Lock,
   ArrowRight,
   RefreshCw,
+  BarChart2,
+  TrendingUp,
 } from 'lucide-react'
 
 import StatCard from '../components/StatCard'
 import Tooltip from '../components/Tooltip'
 import CooperadoraAlumnosTable from '../components/cooperadora/CooperadoraAlumnosTable'
 import CooperadoraBuffetTable from '../components/cooperadora/CooperadoraBuffetTable'
+import CooperadoraBalanceTable from '../components/cooperadora/CooperadoraBalanceTable'
 import CooperadoraPagoDrawer, { MESES } from '../components/cooperadora/CooperadoraPagoDrawer'
 import CooperadoraBuffetDrawer from '../components/cooperadora/CooperadoraBuffetDrawer'
 import { GET } from '../services/api'
@@ -32,6 +35,11 @@ import {
   deleteCooperadoraPago,
   getBuffetMovements,
   createBuffetMovement,
+  deleteBuffetMovement,
+  getCooperadoraMovements,
+  createCooperadoraMovement,
+  deleteCooperadoraMovement,
+  getCooperadoraBalance,
 } from '../services/cooperadoraService'
 import { useAuth } from '../context/AuthContext'
 import { canonicalRole } from '../utils/roles'
@@ -59,6 +67,7 @@ export default function CooperadoraAdmin() {
   const [students, setStudents] = useState([])
   const [payments, setPayments] = useState({})
   const [buffetRecords, setBuffetRecords] = useState([])
+  const [balanceReport, setBalanceReport] = useState(null)
 
   // State: Loading & Errors
   const [loading, setLoading] = useState(true)
@@ -66,6 +75,8 @@ export default function CooperadoraAdmin() {
 
   // Drawers
   const [selectedStudentForDrawer, setSelectedStudentForDrawer] = useState(null)
+  const [isCoopDrawerOpen, setIsCoopDrawerOpen] = useState(false)
+  const [coopDrawerTab, setCoopDrawerTab] = useState('alumno')
   const [isBuffetDrawerOpen, setIsBuffetDrawerOpen] = useState(false)
 
   // Toast
@@ -86,13 +97,14 @@ export default function CooperadoraAdmin() {
       setErrorMessage(null)
 
       // Ejecutar llamadas concurrentes a la API
-      const [studentsRes, paymentsRes, buffetRes] = await Promise.allSettled([
+      const [studentsRes, paymentsRes, buffetRes, balanceRes] = await Promise.allSettled([
         GET('/api/v1/alumnos'),
         getCooperadoraPagos(selectedYear),
         getBuffetMovements({
           year: selectedYear,
           month: filterBuffetMes || undefined,
         }),
+        getCooperadoraBalance(selectedYear),
       ])
 
       // Procesar Alumnos
@@ -117,6 +129,13 @@ export default function CooperadoraAdmin() {
         setBuffetRecords(records)
       } else if (buffetRes.status === 'rejected') {
         if (import.meta.env.DEV) console.warn('Error al cargar movimientos de buffet:', buffetRes.reason)
+      }
+
+      // Procesar Reporte de Balance Contable
+      if (balanceRes.status === 'fulfilled' && balanceRes.value) {
+        setBalanceReport(balanceRes.value)
+      } else if (balanceRes.status === 'rejected') {
+        if (import.meta.env.DEV) console.warn('Error al cargar balance contable:', balanceRes.reason)
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('Error global cargando cooperadora:', err)
@@ -219,6 +238,53 @@ export default function CooperadoraAdmin() {
     }
   }
 
+  // ── 3.1 Manejo de Movimientos de Cooperadora y Balance ────────────────────
+  const handleSaveCoopMovement = async (movementData) => {
+    try {
+      await createCooperadoraMovement(movementData)
+      showToast(
+        `Movimiento de cooperadora registrado con éxito: $${Number(movementData.monto).toLocaleString('es-AR')}`
+      )
+      fetchData()
+    } catch (err) {
+      throw new Error(err.message || 'Error al guardar el movimiento de cooperadora')
+    }
+  }
+
+  const handleDeleteBalanceEntry = async (entry) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el movimiento "${entry.detalle}"?`)) {
+      return
+    }
+    try {
+      if (entry.entityType === 'payment' || entry.categoria === 'cuota') {
+        await deleteCooperadoraPago(entry.rawId)
+      } else if (entry.origen === 'cooperadora') {
+        await deleteCooperadoraMovement(entry.rawId)
+      } else if (entry.origen === 'buffet') {
+        await deleteBuffetMovement(entry.rawId)
+      }
+      showToast('Movimiento contable eliminado correctamente.')
+      fetchData()
+    } catch (err) {
+      showToast(err.message || 'Error al eliminar el movimiento.')
+    }
+  }
+
+  const handleOpenNewStudentPayment = () => {
+    if (students.length === 0) {
+      showToast('No hay alumnos cargados en la base de datos.')
+      return
+    }
+    setSelectedStudentForDrawer(students[0])
+    setCoopDrawerTab('alumno')
+    setIsCoopDrawerOpen(true)
+  }
+
+  const handleOpenNewBalanceRecord = (tab = 'gastos') => {
+    setCoopDrawerTab(tab)
+    setIsCoopDrawerOpen(true)
+  }
+
   // ── 4. Filtros y Búsquedas ────────────────────────────────────────────────
   const handleResetFilters = () => {
     setSearchTerm('')
@@ -256,6 +322,19 @@ export default function CooperadoraAdmin() {
       return matchesSearch && matchesTipo
     })
   }, [buffetRecords, searchTerm, filterBuffetTipo])
+
+  const filteredBalanceEntries = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim()
+    return (balanceReport?.entries || []).filter((e) => {
+      const matchesSearch =
+        q === '' ||
+        (e.detalle && e.detalle.toLowerCase().includes(q)) ||
+        (e.observaciones && e.observaciones.toLowerCase().includes(q)) ||
+        (e.origen && e.origen.toLowerCase().includes(q))
+
+      return matchesSearch
+    })
+  }, [balanceReport, searchTerm])
 
   const uniqueCourses = useMemo(() => {
     return [...new Set(students.map((s) => s.course_name).filter(Boolean))].sort()
@@ -385,6 +464,36 @@ export default function CooperadoraAdmin() {
             </button>
           </Tooltip>
 
+          {/* Botón Ver Gráfico con target_blank en pestaña Balance */}
+          {activeTab === 'balance' && (
+            <Tooltip text="Abrir gráfico de líneas interactivo en una pestaña nueva" position="bottom">
+              <a
+                href="/admin/cooperadora/grafico"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 border-2 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs"
+                aria-label="Ver gráfico de líneas"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Ver Gráfico
+              </a>
+            </Tooltip>
+          )}
+
+          {/* Botón Nuevo Registro según la pestaña activa */}
+          {activeTab === 'alumnos' && (
+            <Tooltip text="Registrar cobro de cuota a un alumno" position="bottom">
+              <button
+                onClick={handleOpenNewStudentPayment}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer"
+                aria-label="Nuevo registro de cuota"
+              >
+                <Plus className="h-4 w-4 text-custom-amarillo" />
+                Nuevo Registro
+              </button>
+            </Tooltip>
+          )}
+
           {activeTab === 'buffet' && (
             <Tooltip text="Registrar un ingreso o egreso en el buffet" position="bottom">
               <button
@@ -501,6 +610,22 @@ export default function CooperadoraAdmin() {
               {buffetRecords.length}
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('balance')}
+            className={`flex items-center gap-2.5 px-5 py-3 font-nunito font-bold text-sm border-b-2 transition-all cursor-pointer ${
+              activeTab === 'balance'
+                ? 'border-custom-azul-oscuro dark:border-custom-celeste text-custom-azul-oscuro dark:text-custom-celeste'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <BarChart2 className="h-4.5 w-4.5" />
+            Balance
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-mono">
+              {balanceReport?.entries?.length || 0}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -515,7 +640,9 @@ export default function CooperadoraAdmin() {
               placeholder={
                 activeTab === 'alumnos'
                   ? 'Buscar alumno por nombre, DNI o curso…'
-                  : 'Buscar por detalle o concepto de buffet…'
+                  : activeTab === 'buffet'
+                  ? 'Buscar por detalle o concepto de buffet…'
+                  : 'Buscar por concepto, origen o detalle en balance…'
               }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -617,24 +744,39 @@ export default function CooperadoraAdmin() {
           alumnos={filteredStudents}
           payments={payments}
           loading={loading}
-          onSelectStudent={(student) => setSelectedStudentForDrawer(student)}
+          onSelectStudent={(student) => {
+            setSelectedStudentForDrawer(student)
+            setCoopDrawerTab('alumno')
+            setIsCoopDrawerOpen(true)
+          }}
           currentYear={selectedYear}
         />
-      ) : (
+      ) : activeTab === 'buffet' ? (
         <CooperadoraBuffetTable
           registros={filteredBuffetRecords}
           onOpenNewModal={() => setIsBuffetDrawerOpen(true)}
         />
+      ) : (
+        <CooperadoraBalanceTable
+          entries={filteredBalanceEntries}
+          loading={loading}
+          onDeleteEntry={handleDeleteBalanceEntry}
+        />
       )}
 
-      {/* Drawer: Student Cooperadora Payment Details & Form */}
+      {/* Drawer Unificado de Cooperadora (3 Pestañas: Alumno, Ingreso Vario, Gastos) */}
       <CooperadoraPagoDrawer
         student={selectedStudentForDrawer}
-        isOpen={Boolean(selectedStudentForDrawer)}
-        onClose={() => setSelectedStudentForDrawer(null)}
+        isOpen={isCoopDrawerOpen}
+        initialTab={coopDrawerTab}
+        onClose={() => {
+          setIsCoopDrawerOpen(false)
+          setSelectedStudentForDrawer(null)
+        }}
         payments={payments}
         onSavePayment={handleSavePayment}
         onDeletePayment={handleDeletePayment}
+        onSaveCoopMovement={handleSaveCoopMovement}
         currentYear={selectedYear}
         studentsList={students}
         onSelectStudent={(student) => setSelectedStudentForDrawer(student)}

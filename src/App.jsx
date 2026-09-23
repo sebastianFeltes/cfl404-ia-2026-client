@@ -26,6 +26,7 @@ import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
 import CooperadoraAdmin from './pages/CooperadoraAdmin'
+import CooperadoraGraficoBalance from './pages/CooperadoraGraficoBalance'
 
 const STAFF_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
 const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
@@ -128,6 +129,7 @@ function AppRoutes() {
         </RoleRoute>
       }>
         <Route path='admin/cooperadora' element={<CooperadoraAdmin />} />
+        <Route path='admin/cooperadora/grafico' element={<CooperadoraGraficoBalance />} />
       </Route>
     </Routes>
   )
