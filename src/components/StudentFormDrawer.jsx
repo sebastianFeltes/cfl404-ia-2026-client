@@ -420,6 +420,11 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
                 <option value="Programador Web">Programador Web</option>
                 <option value="Electricista Matriculado">Electricista Matriculado</option>
                 <option value="Diseño Gráfico Digital">Diseño Gráfico Digital</option>
+                <option value="Soldador">Soldador</option>
+                <option value="Operador de Marketing Digital">Operador de Marketing Digital</option>
+                <option value="Logística Portuaria">Logística Portuaria</option>
+                <option value="Limpieza Institucional">Limpieza Institucional</option>
+                <option value="Impresión 3D">Impresión 3D</option>
               </select>
             </div>
 

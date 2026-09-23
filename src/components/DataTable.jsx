@@ -6,6 +6,7 @@ import { Inbox, Plus, ChevronLeft, ChevronRight, ChevronDown, ShieldAlert, Exter
 
 function isPostulanteCheck(student) {
   if (!student) return false
+  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
   const role = String(student.role_name || '').toUpperCase()
   const status = String(student.status || '').toUpperCase()
   return (
@@ -192,8 +193,19 @@ function DataTable({
                             onView && onView(student.id)
                           }}
                         >
-                          <div className="font-nunito font-bold text-slate-800 dark:text-slate-100 group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste transition-colors truncate">
-                            {student.first_name} {student.last_name}
+                          <div className="flex items-center gap-2">
+                            <div className={`font-nunito font-bold truncate transition-colors ${
+                              student.status_id === 2 
+                                ? 'text-slate-400 line-through dark:text-slate-500' 
+                                : 'text-slate-800 dark:text-slate-100 group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste'
+                            }`}>
+                              {student.first_name} {student.last_name}
+                            </div>
+                            {student.status_id === 2 && (
+                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 rounded font-nunito uppercase tracking-wide shrink-0">
+                                De Baja
+                              </span>
+                            )}
                           </div>
                           {isStudentPostulante && (
                             <div className="mt-0.5">

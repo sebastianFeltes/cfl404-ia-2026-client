@@ -17,11 +17,13 @@ import {
   ExternalLink,
   Pencil,
   UserCheck,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react'
 
 function isPostulanteCheck(student) {
   if (!student) return false
+  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
   const role = String(student.role_name || '').toUpperCase()
   const status = String(student.status || '').toUpperCase()
   return (
@@ -57,6 +59,7 @@ export default function StudentCardView({
   const isPostulantesTab = activeTab === 'postulantes'
   const canCreate = userRole === 'director' || userRole === 'secretaria'
   const canEdit = userRole === 'director' || userRole === 'secretaria'
+  const canDelete = userRole === 'director'
   const totalPaginas = Math.max(1, Math.ceil(totalResultados / itemsPorPagina))
   const startIndex = totalResultados === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1
   const endIndex = Math.min(paginaActual * itemsPorPagina, totalResultados)
@@ -163,15 +166,26 @@ export default function StudentCardView({
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onView && onView(student.id)
-                        }}
-                        className="font-bold text-slate-900 dark:text-slate-100 font-nunito group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste cursor-pointer transition-colors leading-snug truncate"
-                      >
-                        {student.first_name} {student.last_name}
-                      </h3>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onView && onView(student.id)
+                          }}
+                          className={`font-bold font-nunito cursor-pointer transition-colors leading-snug truncate ${
+                            student.status_id === 2
+                              ? 'text-slate-400 line-through dark:text-slate-500'
+                              : 'text-slate-900 dark:text-slate-100 group-hover:text-custom-azul-oscuro dark:group-hover:text-custom-celeste'
+                          }`}
+                        >
+                          {student.first_name} {student.last_name}
+                        </h3>
+                        {student.status_id === 2 && (
+                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 rounded font-nunito uppercase tracking-wide shrink-0">
+                            De Baja
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
                         DNI: {student.dni || '—'}
                       </p>
@@ -261,6 +275,20 @@ export default function StudentCardView({
                         aria-label={`Editar a ${student.first_name}`}
                       >
                         <Pencil className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  )}
+
+                  {/* Eliminar / Descartar */}
+                  {canDelete && onDelete && (
+                    <Tooltip text={isStudentPostulante ? "Descartar postulación" : "Dar de baja alumno"} position="top">
+                      <button
+                        type="button"
+                        onClick={() => onDelete(student.id)}
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all cursor-pointer"
+                        aria-label={`Eliminar a ${student.first_name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </Tooltip>
                   )}

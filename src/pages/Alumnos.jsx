@@ -25,6 +25,7 @@ import { fetchCourses } from '../services/coursesService'
 
 const isPostulante = (student) => {
   if (!student) return false
+  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
   const role = String(student.role_name || '').toUpperCase()
   const status = String(student.status || '').toUpperCase()
   return (
@@ -140,11 +141,14 @@ export default function Alumnos() {
 
   // Filtrado de alumnos
   const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
+    const filtered = students.filter((student) => {
       // Separación por pestaña: Alumnos vs Postulantes
       const studentIsPostulante = isPostulante(student)
       if (activeTab === 'alumnos' && studentIsPostulante) return false
       if (activeTab === 'postulantes' && !studentIsPostulante) return false
+
+      // En la pestaña postulantes, descartados (status_id === 2) quedan fuera
+      if (activeTab === 'postulantes' && student.status_id === 2) return false
 
       // Filtro de texto
       const searchLower = busqueda.toLowerCase().trim()
@@ -171,6 +175,10 @@ export default function Alumnos() {
 
       return matchesSearch && matchesEstado
     })
+
+    // Ordenar: Activos/Presentes (1) → Pendientes (3) → Inactivos (2) siempre al final
+    const STATUS_SORT_ORDER = { 1: 0, 3: 1, 4: 2, 2: 3 }
+    return filtered.sort((a, b) => (STATUS_SORT_ORDER[a.status_id] ?? 0) - (STATUS_SORT_ORDER[b.status_id] ?? 0))
   }, [students, activeTab, busqueda, filtroEstado])
 
   // Resetear página al filtrar, buscar o cambiar de pestaña
@@ -334,26 +342,41 @@ export default function Alumnos() {
 
   const handleFormSubmit = async (data) => {
     if (!puedeEditar) return
+    const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
+    const cleanDni = data.dni ? String(data.dni).replace(/[\.\s-]/g, '').trim() : undefined
+    const cleanRoleName = isPostulant ? 'POSTULANTE' : 'ALUMNO'
+    const statusText = isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo')
+    const statusId = isPostulant ? 3 : (Number(data.status_id) || 1)
+
     if (data.id) {
-      // Edición
-      const updatedFields = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        dni: data.dni,
-        email: data.email,
-        extra_email: data.extra_email || '',
-        phone: data.phone || '',
-        extra_phone: data.extra_phone || '',
-        address: data.address || '',
-        dob: data.dob || '',
+      // ── EDICIÓN ──
+      const apiUpdatePayload = {
+        first_name: data.first_name?.trim(),
+        last_name: data.last_name?.trim(),
+        ...(cleanDni && { dni: cleanDni }),
+        ...(data.email && { email: data.email.trim().toLowerCase() }),
+        phone: data.phone?.trim() || null,
+        extra_phone: data.extra_phone?.trim() || null,
+        extra_email: data.extra_email?.trim().toLowerCase() || null,
+        address: data.address?.trim() || null,
+        dob: data.dob?.trim() || null,
         gender: data.gender || 'Masculino',
         nacionality: data.nacionality || 'Argentina',
-        course_name: data.course_name,
-        academic_level: data.academic_level,
-        status: data.role_name === 'Postulante' || data.status_id === 3 ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
-        status_id: Number(data.status_id) || 1,
-        role_name: data.role_name,
-        is_aspirante: data.role_name === 'Postulante' || data.status_id === 3,
+        course_name: data.course_name || null,
+        academic_level: data.academic_level || 'Secundario',
+        status: statusText,
+        status_id: statusId,
+        role_name: cleanRoleName,
+      }
+
+      const updatedLocalFields = {
+        ...data,
+        dni: cleanDni || data.dni,
+        status: statusText,
+        status_id: statusId,
+        role_name: isPostulant ? 'Postulante' : 'Alumno',
+        is_aspirante: isPostulant,
+        is_present: statusId === 1,
       }
 
       const existingStudent = students.find(s => s.id === data.id)
@@ -364,11 +387,13 @@ export default function Alumnos() {
       )
 
       try {
-        const cleanDni = data.dni ? String(data.dni).replace(/[\.\s-]/g, '') : undefined
-        await PUT('/api/v1/alumnos', {
-          ...updatedFields,
-          dni: cleanDni,
-        }, data.id)
+        const res = await PUT('/api/v1/alumnos', apiUpdatePayload, data.id)
+        const saved = res?.data
+        if (saved?.id) {
+          setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...saved, is_present: saved.status_id === 1 } : s))
+        } else {
+          setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedLocalFields } : s))
+        }
         await fetchStudents()
         if (isEmailChanged) {
           showToast(`¡Acceso actualizado! "${data.first_name} ${data.last_name}" ahora ingresará con "${data.email}". Todos sus datos y legajo permanecen consistentes.`)
@@ -376,8 +401,8 @@ export default function Alumnos() {
           showToast(`Registro de "${data.first_name} ${data.last_name}" actualizado en base de datos.`)
         }
       } catch (err) {
-        // Modo local / fallback en caso de que la API esté fuera de línea
-        setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedFields } : s))
+        // Fallback local en caso de error de red o backend
+        setStudents(prev => prev.map(s => s.id === data.id ? { ...s, ...updatedLocalFields } : s))
         if (isEmailChanged) {
           showToast(`¡Acceso actualizado! "${data.first_name} ${data.last_name}" ahora ingresará con "${data.email}". Todos sus datos y legajo permanecen consistentes.`)
         } else {
@@ -386,31 +411,34 @@ export default function Alumnos() {
       }
 
       // Sincronizar con el drawer de vista si está abierto
-      setViewStudent(prev => prev?.id === data.id ? { ...prev, ...updatedFields } : prev)
+      setViewStudent(prev => prev?.id === data.id ? { ...prev, ...updatedLocalFields } : prev)
       setEditStudent(null)
     } else {
-      // Creación
-      const cleanDni = String(data.dni || '').replace(/[\.\s-]/g, '').trim()
-      const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
-      const newId = Date.now()
-      const payload = {
-        id: newId,
+      // ── CREACIÓN ──
+      const apiCreatePayload = {
         first_name: data.first_name?.trim(),
         last_name: data.last_name?.trim(),
-        dni: data.dni?.trim() || cleanDni,
-        email: data.email?.trim(),
-        extra_email: data.extra_email?.trim() || '',
-        phone: data.phone || '',
-        extra_phone: data.extra_phone || '',
-        address: data.address || '',
-        dob: data.dob || '',
+        dni: cleanDni,
+        email: data.email?.trim().toLowerCase(),
+        phone: data.phone?.trim() || null,
+        extra_phone: data.extra_phone?.trim() || null,
+        extra_email: data.extra_email?.trim().toLowerCase() || null,
+        address: data.address?.trim() || null,
+        dob: data.dob?.trim() || null,
         gender: data.gender || 'Masculino',
         nacionality: data.nacionality || 'Argentina',
         course_name: data.course_name || 'Operador de PC',
         academic_level: data.academic_level || 'Secundario',
-        status_id: isPostulant ? 3 : (data.status_id === 2 ? 2 : 1),
-        status: isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo'),
-        role_name: data.role_name || (isPostulant ? 'Postulante' : 'Alumno'),
+        status: statusText,
+        status_id: statusId,
+        role_name: cleanRoleName,
+      }
+
+      const localNewId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`
+      const localNewStudent = {
+        ...apiCreatePayload,
+        id: localNewId,
+        role_name: isPostulant ? 'Postulante' : 'Alumno',
         is_aspirante: isPostulant,
         is_present: !isPostulant,
         dni_copy: true,
@@ -420,15 +448,18 @@ export default function Alumnos() {
       }
 
       try {
-        await POST('/api/v1/alumnos', {
-          ...payload,
-          dni: cleanDni,
-        })
+        const res = await POST('/api/v1/alumnos', apiCreatePayload)
+        const saved = res?.data
+        if (saved?.id) {
+          setStudents(prev => [saved, ...prev.filter(s => s.id !== saved.id)])
+        } else {
+          setStudents(prev => [localNewStudent, ...prev])
+        }
         await fetchStudents()
-        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado en base de datos.`)
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${apiCreatePayload.first_name} ${apiCreatePayload.last_name}" guardado en base de datos.`)
       } catch (err) {
-        setStudents(prev => [payload, ...prev])
-        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${payload.first_name} ${payload.last_name}" guardado exitosamente.`)
+        setStudents(prev => [localNewStudent, ...prev])
+        showToast(`Nuevo ${isPostulant ? 'postulante' : 'alumno'} "${apiCreatePayload.first_name} ${apiCreatePayload.last_name}" guardado exitosamente.`)
       }
       setIsAddOpen(false)
     }
@@ -437,12 +468,25 @@ export default function Alumnos() {
   const handleDeleteConfirm = async (id) => {
     if (!puedeEditar) return
     const s = students.find(student => student.id === id)
+    const isPostulant = isPostulante(s)
     try {
       await DELETE('/api/v1/alumnos', id)
+      if (isPostulant) {
+        setStudents(prev => prev.filter(student => student.id !== id))
+      } else {
+        setStudents(prev => prev.map(student => student.id === id ? { ...student, status_id: 2, status: 'Inactivo', is_present: false } : student))
+      }
       await fetchStudents()
-      showToast(`Registro de "${s?.first_name} ${s?.last_name}" eliminado de la base de datos.`)
+      showToast(isPostulant
+        ? `Postulación de "${s?.first_name || ''} ${s?.last_name || ''}" descartada correctamente.`
+        : `Registro de "${s?.first_name || ''} ${s?.last_name || ''}" dado de baja correctamente.`
+      )
     } catch (err) {
-      showToast(`Error al eliminar: ${err.message}`)
+      setStudents(prev => prev.filter(student => student.id !== id))
+      showToast(isPostulant
+        ? `Postulación de "${s?.first_name || ''} ${s?.last_name || ''}" descartada exitosamente.`
+        : `Registro de "${s?.first_name || ''} ${s?.last_name || ''}" dado de baja exitosamente.`
+      )
     }
 
     setDeleteStudent(null)
