@@ -12,9 +12,9 @@ export function canonicalRole(role) {
   if (r === 'DIRECTIVO') return 'DIRECTOR'
   if (r === 'SECRETARÍA') return 'SECRETARIA'
   if (r === 'PRECEPTOR') return 'PRECEPTORIA'
-  if (['PROFESOR', 'TEACHER', 'DOCENTE'].includes(r)) return 'INSTRUCTOR'
-  if (['STUDENT', 'ESTUDIANTE'].includes(r)) return 'ALUMNO'
-  if (r === 'ASPIRANTE') return 'POSTULANTE'
+  if (['PROFESOR', 'PROFESORES', 'TEACHER', 'TEACHERS', 'DOCENTE', 'DOCENTES', 'INSTRUCTOR', 'INSTRUCTORES'].includes(r)) return 'INSTRUCTOR'
+  if (['STUDENT', 'STUDENTS', 'ESTUDIANTE', 'ESTUDIANTES', 'ALUMNO', 'ALUMNOS'].includes(r)) return 'ALUMNO'
+  if (['ASPIRANTE', 'ASPIRANTES', 'POSTULANTE', 'POSTULANTES'].includes(r)) return 'POSTULANTE'
   if (r === 'DIRECTOR') return 'DIRECTOR'
 
   return r || 'ALUMNO'

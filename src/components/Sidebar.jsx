@@ -78,9 +78,18 @@ export default function Sidebar({ isOpen = true, onToggle }) {
   const canSeeAdmin = ADMIN_NAV_ROLES.includes(role)
   const canAccessCooperadora = COOPERADORA_ROLES.includes(role)
 
-  const visibleNavItems = canSeeAdmin
-    ? (canAccessCooperadora ? [...navItems, cooperadoraItem] : navItems)
-    : []
+  let visibleNavItems = []
+  if (canSeeAdmin) {
+    visibleNavItems = canAccessCooperadora ? [...navItems, cooperadoraItem] : navItems
+  } else if (role === 'INSTRUCTOR') {
+    visibleNavItems = [
+      navItems[0], // Dashboard
+    ]
+  } else if (['ALUMNO', 'POSTULANTE', 'ESTUDIANTE'].includes(role)) {
+    visibleNavItems = [
+      navItems[0], // Dashboard
+    ]
+  }
 
   return (
     <aside
