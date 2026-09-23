@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useOutletContext } from 'react-router'
 import { 
   Search, 
-  UserPlus, 
+  Plus, 
   X,
   AlertCircle,
   FilterX,
-  Printer,
+  Download,
+  RefreshCw,
   ShieldX,
   LayoutList,
   LayoutGrid,
@@ -62,6 +63,8 @@ function NoAccessBanner({ userRole }) {
 }
 
 function Instructores() {
+  const selectedYear = new Date().getFullYear()
+
   // Access shared role metadata from layout context
   const { user, userRole } = useOutletContext() || {}
   const accessRole = canonicalRole(user?.rol || userRole)
@@ -73,6 +76,7 @@ function Instructores() {
   // Main CRUD Instructors State List (now from API)
   const [instructors, setInstructors] = useState([])
   const [courses, setCourses] = useState([])
+  const [roles, setRoles] = useState([])
 
   // Loading and error states
   const [loading, setLoading] = useState(true)
@@ -128,6 +132,21 @@ function Instructores() {
     }
   }, [hasAccess])
 
+  // ── Fetch roles from API (para select en formulario) ─────
+  const fetchRolesList = useCallback(async () => {
+    if (!hasAccess) return
+    try {
+      const response = await GET('/api/v1/roles')
+      if (Array.isArray(response?.data)) {
+        setRoles(response.data)
+      } else if (Array.isArray(response)) {
+        setRoles(response)
+      }
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('Error fetching roles list:', err)
+    }
+  }, [hasAccess])
+
   // Initial data load
   useEffect(() => {
     if (!hasAccess) {
@@ -136,7 +155,8 @@ function Instructores() {
     }
     fetchInstructors()
     fetchCoursesList()
-  }, [fetchInstructors, fetchCoursesList, hasAccess])
+    fetchRolesList()
+  }, [fetchInstructors, fetchCoursesList, fetchRolesList, hasAccess])
 
   // Handle resets
   const handleResetFilters = () => {
@@ -307,25 +327,37 @@ function Instructores() {
 
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2">
-        <div>
-          <h2 className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight">
-            Cuerpo Docente
+        <div className="min-w-0 flex-1">
+          <h2 className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight flex items-center gap-2.5">
+            <Users className="h-8 w-8 text-custom-azul-oscuro dark:text-custom-celeste shrink-0" />
+            <span>Instructores</span>
           </h2>
           <p className="text-sm font-medium text-custom-gris-claro dark:text-slate-400 mt-1">
-            Gestión de instructores, asignación de cursos técnicos y datos de contacto institucional.
+            Gestión en tiempo real de instructores, asignación de cursos técnicos y datos de contacto institucional — Ciclo Lectivo {selectedYear}.
           </p>
         </div>
         
-        {/* Main Action buttons */}
-        <div className="flex items-center gap-3 no-print">
-          <Tooltip text="Imprimir o exportar listado a PDF" position="bottom">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 no-print shrink-0">
+          <Tooltip text="Recargar datos desde el servidor" position="bottom">
+            <button
+              onClick={fetchInstructors}
+              disabled={loading}
+              className="p-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+              aria-label="Actualizar datos"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </Tooltip>
+
+          <Tooltip text="Exportar listado a PDF" position="bottom">
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
-              aria-label="Imprimir listado completo"
+              className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap"
+              aria-label="Exportar PDF"
             >
-              <Printer className="h-4 w-4" />
-              Imprimir / PDF
+              <Download className="h-4 w-4" />
+              Exportar PDF
             </button>
           </Tooltip>
           
@@ -333,11 +365,11 @@ function Instructores() {
             <Tooltip text="Registrar un nuevo instructor en la institución" position="bottom">
               <button
                 onClick={() => setIsAddOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer"
-                aria-label="Agregar nuevo instructor"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer whitespace-nowrap"
+                aria-label="Nuevo instructor"
               >
-                <UserPlus className="h-4 w-4 text-custom-amarillo" />
-                + Nuevo Instructor
+                <Plus className="h-4 w-4 text-custom-amarillo" />
+                Nuevo Instructor
               </button>
             </Tooltip>
           )}
@@ -540,6 +572,7 @@ function Instructores() {
           userRole={accessRole}
           hasCrud={hasCrud}
           courses={courses}
+          roles={roles}
           isSubmitting={isSubmitting}
         />
       )}

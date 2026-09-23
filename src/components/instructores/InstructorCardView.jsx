@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Mail, Phone, BookOpen, Calendar, Inbox, Plus, Eye, Pencil, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import InstructorAvatar from './InstructorAvatar'
-import BadgeStatus from '../BadgeStatus'
 import Tooltip from '../Tooltip'
 
 const getInstructorCourses = (instructor) => {
@@ -24,8 +23,6 @@ const getInstructorCourses = (instructor) => {
     extraCourses: courses.slice(1),
   }
 }
-
-const badgeStatus = (statusId) => (Number(statusId) === 3 ? 'licencia' : statusId)
 
 function InstructorCardView({
   instructores = [],
@@ -77,7 +74,7 @@ function InstructorCardView({
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs animate-pulse space-y-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
                   <div className="space-y-2 flex-1">
                     <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
                     <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
@@ -87,7 +84,9 @@ function InstructorCardView({
                   <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full" />
                   <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-5/6" />
                 </div>
-                <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+                  <div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                </div>
               </div>
             ))}
           </div>
@@ -104,36 +103,33 @@ function InstructorCardView({
                   className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-[#37A6DE]/50 dark:hover:border-[#37A6DE]/40 rounded-xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <button
-                          type="button"
-                          className="cursor-pointer shrink-0"
+                    <div className="flex items-center gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        className="cursor-pointer shrink-0"
+                        onClick={() => onView && onView(instructor.id)}
+                        title="Ver legajo completo"
+                      >
+                        <InstructorAvatar
+                          src={instructor.profile_photo_url}
+                          nombre={instructor.first_name}
+                          apellido={instructor.last_name}
+                          estado={instructor.status_id}
+                          size="lg"
+                          rounded="rounded-xl"
+                        />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <h3
                           onClick={() => onView && onView(instructor.id)}
-                          title="Ver legajo completo"
+                          className="font-bold text-slate-900 dark:text-slate-100 font-nunito hover:text-[#166193] dark:hover:text-[#37A6DE] cursor-pointer transition-colors leading-snug truncate"
                         >
-                          <InstructorAvatar
-                            src={instructor.profile_photo_url}
-                            nombre={instructor.first_name}
-                            apellido={instructor.last_name}
-                            estado={instructor.status_id}
-                            size="lg"
-                          />
-                        </button>
-                        <div className="min-w-0">
-                          <h3
-                            onClick={() => onView && onView(instructor.id)}
-                            className="font-bold text-slate-900 dark:text-slate-100 font-nunito hover:text-[#166193] dark:hover:text-[#37A6DE] cursor-pointer transition-colors leading-snug truncate"
-                          >
-                            {instructor.first_name} {instructor.last_name}
-                          </h3>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-                            DNI: {instructor.dni || '—'}
-                          </p>
-                        </div>
+                          {instructor.first_name} {instructor.last_name}
+                        </h3>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                          DNI: {instructor.dni || '—'}
+                        </p>
                       </div>
-
-                      <BadgeStatus status={badgeStatus(instructor.status_id)} />
                     </div>
 
                     <div className="py-3.5 space-y-2.5 text-xs">
@@ -172,15 +168,7 @@ function InstructorCardView({
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between no-print">
-                    <button
-                      type="button"
-                      onClick={() => onView && onView(instructor.id)}
-                      className="text-xs font-bold text-[#166193] dark:text-[#37A6DE] hover:underline cursor-pointer flex items-center gap-1"
-                    >
-                      Ver ficha →
-                    </button>
-
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end no-print">
                     <div className="flex items-center gap-1.5">
                       <Tooltip text="Ver legajo completo" position="top">
                         <button

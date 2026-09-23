@@ -10,7 +10,14 @@ const estadoRing = {
   2: "ring-2 ring-red-500 dark:ring-red-400",
 };
 
-export default function InstructorAvatar({ src, nombre, apellido = "", estado, size = "md" }) {
+export default function InstructorAvatar({ 
+  src, 
+  nombre, 
+  apellido = "", 
+  estado, 
+  size = "md",
+  rounded = "rounded-xl"
+}) {
   const [error, setError] = useState(false);
 
   const sizes = {
@@ -29,7 +36,7 @@ export default function InstructorAvatar({ src, nombre, apellido = "", estado, s
   if (error || !src) {
     return (
       <div
-        className={`${sizeClass} rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 transition-all ${ringClass}`}
+        className={`${sizeClass} ${rounded} bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 transition-all ${ringClass}`}
       >
         <span className="text-slate-500 dark:text-slate-400 font-medium font-nunito">{initials}</span>
       </div>
@@ -41,7 +48,7 @@ export default function InstructorAvatar({ src, nombre, apellido = "", estado, s
       src={src}
       alt={nombre}
       onError={() => setError(true)}
-      className={`${sizeClass} rounded-lg object-cover flex-shrink-0 transition-all ${ringClass}`}
+      className={`${sizeClass} ${rounded} object-cover flex-shrink-0 transition-all ${ringClass}`}
     />
   );
 }

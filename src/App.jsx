@@ -26,10 +26,12 @@ import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
 import CooperadoraAdmin from './pages/CooperadoraAdmin'
+import Configuracion from './pages/Configuracion'
 
 const DASHBOARD_ALLOWED_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA', 'INSTRUCTOR', 'ALUMNO', 'POSTULANTE']
 const STAFF_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
 const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
+const CONFIG_ROLES = ['GOD', 'DIRECTOR', 'REGENTE']
 
 function LoadingScreen() {
   return (
@@ -136,6 +138,14 @@ function AppRoutes() {
         </RoleRoute>
       }>
         <Route path='admin/cooperadora' element={<CooperadoraAdmin />} />
+      </Route>
+
+      <Route element={
+        <RoleRoute allowedRoles={CONFIG_ROLES}>
+          <DashboardLayout />
+        </RoleRoute>
+      }>
+        <Route path='admin/configuracion' element={<Configuracion />} />
       </Route>
     </Routes>
   )

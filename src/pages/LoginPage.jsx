@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useLocation, useNavigate, Link } from 'react-router';
 import { GoogleLogin } from '@react-oauth/google';
-import { ShieldCheck, AlertTriangle, UserCheck, ChevronDown, Sparkles } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, UserCheck, ChevronDown, Sparkles, ExternalLink } from 'lucide-react';
 import fotoSoldando from '../assets/hombre_soldando.PNG';
 import { canonicalRole } from '../utils/roles';
 
@@ -55,6 +55,11 @@ export default function LoginPage() {
   }
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (!acceptedTerms) {
+      setErrorMsg('Debés aceptar los términos y condiciones antes de registrarte o ingresar.');
+      return;
+    }
+
     setErrorMsg('');
 
     if (!acceptedTerms) {
@@ -178,22 +183,32 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+                <label className="flex items-start gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="w-4 h-4 rounded text-custom-celeste focus:ring-custom-celeste border-slate-300 cursor-pointer shrink-0"
+                    onChange={(e) => {
+                      setAcceptedTerms(e.target.checked);
+                      if (e.target.checked) setErrorMsg('');
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded text-custom-celeste focus:ring-custom-celeste border-slate-300 cursor-pointer shrink-0"
                   />
                   <span className="text-xs text-custom-gris-claro font-medium leading-tight">
                     Acepto los{' '}
-                    <Link to="/terminos-condiciones" target="_blank" className="text-custom-celeste hover:underline font-bold">
+                    <Link
+                      to="/terminos-condiciones"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-custom-celeste hover:underline font-bold inline-flex items-center gap-0.5"
+                    >
                       Términos y Condiciones
+                      <ExternalLink className="w-3 h-3" />
                     </Link>{' '}
                     y la{' '}
-                    <Link to="/privacidad" target="_blank" className="text-custom-celeste hover:underline font-bold">
+                    <Link to="/privacidad" target="_blank" rel="noopener noreferrer" className="text-custom-celeste hover:underline font-bold">
                       Política de Privacidad
                     </Link>
+                    , y declaro bajo juramento que mis datos son veraces.
                   </span>
                 </label>
 
