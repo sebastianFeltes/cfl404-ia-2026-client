@@ -71,7 +71,6 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-<<<<<<< HEAD
       const result = await loginWithGoogle(credentialResponse.credential, {
         remember: rememberMe,
         acceptedTerms: Boolean(acceptedTerms),
@@ -80,13 +79,6 @@ export default function LoginPage() {
         ? safeRedirectPath(location.state.from.pathname, result?.user?.rol)
         : safeRedirectPath(undefined, result?.user?.rol);
       navigate(target, { replace: true });
-=======
-      await loginWithGoogle(credentialResponse.credential, {
-        remember: rememberMe,
-        acceptedTerms,
-      });
-      navigate(redirectTo, { replace: true });
->>>>>>> origin/agusvane
     } catch (err) {
       setErrorMsg(err.message || 'No pudimos validar tu cuenta de Google.');
     } finally {
