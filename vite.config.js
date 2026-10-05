@@ -15,7 +15,7 @@ export default defineConfig({
   },
   preview: {
     headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:4000 https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:4000 https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'",
       'X-Frame-Options': 'DENY',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
     },

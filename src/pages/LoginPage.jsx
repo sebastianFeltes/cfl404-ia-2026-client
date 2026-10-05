@@ -7,11 +7,12 @@ import fotoSoldando from '../assets/hombre_soldando.PNG';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const DEMO_ACCOUNTS = [
+  { id: 'god', label: 'Modo Dios (GOD)' },
+  { id: 'directivo', label: 'Directivo' },
+  { id: 'admin', label: 'Administrador' },
+  { id: 'docente', label: 'Docente' },
   { id: 'alumno', label: 'Alumno' },
   { id: 'postulante', label: 'Postulante' },
-  { id: 'docente', label: 'Docente' },
-  { id: 'admin', label: 'Administrador' },
-  { id: 'directivo', label: 'Directivo' },
 ];
 
 function safeRedirectPath(pathname) {
