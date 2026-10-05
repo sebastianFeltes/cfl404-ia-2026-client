@@ -1,5 +1,6 @@
 // Archivo: src/components/cooperadora/CooperadoraPagoDrawer.jsx
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   X,
@@ -303,18 +304,18 @@ export default function CooperadoraPagoDrawer({
     )
   })
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay coincidente con InstructorDrawer */}
+          {/* Overlay que cubre el 100% de la pantalla */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-slate-900/20 dark:bg-slate-950/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 w-screen h-screen min-h-[100dvh] bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"
           />
 
           {/* Panel coincidente con InstructorDrawer */}
@@ -323,16 +324,16 @@ export default function CooperadoraPagoDrawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-[470px] max-w-full z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200 font-nunito"
+            className="fixed inset-y-0 right-0 h-screen h-[100dvh] w-[470px] max-w-full z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-[#166193] flex flex-col font-nunito"
             aria-label="Panel de Cooperadora"
           >
-            {/* Cabecera coincidente con InstructorDrawer */}
-            <div className="bg-white dark:bg-slate-900 px-8 pt-8 pb-5 border-b border-slate-100 dark:border-slate-800/80 relative shrink-0">
+            {/* Cabecera institucional Azul (#166193) */}
+            <div className="bg-[#166193] text-white px-8 pt-7 pb-6 relative shrink-0 shadow-sm">
               <button
                 onClick={onClose}
                 title="Cerrar panel"
                 aria-label="Cerrar"
-                className="absolute top-6 right-6 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md p-1 transition-all focus:outline-none cursor-pointer"
+                className="absolute top-5 right-5 text-white/80 hover:text-white hover:bg-white/10 rounded-md p-1.5 transition-all focus:outline-none cursor-pointer"
               >
                 <X size={20} strokeWidth={2} />
               </button>
@@ -343,34 +344,34 @@ export default function CooperadoraPagoDrawer({
                     <img
                       src={effectiveStudent.profile_photo_url}
                       alt={`${effectiveStudent.first_name} ${effectiveStudent.last_name}`}
-                      className="w-14 h-14 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0"
+                      className="w-14 h-14 rounded-full object-cover border-2 border-white/30 shadow-md shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[#166193] dark:text-sky-400 text-lg font-semibold font-roboto shadow-xs shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-white text-[#166193] border-2 border-white/20 flex items-center justify-center text-lg font-bold font-nunito shadow-md shrink-0">
                       {effectiveStudent.first_name?.[0] || 'A'}{effectiveStudent.last_name?.[0] || 'L'}
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-roboto leading-tight truncate">
+                      <h2 className="text-xl font-semibold text-white font-roboto leading-tight truncate">
                         {effectiveStudent.first_name} {effectiveStudent.last_name}
                       </h2>
                     </div>
 
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-nunito mt-0.5 leading-tight truncate">
+                    <p className="text-sm text-sky-200 font-nunito mt-0.5 leading-tight truncate">
                       {effectiveStudent.course_name || 'Sin curso asignado'} • DNI: {effectiveStudent.dni || 'S/D'}
                     </p>
 
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 rounded-md px-2 py-0.5 text-xs font-medium">
+                      <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 rounded-md px-2 py-0.5 text-xs font-semibold shadow-xs">
                         {totalPaidMonths} / 12 cuotas
                       </span>
                       {studentsList.length > 1 && onSelectStudent && (
                         <button
                           type="button"
                           onClick={() => setIsChangingStudent(!isChangingStudent)}
-                          className="text-xs text-[#166193] dark:text-sky-400 hover:underline font-medium cursor-pointer"
+                          className="text-xs text-sky-200 hover:text-white hover:underline font-medium cursor-pointer transition-colors"
                         >
                           {isChangingStudent ? 'Ocultar alumnos' : 'Cambiar alumno'}
                         </button>
@@ -380,22 +381,18 @@ export default function CooperadoraPagoDrawer({
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xs shrink-0 border ${
-                    activeTab === 'ingreso_vario'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400'
-                  }`}>
+                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-md shrink-0 border border-white/20">
                     {activeTab === 'ingreso_vario' ? (
-                      <ArrowDownLeft size={24} strokeWidth={2} />
+                      <ArrowDownLeft size={24} strokeWidth={2.5} className="text-emerald-600" />
                     ) : (
-                      <ArrowUpRight size={24} strokeWidth={2} />
+                      <ArrowUpRight size={24} strokeWidth={2.5} className="text-amber-600" />
                     )}
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-roboto leading-tight">
+                    <h2 className="text-xl font-semibold text-white font-roboto leading-tight">
                       {activeTab === 'ingreso_vario' ? 'Ingreso Vario' : 'Gastos de Cooperadora'}
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-nunito mt-0.5">
+                    <p className="text-sm text-sky-200 font-nunito mt-0.5">
                       {activeTab === 'ingreso_vario'
                         ? 'Donaciones, premios y subsidios institucionales'
                         : 'Salidas de fondos, compras y mantenimiento'}
@@ -403,9 +400,11 @@ export default function CooperadoraPagoDrawer({
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Selector de Pestañas coincidente con diseño de InstructorDrawer */}
-              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg mt-5 border border-slate-200/60 dark:border-slate-700/60 gap-1">
+            {/* Subcabecera Blanca con Selector de Pestañas */}
+            <div className="bg-white dark:bg-slate-900 px-8 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
+              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/60 dark:border-slate-700/60 gap-1">
                 <button
                   type="button"
                   onClick={() => { setActiveTab('alumno'); setFormError(''); }}
@@ -912,6 +911,7 @@ export default function CooperadoraPagoDrawer({
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

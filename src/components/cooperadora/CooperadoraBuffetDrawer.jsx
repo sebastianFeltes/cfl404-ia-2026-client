@@ -1,5 +1,6 @@
 // Archivo: src/components/cooperadora/CooperadoraBuffetDrawer.jsx
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   X,
@@ -81,18 +82,18 @@ export default function CooperadoraBuffetDrawer({
 
   const esIngreso = formData.tipo === 'ingreso'
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay coincidente con InstructorDrawer */}
+          {/* Overlay que cubre el 100% de la pantalla */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-slate-900/20 dark:bg-slate-950/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 w-screen h-screen min-h-[100dvh] bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"
           />
 
           {/* Panel coincidente con InstructorDrawer */}
@@ -101,40 +102,38 @@ export default function CooperadoraBuffetDrawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-[460px] max-w-full z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200 font-nunito"
+            className="fixed inset-y-0 right-0 h-screen h-[100dvh] w-[460px] max-w-full z-50 bg-white dark:bg-slate-900 shadow-2xl border-l border-[#166193] flex flex-col font-nunito"
             aria-label="Panel de Buffet"
           >
-            {/* Cabecera coincidente con InstructorDrawer */}
-            <div className="bg-white dark:bg-slate-900 px-8 pt-8 pb-5 border-b border-slate-100 dark:border-slate-800/80 relative shrink-0">
+            {/* Cabecera institucional Azul (#166193) */}
+            <div className="bg-[#166193] text-white px-8 pt-7 pb-6 relative shrink-0 shadow-sm">
               <button
                 onClick={onClose}
                 title="Cerrar panel"
                 aria-label="Cerrar"
-                className="absolute top-6 right-6 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md p-1 transition-all focus:outline-none cursor-pointer"
+                className="absolute top-5 right-5 text-white/80 hover:text-white hover:bg-white/10 rounded-md p-1.5 transition-all focus:outline-none cursor-pointer"
               >
                 <X size={20} strokeWidth={2} />
               </button>
 
               <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xs shrink-0 border ${
-                  esIngreso
-                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400'
-                }`}>
-                  <ShoppingBag size={24} strokeWidth={2} />
+                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-md shrink-0 border border-white/20">
+                  <ShoppingBag size={24} strokeWidth={2.2} className={esIngreso ? 'text-emerald-600' : 'text-amber-600'} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-roboto leading-tight">
+                  <h2 className="text-xl font-semibold text-white font-roboto leading-tight">
                     Movimiento de Buffet
                   </h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-nunito mt-0.5">
+                  <p className="text-sm text-sky-200 font-nunito mt-0.5">
                     Ingresos por ventas o gastos de la cantina institucional
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Selector de Tipo (Ingreso vs Egreso) coincidente con InstructorDrawer */}
-              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg mt-5 border border-slate-200/60 dark:border-slate-700/60 gap-1">
+            {/* Subcabecera Blanca con Selector de Tipo (Ingreso vs Egreso) */}
+            <div className="bg-white dark:bg-slate-900 px-8 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
+              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/60 dark:border-slate-700/60 gap-1">
                 <button
                   type="button"
                   onClick={() => setFormData((p) => ({ ...p, tipo: 'ingreso' }))}
@@ -291,6 +290,7 @@ export default function CooperadoraBuffetDrawer({
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
