@@ -17,7 +17,6 @@ import {
   CheckCircle2, 
   Info, 
   Check, 
-  Plus, 
   Lock, 
   ChevronDown, 
   Search, 
@@ -27,7 +26,15 @@ import {
 } from 'lucide-react'
 import Tooltip from '../Tooltip'
 import BadgeStatus from '../BadgeStatus'
-import { canCrud } from '../../utils/roles'
+import { canCrud, roleLabel, canonicalRole } from '../../utils/roles'
+
+const AVAILABLE_ROLES = [
+  { id: 7, name: 'INSTRUCTOR', label: 'Instructor / Docente' },
+  { id: 6, name: 'PRECEPTORIA', label: 'Preceptoría' },
+  { id: 5, name: 'SECRETARIA', label: 'Secretaría' },
+  { id: 4, name: 'REGENTE', label: 'Regente' },
+  { id: 3, name: 'DIRECTOR', label: 'Director / Directivo' },
+]
 
 const INITIAL_FORM_STATE = {
   first_name: '',
@@ -42,12 +49,38 @@ const INITIAL_FORM_STATE = {
   assigned_course_ids: [],
 }
 
-function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete, userRole, hasCrud = false, courses = [], isSubmitting = false }) {
+function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete, userRole, hasCrud = false, courses = [], roles = [], isSubmitting = false }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const [imgError, setImgError] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [courseSearch, setCourseSearch] = useState('')
   const dropdownRef = useRef(null)
+
+  const roleOptions = useMemo(() => {
+    const isExcluded = (id, name) => {
+      const canonical = canonicalRole(name)
+      const n = String(name || '').toUpperCase()
+      return (
+        Number(id) === 1 ||
+        Number(id) === 2 ||
+        canonical === 'GOD' ||
+        canonical === 'ADMIN' ||
+        n.includes('ADMIN') ||
+        n.includes('DIOS')
+      )
+    }
+
+    if (Array.isArray(roles) && roles.length > 0) {
+      return roles
+        .filter((r) => !isExcluded(r.id, r.name))
+        .map((r) => ({
+          id: Number(r.id),
+          name: r.name,
+          label: roleLabel(r.name) || r.name,
+        }))
+    }
+    return AVAILABLE_ROLES.filter((r) => !isExcluded(r.id, r.name))
+  }, [roles])
 
   // Lock body scroll when drawer is active
   useEffect(() => {
@@ -103,7 +136,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
         email: instructor.email || '',
         dni: instructor.dni || '',
         status_id: Number(instructor.status_id) || 1,
-        role_id: Number(instructor.role_id) || 7,
+        role_id: Number(instructor.role_id || instructor.role?.id) || 7,
         phone: instructor.phone || '',
         address: instructor.address || '',
         profile_photo_url: instructor.profile_photo_url || '',
@@ -124,7 +157,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
     }
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'status_id' ? Number(value) : value
+      [name]: name === 'status_id' || name === 'role_id' ? Number(value) : value
     }))
   }
 
@@ -186,7 +219,7 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
       phone: formData.phone?.trim() || null,
       address: formData.address?.trim() || null,
       profile_photo_url: formData.profile_photo_url?.trim() || null,
-      role_id: Number(formData.role_id) || 7, // Siempre INSTRUCTOR
+      role_id: Number(formData.role_id) || 7,
       assigned_course_ids: formData.assigned_course_ids || [],
     }
 
@@ -787,6 +820,36 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
                 </Tooltip>
               </div>
             </div>
+
+            {/* Selector de Rol Institucional */}
+            <div>
+              <label htmlFor="role_id" className="block font-bold text-custom-gris-oscuro dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-custom-celeste" />
+                Rol Institucional
+              </label>
+              <div className="relative">
+                <select
+                  id="role_id"
+                  name="role_id"
+                  disabled={isReadOnly}
+                  value={formData.role_id}
+                  onChange={handleChange}
+                  className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste bg-gray-50/50 dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-bold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
+                  style={{
+                    backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right .75em top 50%',
+                    backgroundSize: '.65em auto',
+                  }}
+                >
+                  {roleOptions.map((r) => (
+                    <option key={r.id} value={r.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </form>
 
@@ -808,16 +871,6 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
           </div>
 
           <div className="flex items-center gap-3">
-            <Tooltip text="Cancelar y descartar cambios" position="top">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-custom-gris-claro/30 dark:border-slate-700 text-custom-gris-oscuro dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
-              >
-                Cancelar
-              </button>
-            </Tooltip>
-            
             <Tooltip text={isSubmitting ? 'Guardando...' : instructor ? 'Guardar cambios en el legajo del docente' : 'Dar de alta al nuevo instructor'} position="top">
               <button
                 type="submit"

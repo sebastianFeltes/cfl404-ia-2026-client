@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom'
  *   o fuera del viewport visible.
  * - zIndex ajustado (z-25) para no invadir barras de navegación ni modales/drawers.
  */
+
 const GAP = 8
 const NAVBAR_HEIGHT = 64
 
@@ -68,7 +69,7 @@ function styleFromRect(rect, position) {
           transform: 'translateY(-50%)',
         },
       }
-    default:
+    default: // top
       return {
         pos: 'top',
         style: {
@@ -82,6 +83,7 @@ function styleFromRect(rect, position) {
 
 function Tooltip({ text, position = 'top', children, className = '' }) {
   const triggerRef = useRef(null)
+  const isHoveredRef = useRef(false)
   const [rect, setRect] = useState(null)
 
   const hide = useCallback(() => {

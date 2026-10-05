@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useLocation, useNavigate, Link } from 'react-router';
 import { GoogleLogin } from '@react-oauth/google';
-import { ShieldCheck, AlertTriangle, UserCheck, ChevronDown, Sparkles } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, UserCheck, ChevronDown, Sparkles, ExternalLink } from 'lucide-react';
 import fotoSoldando from '../assets/hombre_soldando.PNG';
 import { canonicalRole } from '../utils/roles';
 
@@ -56,6 +56,11 @@ export default function LoginPage() {
   }
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (!acceptedTerms) {
+      setErrorMsg('Debés aceptar los términos y condiciones antes de registrarte o ingresar.');
+      return;
+    }
+
     setErrorMsg('');
 
     if (!acceptedTerms) {
@@ -66,6 +71,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
+<<<<<<< HEAD
       const result = await loginWithGoogle(credentialResponse.credential, {
         remember: rememberMe,
         acceptedTerms: Boolean(acceptedTerms),
@@ -74,6 +80,13 @@ export default function LoginPage() {
         ? safeRedirectPath(location.state.from.pathname, result?.user?.rol)
         : safeRedirectPath(undefined, result?.user?.rol);
       navigate(target, { replace: true });
+=======
+      await loginWithGoogle(credentialResponse.credential, {
+        remember: rememberMe,
+        acceptedTerms,
+      });
+      navigate(redirectTo, { replace: true });
+>>>>>>> origin/agusvane
     } catch (err) {
       setErrorMsg(err.message || 'No pudimos validar tu cuenta de Google.');
     } finally {
@@ -183,7 +196,10 @@ export default function LoginPage() {
                   <input
                     type="checkbox"
                     checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    onChange={(e) => {
+                      setAcceptedTerms(e.target.checked);
+                      if (e.target.checked) setErrorMsg('');
+                    }}
                     className="w-4 h-4 rounded text-custom-celeste focus:ring-custom-celeste border-slate-300 cursor-pointer shrink-0"
                   />
                   <span className="text-xs text-custom-gris-claro font-medium leading-tight">
