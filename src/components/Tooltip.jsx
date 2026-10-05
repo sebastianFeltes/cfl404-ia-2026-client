@@ -152,7 +152,7 @@ function Tooltip({ text, position = 'top', children, className = '' }) {
     <>
       <div
         ref={triggerRef}
-        className={`flex items-center ${className}`}
+        className={`flex ${className.includes('items-') ? '' : 'items-center'} ${className}`}
         onPointerEnter={show}
         onPointerLeave={hide}
         onFocusCapture={show}
