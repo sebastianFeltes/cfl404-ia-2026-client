@@ -151,7 +151,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
               onClick={handleAction}
               className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors shadow-sm cursor-pointer"
             >
-              <span>Iniciar sesión</span>
+              <span>Inscribirme</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -271,7 +271,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
               onClick={handleAction}
               className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[#166193] cursor-pointer"
             >
-              <span>Iniciar sesión</span>
+              <span>Inscribirme</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

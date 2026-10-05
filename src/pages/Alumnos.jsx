@@ -313,7 +313,7 @@ export default function Alumnos() {
     }
 
     try {
-      const cleanDni = student.dni ? String(student.dni).replace(/[\.\s-]/g, '') : undefined
+      const cleanDni = student.dni ? String(student.dni).replace(/[.\s-]/g, '') : undefined
       await PUT('/api/v1/alumnos', {
         first_name: student.first_name,
         last_name: student.last_name,
@@ -343,7 +343,7 @@ export default function Alumnos() {
   const handleFormSubmit = async (data) => {
     if (!puedeEditar) return
     const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
-    const cleanDni = data.dni ? String(data.dni).replace(/[\.\s-]/g, '').trim() : undefined
+    const cleanDni = data.dni ? String(data.dni).replace(/[.\s-]/g, '').trim() : undefined
     const cleanRoleName = isPostulant ? 'POSTULANTE' : 'ALUMNO'
     const statusText = isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo')
     const statusId = isPostulant ? 3 : (Number(data.status_id) || 1)

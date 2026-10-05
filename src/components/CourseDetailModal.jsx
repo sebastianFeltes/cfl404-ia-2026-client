@@ -201,7 +201,7 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
               onClick={handleActionClick}
               className="flex-1 sm:flex-initial bg-[#166193] hover:bg-[#37ACDE] text-white font-bold px-8 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-[#37ACDE]/40"
             >
-              <span>Iniciar sesión</span>
+              <span>Inscribirme</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
