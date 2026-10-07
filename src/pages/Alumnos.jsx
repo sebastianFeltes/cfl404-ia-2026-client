@@ -25,17 +25,17 @@ import { fetchCourses } from '../services/coursesService'
 
 const isPostulante = (student) => {
   if (!student) return false
-  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
-  const role = String(student.role_name || '').toUpperCase()
-  const status = String(student.status || '').toUpperCase()
+  if (student.status_id === 2 || String(student.status || '').toLowerCase() === 'inactivo') return false
+  const role = String(student.role_name || '').toLowerCase()
+  const status = String(student.status || '').toLowerCase()
   return (
     Boolean(student.is_aspirante) ||
-    role === 'POSTULANTE' ||
-    role === 'ASPIRANTE' ||
+    role === 'postulante' ||
+    role === 'aspirante' ||
     student.status_id === 3 ||
-    status === 'PENDIENTE' ||
-    status === 'POSTULANTE' ||
-    status === 'ASPIRANTE'
+    status === 'pendiente' ||
+    status === 'postulante' ||
+    status === 'aspirante'
   )
 }
 
@@ -59,15 +59,15 @@ export default function Alumnos() {
       const res = await GET('/api/v1/alumnos')
       if (res?.data && Array.isArray(res.data)) {
         const apiStudents = res.data.map(item => {
-          const roleUpper = String(item.role_name || '').toUpperCase()
-          const statusUpper = String(item.status || '').toUpperCase()
-          const isAsp = Boolean(item.is_aspirante) || roleUpper === 'POSTULANTE' || roleUpper === 'ASPIRANTE' || item.status_id === 3 || statusUpper === 'PENDIENTE'
+          const roleLower = String(item.role_name || '').toLowerCase()
+          const statusLower = String(item.status || '').toLowerCase()
+          const isAsp = Boolean(item.is_aspirante) || roleLower === 'postulante' || roleLower === 'aspirante' || item.status_id === 3 || statusLower === 'pendiente'
           return {
             ...item,
-            status_id: item.status === 'Inactivo' ? 2 : isAsp ? 3 : 1,
+            status_id: statusLower === 'inactivo' ? 2 : isAsp ? 3 : 1,
             is_present: item.is_present ?? !isAsp,
             is_aspirante: isAsp,
-            role_name: item.role_name ?? (isAsp ? 'Postulante' : 'Alumno'),
+            role_name: item.role_name ?? (isAsp ? 'postulante' : 'alumno'),
             dni_copy: item.studentDetail?.dniCopy ?? true,
             form_copy: item.studentDetail?.formCopy ?? true,
             title_copy: item.studentDetail?.titleCopy ?? (!isAsp),
@@ -301,9 +301,9 @@ export default function Alumnos() {
     const token = `CFL404-ATT-${student.id}`
     const updated = {
       ...student,
-      status: 'Activo',
+      status: 'activo',
       status_id: 1,
-      role_name: 'Alumno',
+      role_name: 'alumno',
       is_aspirante: false,
       is_present: true,
       attendance_token: token,
@@ -322,9 +322,9 @@ export default function Alumnos() {
         phone: student.phone,
         course_name: student.course_name,
         academic_level: student.academic_level,
-        status: 'Activo',
+        status: 'activo',
         status_id: 1,
-        role_name: 'Alumno',
+        role_name: 'alumno',
         attendance_token: token,
       }, student.id)
       await fetchStudents()
@@ -342,10 +342,10 @@ export default function Alumnos() {
 
   const handleFormSubmit = async (data) => {
     if (!puedeEditar) return
-    const isPostulant = data.role_name === 'Postulante' || data.status_id === 3
+    const isPostulant = String(data.role_name || '').toLowerCase() === 'postulante' || data.status_id === 3
     const cleanDni = data.dni ? String(data.dni).replace(/[.\s-]/g, '').trim() : undefined
-    const cleanRoleName = isPostulant ? 'POSTULANTE' : 'ALUMNO'
-    const statusText = isPostulant ? 'Pendiente' : (data.status_id === 2 ? 'Inactivo' : 'Activo')
+    const cleanRoleName = isPostulant ? 'postulante' : 'alumno'
+    const statusText = isPostulant ? 'pendiente' : (data.status_id === 2 ? 'inactivo' : 'activo')
     const statusId = isPostulant ? 3 : (Number(data.status_id) || 1)
 
     if (data.id) {
@@ -374,7 +374,7 @@ export default function Alumnos() {
         dni: cleanDni || data.dni,
         status: statusText,
         status_id: statusId,
-        role_name: isPostulant ? 'Postulante' : 'Alumno',
+        role_name: isPostulant ? 'postulante' : 'alumno',
         is_aspirante: isPostulant,
         is_present: statusId === 1,
       }
@@ -438,7 +438,7 @@ export default function Alumnos() {
       const localNewStudent = {
         ...apiCreatePayload,
         id: localNewId,
-        role_name: isPostulant ? 'Postulante' : 'Alumno',
+        role_name: isPostulant ? 'postulante' : 'alumno',
         is_aspirante: isPostulant,
         is_present: !isPostulant,
         dni_copy: true,
@@ -474,7 +474,7 @@ export default function Alumnos() {
       if (isPostulant) {
         setStudents(prev => prev.filter(student => student.id !== id))
       } else {
-        setStudents(prev => prev.map(student => student.id === id ? { ...student, status_id: 2, status: 'Inactivo', is_present: false } : student))
+        setStudents(prev => prev.map(student => student.id === id ? { ...student, status_id: 2, status: 'inactivo', is_present: false } : student))
       }
       await fetchStudents()
       showToast(isPostulant
@@ -798,7 +798,7 @@ export default function Alumnos() {
         onClose={() => setIsAddOpen(false)}
         onSubmit={handleFormSubmit}
         userRole={userRole}
-        initialRole={activeTab === 'postulantes' ? 'Postulante' : 'Alumno'}
+        initialRole={activeTab === 'postulantes' ? 'postulante' : 'alumno'}
       />
 
       {/* Drawer: Formulario de Edición de Alumno Existente */}
@@ -812,7 +812,7 @@ export default function Alumnos() {
           handleDeleteTrigger(id)
         }}
         userRole={userRole}
-        initialRole={editStudent && isPostulante(editStudent) ? 'Postulante' : 'Alumno'}
+        initialRole={editStudent && isPostulante(editStudent) ? 'postulante' : 'alumno'}
       />
 
       {/* Modal: Confirmación de Baja */}

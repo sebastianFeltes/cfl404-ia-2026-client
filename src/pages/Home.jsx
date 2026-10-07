@@ -1,17 +1,23 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import Hero from '../components/Hero';
 import FAQ from '../components/FAQ';
 import CourseFilters from '../components/CourseFilters';
 import CourseCard from '../components/CourseCard';
 import CourseDetailModal from '../components/CourseDetailModal';
-import VirtualQueueModal from '../components/VirtualQueueModal';
-import { coursesData as initialCourses } from '../data/coursesData';
+import { fetchCourses, fetchFamilies } from '../services/coursesService';
+import { useAuth } from '../context/AuthContext';
+import { canonicalRole } from '../utils/roles';
+import { ENROLLMENT_PROFILE_NOTICE, hasBasicEnrollmentData } from '../utils/enrollmentProfile';
 import { AlertCircle, Download } from 'lucide-react';
 
-export default function Home() {
+export default function Home({ embedded = false }) {
   const navigate = useNavigate();
-  const courses = initialCourses;
+  const { user, isAuthenticated } = useAuth();
+  const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState(['Todos']);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [coursesError, setCoursesError] = useState('');
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,7 +26,46 @@ export default function Home() {
 
   // Modal States
   const [detailCourse, setDetailCourse] = useState(null);
-  const [queueCourse, setQueueCourse] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setLoadingCourses(true);
+      setCoursesError('');
+      try {
+        const [courseList, familyList] = await Promise.all([
+          fetchCourses(),
+          fetchFamilies(),
+        ]);
+        if (cancelled) return;
+        setCourses(courseList);
+        const usedNames = [...new Set(courseList.map((course) => course.category).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, 'es'));
+        const names = usedNames.length > 0
+          ? usedNames
+          : (familyList || []).map((family) => family.name).filter(Boolean);
+        setCategories(['Todos', ...names]);
+      } catch (error) {
+        if (cancelled) return;
+        setCourses([]);
+        setCoursesError(error.message || 'No se pudieron cargar los cursos');
+      } finally {
+        if (!cancelled) setLoadingCourses(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const enrollAccess = useMemo(() => {
+    if (!isAuthenticated) return { mode: 'login', label: 'Iniciar sesión' };
+    const mustCompleteProfile = canonicalRole(user?.rol) === 'postulante' && !hasBasicEnrollmentData(user);
+    if (mustCompleteProfile) return { mode: 'profile', label: 'Completar datos' };
+    return { mode: 'ready', label: 'Inscribirme' };
+  }, [isAuthenticated, user]);
 
   // Toast Feedback State
   const [toast, setToast] = useState(null);
@@ -36,6 +81,12 @@ export default function Home() {
 
     return courses.filter((c) => {
       if (!c) return false;
+
+      const statusName = String(c.status?.name || '').toLowerCase();
+      const statusId = Number(c.statusId || c.status?.id);
+      if (statusName === 'inactivo' || statusName === 'eliminado' || statusId === 2 || statusId === 7) {
+        return false;
+      }
 
       // 1. Filtro por Etapa
       if (selectedStage === 'segunda') {
@@ -58,7 +109,9 @@ export default function Home() {
         const matchName = c.name?.toLowerCase().includes(query) || false;
         const matchDesc = c.detail?.description?.toLowerCase().includes(query) || false;
         const matchCat = c.category?.toLowerCase().includes(query) || false;
-        const matchSponsor = c.sponsor?.name?.toLowerCase().includes(query) || false;
+        const matchSponsor = [c.sponsor?.name, ...(c.sponsors || []).map((sponsor) => sponsor.name)]
+          .filter(Boolean)
+          .some((name) => name.toLowerCase().includes(query));
         if (!matchName && !matchDesc && !matchCat && !matchSponsor) return false;
       }
 
@@ -79,15 +132,16 @@ export default function Home() {
     return 'Catálogo completo de capacitaciones profesionales.';
   }, [selectedStage]);
 
-  const handleLoginRedirect = () => {
-    showToast('Redirigiendo a Iniciar Sesión para el proceso de pre-inscripción...', 'info');
-    setTimeout(() => {
+  const handleEnroll = () => {
+    if (enrollAccess.mode === 'login') {
       navigate('/login');
-    }, 1000);
-  };
-
-  const handleOpenQueue = (course) => {
-    setQueueCourse(course);
+      return;
+    }
+    if (enrollAccess.mode === 'profile') {
+      navigate('/perfil', { state: { enrollmentNotice: ENROLLMENT_PROFILE_NOTICE } });
+      return;
+    }
+    showToast('Tu perfil está listo para inscribirte. La cola de inscripción se conecta en el próximo paso.', 'info');
   };
 
   return (
@@ -103,11 +157,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Hero section con imagen de fondo y CTAs */}
-      <Hero />
+      {!embedded && <Hero />}
 
       {/* Catálogo de Cursos */}
-      <section id="cursos" className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 font-['Nunito']">
+      <section id="cursos" className={`max-w-7xl w-full mx-auto font-['Nunito'] ${embedded ? 'px-0 py-2' : 'px-4 sm:px-6 lg:px-8 py-12'}`}>
 
         {/* Filter Toolbar */}
         <CourseFilters
@@ -118,6 +171,7 @@ export default function Home() {
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           totalResults={filteredCourses.length}
+          categories={categories}
         />
 
         {/* Banner de etapa activa (Con nodos de texto seguros para React Reconciler) */}
@@ -134,7 +188,21 @@ export default function Home() {
         </div>
 
         {/* Grid de cursos */}
-        {filteredCourses.length === 0 ? (
+        {loadingCourses ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-200 my-8">
+            <p className="text-sm font-semibold text-[#585856]">Cargando la oferta de cursos…</p>
+          </div>
+        ) : coursesError ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-200 space-y-4 my-8">
+            <div className="w-16 h-16 rounded-full bg-gray-100 text-[#585856] flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-[#1D1E1C] font-['Roboto_Flex']">
+              No pudimos cargar los cursos
+            </h3>
+            <p className="text-sm text-[#585856] max-w-md mx-auto">{coursesError}</p>
+          </div>
+        ) : filteredCourses.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-gray-200 space-y-4 my-8">
             <div className="w-16 h-16 rounded-full bg-gray-100 text-[#585856] flex items-center justify-center mx-auto">
               <AlertCircle className="w-8 h-8" />
@@ -159,16 +227,15 @@ export default function Home() {
                 key={`course-card-${course.id}`}
                 course={course}
                 onSelectCourse={(c) => setDetailCourse(c)}
-                onLogin={handleLoginRedirect}
-                onOpenQueue={handleOpenQueue}
+                onEnroll={handleEnroll}
+                enrollLabel={enrollAccess.label}
               />
             ))}
           </div>
         )}
       </section>
 
-      {/* FAQ */}
-      <FAQ />
+      {!embedded && <FAQ />}
 
       {/* Modal Ficha Completa del Curso */}
       {detailCourse && (
@@ -176,16 +243,8 @@ export default function Home() {
           key={`modal-${detailCourse.id}`}
           course={detailCourse}
           onClose={() => setDetailCourse(null)}
-          onLogin={handleLoginRedirect}
-          onOpenQueue={handleOpenQueue}
-        />
-      )}
-
-      {queueCourse && (
-        <VirtualQueueModal
-          key={`queue-${queueCourse.id}`}
-          course={queueCourse}
-          onClose={() => setQueueCourse(null)}
+          onEnroll={handleEnroll}
+          enrollLabel={enrollAccess.label}
         />
       )}
     </div>

@@ -23,7 +23,7 @@ const INITIAL_FORM_STATE = {
   extra_email: '',
   dni: '',
   status_id: 1, // Default Activo
-  role_name: 'Alumno',
+  role_name: 'alumno',
   phone: '',
   extra_phone: '',
   address: '',
@@ -35,7 +35,7 @@ const INITIAL_FORM_STATE = {
   enrollment_date: ''
 }
 
-function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userRole, initialRole = 'Alumno' }) {
+function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userRole, initialRole = 'alumno' }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const [showEmailChangeConfirm, setShowEmailChangeConfirm] = useState(false)
   const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
@@ -51,7 +51,7 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
         extra_email: student.extra_email || student.studentDetail?.extraEmail || student.extraEmail || '',
         dni: student.dni || '',
         status_id: Number(student.status_id) || 1,
-        role_name: student.role_name || (student.is_aspirante ? 'Postulante' : 'Alumno'),
+        role_name: String(student.role_name || (student.is_aspirante ? 'postulante' : 'alumno')).toLowerCase(),
         phone: student.phone || student.studentDetail?.phone || '',
         extra_phone: student.extra_phone || student.studentDetail?.extraPhone || student.extraPhone || '',
         address: student.address || student.studentDetail?.address || '',
@@ -63,11 +63,11 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
         enrollment_date: student.enrollment_date || new Date().toLocaleDateString('es-AR')
       })
     } else {
-      const defaultRole = initialRole === 'Postulante' ? 'Postulante' : 'Alumno'
+      const defaultRole = String(initialRole || '').toLowerCase() === 'postulante' ? 'postulante' : 'alumno'
       setFormData({
         ...INITIAL_FORM_STATE,
         role_name: defaultRole,
-        status_id: defaultRole === 'Postulante' ? 3 : 1,
+        status_id: defaultRole === 'postulante' ? 3 : 1,
         enrollment_date: new Date().toLocaleDateString('es-AR')
       })
     }
@@ -146,11 +146,11 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
             <div className="min-w-0 pr-6">
               <h2 id="form-drawer-title" className="font-nunito font-extrabold text-lg leading-tight text-white truncate">
                 {student 
-                  ? (formData.role_name === 'Postulante' ? 'Modificar Registro de Postulante' : 'Modificar Registro de Alumno') 
-                  : (formData.role_name === 'Postulante' ? 'Registrar Nuevo Postulante' : 'Registrar Nuevo Alumno')}
+                  ? (String(formData.role_name || '').toLowerCase() === 'postulante' ? 'Modificar Registro de Postulante' : 'Modificar Registro de Alumno') 
+                  : (String(formData.role_name || '').toLowerCase() === 'postulante' ? 'Registrar Nuevo Postulante' : 'Registrar Nuevo Alumno')}
               </h2>
               <p className="text-xs text-custom-celeste font-medium mt-0.5">
-                {student ? `Editando registro ID #${student.id}` : (formData.role_name === 'Postulante' ? 'Carga de aspirante a curso' : 'Alta inicial en base de datos')}
+                {student ? `Editando registro ID #${student.id}` : (String(formData.role_name || '').toLowerCase() === 'postulante' ? 'Carga de aspirante a curso' : 'Alta inicial en base de datos')}
               </p>
             </div>
           </div>
@@ -221,9 +221,9 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
                   disabled={isReadOnly}
                   className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste transition-colors cursor-pointer"
                 >
-                  <option value="Alumno">Alumno</option>
-                  <option value="Egresado">Egresado</option>
-                  <option value="Postulante">Postulante</option>
+                  <option value="alumno">Alumno</option>
+                  <option value="egresado">Egresado</option>
+                  <option value="postulante">Postulante</option>
                 </select>
               </div>
             </div>
@@ -497,7 +497,7 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
                 }`}
               >
                 <Save className="h-4 w-4 text-custom-amarillo" />
-                {student ? 'Guardar Cambios' : (formData.role_name === 'Postulante' ? 'Registrar Postulante' : 'Guardar Alumno')}
+                {student ? 'Guardar Cambios' : (String(formData.role_name || '').toLowerCase() === 'postulante' ? 'Registrar Postulante' : 'Guardar Alumno')}
               </button>
             </div>
           </div>

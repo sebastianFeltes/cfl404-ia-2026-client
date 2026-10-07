@@ -1,72 +1,11 @@
 import { NavLink, Link } from 'react-router'
-import {
-  Users,
-  Book,
-  GraduationCap,
-  PanelLeftClose,
-  PanelLeftOpen,
-  LayoutDashboard,
-  ClipboardCheck,
-  Wallet,
-  Scale,
-  Shield,
-  Settings2,
-} from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, Scale, Shield } from 'lucide-react'
 import Tooltip from './Tooltip'
 import { useAuth } from '../context/AuthContext'
 import { canonicalRole } from '../utils/roles'
+import { sectionPath, sectionTitle, sectionsForRole } from './appNavigation'
 
-const ADMIN_NAV_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
-const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
-const CONFIG_ROLES = ['GOD', 'DIRECTOR', 'REGENTE']
 const YEAR = new Date().getFullYear()
-
-const navItems = [
-  {
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    path: '/admin/dashboard',
-    title: 'Resumen del centro',
-  },
-  {
-    label: 'Asistencia',
-    icon: ClipboardCheck,
-    path: '/admin/asistencia',
-    title: 'Registro y seguimiento de asistencia',
-  },
-  {
-    label: 'Profesores',
-    icon: Users,
-    path: '/admin/instructores',
-    title: 'Gestión de docentes e instructores',
-  },
-  {
-    label: 'Cursos',
-    icon: Book,
-    path: '/admin/cursos',
-    title: 'Gestión de ofertas formativas',
-  },
-  {
-    label: 'Alumnos',
-    icon: GraduationCap,
-    path: '/admin/alumnos',
-    title: 'Matrícula y nómina de estudiantes',
-  },
-]
-
-const cooperadoraItem = {
-  label: 'Cooperadora',
-  icon: Wallet,
-  path: '/admin/cooperadora',
-  title: 'Gestión de pagos de cooperadora y buffet',
-}
-
-const configItem = {
-  label: 'Configuración',
-  icon: Settings2,
-  path: '/admin/configuracion',
-  title: 'Ajustes del sistema, cooperadora y patrocinadores',
-}
 
 function BrandMark({ className = 'h-9 w-9' }) {
   return (
@@ -84,20 +23,7 @@ export default function Sidebar({ isOpen = true, onToggle }) {
   const open = onToggle !== undefined ? isOpen : true
   const { user } = useAuth()
   const role = canonicalRole(user?.rol)
-  const canSeeAdmin = ADMIN_NAV_ROLES.includes(role)
-  const canAccessCooperadora = COOPERADORA_ROLES.includes(role)
-  const canAccessConfig = CONFIG_ROLES.includes(role)
-
-  let visibleNavItems = []
-  if (canSeeAdmin) {
-    visibleNavItems = [
-      ...navItems,
-      ...(canAccessCooperadora ? [cooperadoraItem] : []),
-      ...(canAccessConfig ? [configItem] : []),
-    ]
-  } else if (role === 'INSTRUCTOR' || ['ALUMNO', 'POSTULANTE', 'ESTUDIANTE'].includes(role)) {
-    visibleNavItems = [navItems[0]]
-  }
+  const visibleNavItems = sectionsForRole(role)
 
   return (
     <aside
@@ -182,8 +108,8 @@ export default function Sidebar({ isOpen = true, onToggle }) {
             className={open ? 'flex w-full' : 'flex w-full justify-center'}
           >
             <NavLink
-              to={item.path}
-              title={open ? item.title : undefined}
+              to={sectionPath(item, role)}
+              title={open ? sectionTitle(item, role) : undefined}
               className={({ isActive }) =>
                 `rounded-lg flex items-center text-sm font-nunito transition-colors ${
                   open ? 'px-3 py-2.5 gap-3 w-full' : 'h-10 w-10 justify-center'

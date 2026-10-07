@@ -157,14 +157,14 @@ export default function DashboardQuickActions({ role = 'director' }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-roboto">
-          Accesos Rápidos del Módulo
+          Accesos rápidos
         </h3>
         <span className="text-xs text-slate-400 font-nunito">Operaciones frecuentes</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-nunito">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-nunito">
         {actions.map((action) => {
           const Icon = action.icon
 

@@ -35,9 +35,9 @@ const matchesSearchValue = (value, searchLower) =>
 
 function NoAccessBanner({ userRole }) {
   const labels = {
-    INSTRUCTOR: 'Instructor/a',
-    ALUMNO: 'Alumno/a',
-    POSTULANTE: 'Postulante',
+    instructor: 'Instructor/a',
+    alumno: 'Alumno/a',
+    postulante: 'Postulante',
   }
   const label = labels[canonicalRole(userRole)] || userRole
 

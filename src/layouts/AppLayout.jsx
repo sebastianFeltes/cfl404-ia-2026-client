@@ -4,6 +4,9 @@ import { Menu, X, Home, Building2, GraduationCap, Users, Mail, LogIn, User } fro
 import Footer from '../components/Footer'
 import AvisoConsentimiento from '../components/AvisoConsentimiento'
 import { useAuth } from '../context/AuthContext'
+import { canonicalRole } from '../utils/roles'
+
+const DASHBOARD_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria', 'instructor', 'alumno', 'postulante']
 
 /**
  * AppLayout — layout público del sitio institucional del CFL 404.
@@ -16,11 +19,16 @@ function AppLayout() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
 
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
     const location = useLocation()
     const navigate = useNavigate()
     const isHome = location.pathname === '/'
     const isLegalPage = ['/cookies', '/privacidad', '/terminos-condiciones'].includes(location.pathname)
+    const logoTo = !isAuthenticated
+        ? '/'
+        : DASHBOARD_ROLES.includes(canonicalRole(user?.rol))
+            ? '/admin/dashboard'
+            : '/perfil'
 
     // Detectar scroll en la Home
     useEffect(() => {
@@ -70,7 +78,7 @@ function AppLayout() {
     // Manejador de clic en el logo del Navbar
     const handleLogoClick = (e) => {
         closeMenu()
-        if (isHome) {
+        if (!isAuthenticated && isHome) {
             e.preventDefault()
             window.scrollTo({ top: 0, behavior: 'smooth' })
         }
@@ -95,24 +103,8 @@ function AppLayout() {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 font-roboto text-custom-gris-oscuro">
 
-            {/* ── Navbar ── */}
-            {isLegalPage ? (
-                <header className="fixed top-0 left-0 right-0 z-40 bg-custom-azul-oscuro shadow-md">
-                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-center">
-                        <NavLink
-                            to="/"
-                            className="flex items-center active:scale-95 transition-all duration-300"
-                            aria-label="Ir al inicio"
-                        >
-                            <img
-                                src="/logo_texto_hero.svg"
-                                alt="Centro de Formación Laboral Nº 404 / Berisso"
-                                className="h-10 sm:h-12 w-auto object-contain bg-white/10 rounded-full p-0.5 border border-white/20 shadow-sm"
-                            />
-                        </NavLink>
-                    </div>
-                </header>
-            ) : (
+            {/* ── Navbar (solo en páginas no legales) ── */}
+            {!isLegalPage && (
                 <>
                     <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${headerBgClass}`}>
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -120,12 +112,12 @@ function AppLayout() {
                             {/* Logo */}
                             <div className="flex items-center">
                                 <NavLink
-                                    to="/"
+                                    to={logoTo}
                                     onClick={handleLogoClick}
                                     className={`flex items-center transition-all duration-300 active:scale-95 ${
                                         showLogo ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
                                     }`}
-                                    aria-label="Ir al inicio"
+                                    aria-label={isAuthenticated ? 'Ir al panel' : 'Ir al inicio'}
                                 >
                                     <img
                                         src="/logo_texto_hero.svg"
@@ -304,7 +296,7 @@ function AppLayout() {
             )}
 
             {/* ── Contenido de página ── */}
-            <main className="flex-grow flex flex-col pt-16">
+            <main className={`flex-grow flex flex-col ${isLegalPage ? 'pt-0' : 'pt-16'}`}>
                 <Outlet />
             </main>
 

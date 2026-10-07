@@ -27,7 +27,7 @@ function normalizeUser(payload) {
     rol: payload.rol || payload.role?.name || payload.role || '',
     estado: payload.estado || payload.status || '',
     institucion: payload.institucion || "CFL N°404 'Berisso'",
-    fotoUrl: payload.fotoUrl || payload.profilePhotoUrl || '',
+    fotoUrl: payload.fotoUrl || payload.profilePhotoUrl || payload.picture || '',
     tipo: payload.tipo || payload.type || '',
     emailVerificado: payload.emailVerificado ?? payload.emailVerified ?? false,
     aceptaTerminos: Boolean(payload.aceptaTerminos ?? payload.acceptedTerms),
@@ -48,6 +48,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => normalizeUser(readStoredUser()));
   const [remember, setRemember] = useState(() => isRememberedSession());
   const [isLoading, setIsLoading] = useState(true);
+  const [loginEpoch, setLoginEpoch] = useState(0);
 
   const isAuthenticated = Boolean(user);
 
@@ -59,6 +60,7 @@ export function AuthProvider({ children }) {
     setRemember(rememberSession);
     setToken(Boolean(nextUser) ? 'session' : null);
     setUser(nextUser);
+    setLoginEpoch((current) => current + 1);
 
     return nextUser;
   }, []);
@@ -112,12 +114,17 @@ export function AuthProvider({ children }) {
     return true;
   }, [applySession]);
 
-  const loginWithGoogle = useCallback(async (credential, { remember: rememberSession = true, acceptedTerms = true } = {}) => {
+  const loginWithGoogle = useCallback(async (credential, { remember: rememberSession = true, acceptedTerms = false } = {}) => {
     if (!credential) {
       throw new Error('Google no devolvió una credencial válida');
     }
 
-    const data = await POST('/api/auth/google', { credential, acceptedTerms: Boolean(acceptedTerms) });
+    const payload = { credential };
+    if (acceptedTerms) {
+      payload.acceptedTerms = true;
+    }
+
+    const data = await POST('/api/auth/google', payload);
     const nextUser = applySession(data.token, data.user ?? data, rememberSession);
     return { user: nextUser, isNewAccount: Boolean(data.isNewAccount), message: data.message };
   }, [applySession]);
@@ -151,8 +158,8 @@ export function AuthProvider({ children }) {
   }, [remember]);
 
   const value = useMemo(
-    () => ({ token, user, isAuthenticated, isLoading, login, loginWithGoogle, loginAsDemo, logout, updateUser }),
-    [token, user, isAuthenticated, isLoading, login, loginWithGoogle, loginAsDemo, logout, updateUser],
+    () => ({ token, user, isAuthenticated, isLoading, loginEpoch, login, loginWithGoogle, loginAsDemo, logout, updateUser }),
+    [token, user, isAuthenticated, isLoading, loginEpoch, login, loginWithGoogle, loginAsDemo, logout, updateUser],
   );
 
   return (

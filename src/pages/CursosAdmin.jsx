@@ -21,6 +21,7 @@ import Tooltip from '../components/Tooltip'
 import CourseFormDrawer from '../components/cursos/CourseFormDrawer'
 import CourseDetailDrawer from '../components/cursos/CourseDetailDrawer'
 import CourseDeleteModal from '../components/cursos/CourseDeleteModal'
+import { COURSE_STATUS_OPTIONS, isCourseRunning } from '../utils/courseStatus'
 import {
   fetchCourses,
   fetchFamilies,
@@ -41,6 +42,87 @@ const COLS = [
   { label: 'Cupos', width: '12%', align: 'left' },
   { label: 'Acciones', width: '10%', align: 'right' },
 ]
+
+const STAGE_FILTERS = [
+  { key: '', label: 'Todas las etapas' },
+  { key: 'segunda', label: 'Segunda etapa (Julio - Diciembre)' },
+  { key: 'primera', label: 'Primera etapa (Marzo - Julio)' },
+  { key: 'anual', label: 'Anual / Dictado continuo' },
+]
+
+function CourseFact({ label, value }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 px-3 py-2 min-w-0">
+      <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400 shrink-0 pt-0.5">
+        {label}
+      </dt>
+      <dd className="text-right text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug break-words min-w-0">
+        {value || '—'}
+      </dd>
+    </div>
+  )
+}
+
+function CourseSummaryCard({ course, puedeEditar, onView, onEdit }) {
+  const stage = getCourseStageFromDates(course)
+  const isActive = isCourseRunning(course.statusId || course.status?.id)
+  const statusLabel = course.status?.label || (isActive ? 'Activo' : 'Finalizado')
+
+  return (
+    <article className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-xs flex flex-col gap-3 min-w-0">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-snug min-w-0">
+          <button
+            type="button"
+            onClick={() => onView(course)}
+            className="text-left hover:text-[#166193] cursor-pointer break-words"
+          >
+            {course.name}
+          </button>
+        </h3>
+        <span
+          className={`shrink-0 inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full ${
+            isActive
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+              : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+          {statusLabel}
+        </span>
+      </div>
+
+      <dl className="grid grid-cols-1 gap-2">
+        <CourseFact label="Familia" value={course.family?.name || course.category || '—'} />
+        <CourseFact label="Etapa" value={stage?.label || course.stage || 'Sin etapa'} />
+        <CourseFact label="Instructor" value={course.instructorName || course.staff || 'Sin instructor'} />
+        <CourseFact label="Horario" value={course.schedule || 'A confirmar'} />
+        <CourseFact label="Cupos" value={`${course.availableQuota ?? course.detail?.quota ?? 0} vacantes`} />
+      </dl>
+
+      <div className="flex gap-2 pt-1">
+        <button
+          type="button"
+          onClick={() => onView(course)}
+          className="flex-1 h-10 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-[#166193] dark:text-custom-celeste hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+        >
+          <Eye size={15} />
+          Ver
+        </button>
+        {puedeEditar && (
+          <button
+            type="button"
+            onClick={() => onEdit(course)}
+            className="flex-1 h-10 inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-bold text-amber-700 hover:bg-amber-100 cursor-pointer"
+          >
+            <Pencil size={15} />
+            Editar
+          </button>
+        )}
+      </div>
+    </article>
+  )
+}
 
 export default function CursosAdmin() {
   const context = useOutletContext()
@@ -114,7 +196,9 @@ export default function CursosAdmin() {
         (course.name || '').toLowerCase().includes(searchLower) ||
         familyName.toLowerCase().includes(searchLower) ||
         instructorName.toLowerCase().includes(searchLower) ||
-        (course.sponsor?.name && course.sponsor.name.toLowerCase().includes(searchLower))
+        [course.sponsor?.name, ...(course.sponsors || []).map((sponsor) => sponsor.name)]
+          .filter(Boolean)
+          .some((name) => name.toLowerCase().includes(searchLower))
 
       const matchesStage = courseMatchesStage(course, filterStage)
       const matchesFamily = filterFamily === '' || String(course.familyId) === String(filterFamily) || familyName === filterFamily
@@ -221,9 +305,9 @@ export default function CursosAdmin() {
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2 font-nunito no-print">
-        <div>
-          <h2 className="font-nunito font-extrabold text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight flex items-center gap-2.5">
-            <BookOpen className="h-8 w-8 text-custom-azul-oscuro dark:text-custom-celeste" />
+        <div className="min-w-0">
+          <h2 className="font-nunito font-extrabold text-xl sm:text-3xl text-custom-azul-oscuro dark:text-custom-celeste tracking-tight flex items-start sm:items-center gap-2.5 leading-tight">
+            <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 shrink-0 mt-0.5 sm:mt-0 text-custom-azul-oscuro dark:text-custom-celeste" />
             Gestión de Cursos y Oferta Educativa
           </h2>
           <p className="text-sm font-medium text-custom-gris-claro dark:text-slate-400 mt-1">
@@ -231,11 +315,11 @@ export default function CursosAdmin() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
           <Tooltip text="Imprimir o exportar el listado filtrado a PDF" position="bottom">
             <button
               onClick={handlePrintList}
-              className="flex items-center gap-2 px-4 py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 border-2 border-custom-azul-oscuro/25 dark:border-custom-celeste/40 text-custom-azul-oscuro dark:text-custom-celeste hover:border-custom-azul-oscuro dark:hover:border-custom-celeste hover:bg-custom-azul-oscuro/5 dark:hover:bg-custom-celeste/10 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer w-full sm:w-auto"
             >
               <Printer className="h-4 w-4" />
               Exportar PDF
@@ -244,10 +328,10 @@ export default function CursosAdmin() {
           {puedeEditar && (
             <button
               onClick={() => { setEditingCourse(null); setIsAddOpen(true) }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg text-xs font-bold transition-all duration-200 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md cursor-pointer w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 text-[#FDEA14]" />
-              + Agregar Curso
+              Agregar curso
             </button>
           )}
         </div>
@@ -268,7 +352,7 @@ export default function CursosAdmin() {
           title="Cursos Activos"
           value={loading ? '...' : kpis.activos}
           icon={CheckCircle2}
-          trend="Estado ACTIVO"
+          trend="Estado activo"
           trendType="up"
           colorClass="border-[#37A6DE]"
           iconColorClass="text-[#37A6DE] bg-[#37A6DE]/10"
@@ -296,26 +380,37 @@ export default function CursosAdmin() {
         />
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center gap-2 font-nunito no-print">
-        <span className="text-xs font-bold text-slate-500 px-3 uppercase tracking-wider">Filtrar por Etapa:</span>
-        {[
-          { key: '', label: `Todas las Etapas (${courses.length})` },
-          { key: 'segunda', label: 'Segunda etapa (Julio - Diciembre)' },
-          { key: 'primera', label: 'Primera etapa (Marzo - Julio)' },
-          { key: 'anual', label: 'Anual / Dictado Continuo' },
-        ].map((tab) => (
-          <button
-            key={tab.key || 'all'}
-            onClick={() => setFilterStage(tab.key)}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              filterStage === tab.key
-                ? 'bg-[#166193] text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-            }`}
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-xs font-nunito no-print">
+        <label className="sm:hidden block px-1 pb-1">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Etapa</span>
+          <select
+            value={filterStage}
+            onChange={(event) => setFilterStage(event.target.value)}
+            className="mt-1 w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 font-semibold focus:outline-none focus:border-[#166193]"
           >
-            {tab.label}
-          </button>
-        ))}
+            {STAGE_FILTERS.map((tab) => (
+              <option key={tab.key || 'all'} value={tab.key}>
+                {tab.label}{tab.key === '' ? ` (${courses.length})` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="hidden sm:flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-500 px-3 uppercase tracking-wider">Filtrar por etapa:</span>
+          {STAGE_FILTERS.map((tab) => (
+            <button
+              key={tab.key || 'all'}
+              onClick={() => setFilterStage(tab.key)}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterStage === tab.key
+                  ? 'bg-[#166193] text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              {tab.key === '' ? `${tab.label} (${courses.length})` : tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 p-4 space-y-4 font-nunito no-print">
@@ -327,7 +422,7 @@ export default function CursosAdmin() {
               placeholder="Buscar por curso, familia, instructor o patrocinador..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950 focus:outline-none focus:border-[#166193]"
+              className="w-full pl-10 pr-8 py-2.5 sm:py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-base sm:text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950 focus:outline-none focus:border-[#166193]"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -336,11 +431,11 @@ export default function CursosAdmin() {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1 max-w-xl">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-2 w-full lg:w-auto flex-1 min-w-0">
             <select
               value={filterFamily}
               onChange={(e) => setFilterFamily(e.target.value)}
-              className="flex-1 min-w-[130px] p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
+              className="w-full sm:flex-1 sm:min-w-[130px] p-2.5 sm:p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-base sm:text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
             >
               <option value="">Familia: Todas</option>
               {families.map((family) => (
@@ -351,13 +446,12 @@ export default function CursosAdmin() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="flex-1 min-w-[130px] p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
+              className="w-full sm:flex-1 sm:min-w-[130px] p-2.5 sm:p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-base sm:text-xs bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-[#166193] cursor-pointer"
             >
               <option value="">Estado: Todos</option>
-              <option value="1">Activo</option>
-              <option value="2">Inactivo</option>
-              <option value="3">Pendiente</option>
-              <option value="4">Finalizado</option>
+              {COURSE_STATUS_OPTIONS.map((status) => (
+                <option key={status.id} value={status.id}>{status.label}</option>
+              ))}
             </select>
 
             {/* View Mode Toggle: Tabla / Cuadrícula */}
@@ -412,14 +506,31 @@ export default function CursosAdmin() {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden font-nunito no-print">
         {viewMode === 'table' ? (
           <>
-            <div className="flex items-center px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 font-bold no-print">
+            <div className="md:hidden p-3 space-y-3">
+              {loading ? (
+                <div className="py-12 text-center text-sm text-slate-400 font-medium">Cargando cursos desde la base de datos...</div>
+              ) : paginatedCourses.length === 0 ? (
+                <div className="py-12 text-center text-sm text-slate-400 font-medium">No se encontraron cursos con los filtros seleccionados.</div>
+              ) : (
+                paginatedCourses.map((course) => (
+                  <CourseSummaryCard
+                    key={course.id}
+                    course={course}
+                    puedeEditar={puedeEditar}
+                    onView={setViewCourse}
+                    onEdit={(item) => { setIsAddOpen(false); setEditingCourse(item) }}
+                  />
+                ))
+              )}
+            </div>
+
+            <div className="hidden md:block">
+            <div className="flex items-center px-4 py-4 border-b border-custom-azul-oscuro bg-custom-azul-oscuro text-white text-xs font-bold uppercase tracking-wider no-print">
               {COLS.map((col) => (
                 <div
                   key={col.label}
                   style={{ width: col.width }}
-                  className={`text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300 ${
-                    col.align === 'right' ? 'text-right' : 'text-left'
-                  }`}
+                  className={col.align === 'right' ? 'text-right' : 'text-left'}
                 >
                   {col.label}
                 </div>
@@ -434,7 +545,7 @@ export default function CursosAdmin() {
               <div className="flex flex-col">
                 {paginatedCourses.map((course) => {
                   const stage = getCourseStageFromDates(course)
-                  const isActive = Number(course.statusId || course.status?.id) === 1
+                  const isActive = isCourseRunning(course.statusId || course.status?.id)
                   return (
                     <div
                       key={course.id}
@@ -504,84 +615,31 @@ export default function CursosAdmin() {
                 })}
               </div>
             )}
+            </div>
           </>
         ) : (
-          /* Grid / Card View */
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             {loading ? (
               <div className="py-16 text-center text-slate-400 font-medium">Cargando cursos desde la base de datos...</div>
             ) : paginatedCourses.length === 0 ? (
               <div className="py-16 text-center text-slate-400 font-medium">No se encontraron cursos con los filtros seleccionados.</div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {paginatedCourses.map((course) => {
-                  const stage = getCourseStageFromDates(course)
-                  const isActive = Number(course.statusId || course.status?.id) === 1
-                  return (
-                    <div
-                      key={course.id}
-                      className="group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md hover:border-[#166193]/40 transition-all space-y-3 flex flex-col"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span
-                          title={isActive ? 'Activo' : 'Finalizado'}
-                          className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${
-                            isActive ? 'bg-emerald-500' : 'bg-slate-400'
-                          }`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug hover:text-[#166193] cursor-pointer line-clamp-2"
-                            onClick={() => setViewCourse(course)}
-                          >
-                            {course.name}
-                          </p>
-                          <span className="text-[10px] font-semibold text-[#166193] bg-[#166193]/10 px-1.5 py-0.5 rounded inline-block mt-1">
-                            {stage?.label || course.stage || 'Sin etapa'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                            {course.family?.name || course.category || '—'}
-                          </span>
-                          <span className="font-bold text-slate-800 dark:text-slate-100">
-                            {course.availableQuota ?? course.detail?.quota ?? 0} vacantes
-                          </span>
-                        </div>
-                        <p className="truncate font-medium">{course.instructorName || course.staff || 'Sin instructor'}</p>
-                        <p className="text-slate-500 dark:text-slate-400">{course.schedule}</p>
-                      </div>
-
-                      <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-100 dark:border-slate-700 mt-auto no-print">
-                        <button
-                          onClick={() => setViewCourse(course)}
-                          title="Ver detalle del curso"
-                          className="p-1.5 rounded-md text-slate-400 hover:text-[#166193] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        >
-                          <Eye size={15} />
-                        </button>
-                        {puedeEditar && (
-                          <button
-                            onClick={() => { setIsAddOpen(false); setEditingCourse(course) }}
-                            title="Editar curso"
-                            className="p-1.5 rounded-md text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                {paginatedCourses.map((course) => (
+                  <CourseSummaryCard
+                    key={course.id}
+                    course={course}
+                    puedeEditar={puedeEditar}
+                    onView={setViewCourse}
+                    onEdit={(item) => { setIsAddOpen(false); setEditingCourse(item) }}
+                  />
+                ))}
               </div>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-xs no-print">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-xs no-print">
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
             <span>Mostrar</span>
             <select
@@ -590,7 +648,7 @@ export default function CursosAdmin() {
                 setItemsPorPagina(Number(e.target.value))
                 setPaginaActual(1)
               }}
-              className="h-7 px-2 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+              className="h-8 px-2 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -599,24 +657,26 @@ export default function CursosAdmin() {
             <span>por página</span>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-slate-600 dark:text-slate-300">
             <span>
-              Mostrando <strong>{filteredCourses.length === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1}</strong> a{' '}
-              <strong>{Math.min(paginaActual * itemsPorPagina, filteredCourses.length)}</strong> de{' '}
-              <strong>{filteredCourses.length}</strong> resultados
+              <strong>{filteredCourses.length === 0 ? 0 : (paginaActual - 1) * itemsPorPagina + 1}</strong>
+              {'–'}
+              <strong>{Math.min(paginaActual * itemsPorPagina, filteredCourses.length)}</strong>
+              {' de '}
+              <strong>{filteredCourses.length}</strong>
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
                 disabled={paginaActual === 1}
-                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
+                className="h-9 sm:h-7 flex-1 sm:flex-none px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 Anterior
               </button>
               <button
                 onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
                 disabled={paginaActual === totalPaginas || filteredCourses.length === 0}
-                className="h-7 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
+                className="h-9 sm:h-7 flex-1 sm:flex-none px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 Siguiente
               </button>

@@ -18,7 +18,7 @@ function StatCard({
 }) {
   const card = (
     <div 
-      className={`bg-white dark:bg-slate-900 rounded-xl shadow-xs border-l-4 ${colorClass} border-y border-r border-slate-200/80 dark:border-slate-800/80 p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-default w-full h-full min-h-[140px]`}
+      className={`bg-white dark:bg-slate-900 rounded-xl shadow-xs border-l-4 ${colorClass} border-y border-r border-slate-200/80 dark:border-slate-800/80 p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-md sm:hover:-translate-y-0.5 cursor-default w-full h-full min-h-[120px] sm:min-h-[140px]`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 min-w-0 flex-1">
@@ -28,7 +28,7 @@ function StatCard({
           >
             {title}
           </p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-custom-gris-oscuro dark:text-slate-100 font-nunito tracking-tight truncate">
+          <p className="text-xl sm:text-3xl font-extrabold text-custom-gris-oscuro dark:text-slate-100 font-nunito tracking-tight leading-tight break-words">
             {value}
           </p>
         </div>

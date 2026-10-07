@@ -17,7 +17,16 @@ import {
 } from 'lucide-react'
 import Tooltip from '../Tooltip'
 import { courseSchema } from '../../schemas/courseSchema'
+import { COURSE_STATUS_OPTIONS } from '../../utils/courseStatus'
+import { getSponsors } from '../../services/settingsService'
 import { getCourseStageFromDates, toDateInputValue, validateCourseStageDates } from '../../utils/courseStage'
+
+function sponsorIdsFromCourse(course) {
+  if (Array.isArray(course?.sponsorIds)) return course.sponsorIds
+  const fromList = (course?.sponsors || []).map((sponsor) => sponsor.id).filter(Boolean)
+  if (fromList.length > 0) return fromList
+  return course?.sponsor?.id ? [course.sponsor.id] : []
+}
 
 const INITIAL_FORM_STATE = {
   name: '',
@@ -37,7 +46,7 @@ const INITIAL_FORM_STATE = {
   description: '',
   titleRequired: false,
   endorsementBy: 'Ministerio de Educación y Trabajo de la Provincia de Buenos Aires',
-  sponsorName: '',
+  sponsorIds: [],
   dayIds: [],
 }
 
@@ -55,6 +64,7 @@ function CourseFormDrawer({
 }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const [errors, setErrors] = useState({})
+  const [sponsors, setSponsors] = useState([])
 
   useEffect(() => {
     if (isOpen) {
@@ -64,6 +74,21 @@ function CourseFormDrawer({
     }
     return () => {
       document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    let cancelled = false
+    getSponsors()
+      .then((data) => {
+        if (!cancelled) setSponsors(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!cancelled) setSponsors([])
+      })
+    return () => {
+      cancelled = true
     }
   }, [isOpen])
 
@@ -89,7 +114,7 @@ function CourseFormDrawer({
         description: course.detail?.description || course.courseDetail?.description || '',
         titleRequired: Boolean(course.detail?.titleRequired || course.courseDetail?.titleRequired),
         endorsementBy: course.detail?.endorsement_by || course.courseDetail?.endorsementBy || INITIAL_FORM_STATE.endorsementBy,
-        sponsorName: course.sponsor?.name || course.courseDetail?.sponsorName || '',
+        sponsorIds: sponsorIdsFromCourse(course),
         dayIds: course.dayIds || (course.courseDays || []).map((item) => item.dayId),
       })
     } else {
@@ -125,6 +150,19 @@ function CourseFormDrawer({
     }
   }
 
+  const toggleSponsor = (sponsorId) => {
+    if (isReadOnly) return
+    setFormData((prev) => {
+      const exists = prev.sponsorIds.includes(sponsorId)
+      return {
+        ...prev,
+        sponsorIds: exists
+          ? prev.sponsorIds.filter((id) => id !== sponsorId)
+          : [...prev.sponsorIds, sponsorId],
+      }
+    })
+  }
+
   const toggleDay = (dayId) => {
     if (isReadOnly) return
     setFormData((prev) => {
@@ -152,6 +190,7 @@ function CourseFormDrawer({
       maxAbsences: Number(formData.maxAbsences),
       isAnnual: Boolean(formData.isAnnual),
       titleRequired: Boolean(formData.titleRequired),
+      sponsorIds: formData.sponsorIds,
       dayIds: formData.dayIds.map(Number),
     }
 
@@ -283,10 +322,9 @@ function CourseFormDrawer({
                   disabled={isReadOnly}
                   className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950 cursor-pointer"
                 >
-                  <option value={1}>Activo</option>
-                  <option value={2}>Inactivo</option>
-                  <option value={3}>Pendiente</option>
-                  <option value={4}>Finalizado</option>
+                  {COURSE_STATUS_OPTIONS.map((status) => (
+                    <option key={status.id} value={status.id}>{status.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -505,8 +543,33 @@ function CourseFormDrawer({
               <input id="endorsementBy" name="endorsementBy" value={formData.endorsementBy} onChange={handleChange} disabled={isReadOnly} className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950" />
             </div>
             <div>
-              <label htmlFor="sponsorName" className="block font-bold mb-1">Patrocinador</label>
-              <input id="sponsorName" name="sponsorName" value={formData.sponsorName} onChange={handleChange} disabled={isReadOnly} placeholder="Ej. TecPlata" className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950" />
+              <p className="block font-bold mb-1">Patrocinadores</p>
+              {sponsors.length === 0 ? (
+                <p className="text-[11px] text-slate-500">
+                  No hay patrocinadores cargados. Creálos en Configuración y después asignalos acá.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {sponsors.map((sponsor) => {
+                    const selected = formData.sponsorIds.includes(sponsor.id)
+                    return (
+                      <button
+                        key={sponsor.id}
+                        type="button"
+                        onClick={() => toggleSponsor(sponsor.id)}
+                        disabled={isReadOnly}
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                          selected
+                            ? 'bg-custom-azul-oscuro text-white border-custom-azul-oscuro'
+                            : 'bg-white dark:bg-slate-950 text-slate-600 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {sponsor.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </form>

@@ -49,9 +49,9 @@ export default function DashboardAlerts({ alerts = [] }) {
 
   return (
     <div className="space-y-2.5 font-nunito">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
         <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-roboto">
-          Avisos Operativos del Centro
+          Avisos del centro
         </h4>
         <span className="text-[11px] text-slate-400">Actualizado en tiempo real</span>
       </div>

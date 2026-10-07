@@ -16,20 +16,20 @@ export default function ModuleSummaryCard({
 }) {
   return (
     <div
-      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between w-full h-full ${className}`}
+      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between w-full h-full ${className}`}
     >
       <div>
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+          <div className="flex items-start gap-3 min-w-0">
             {Icon && (
               <div className={`p-2.5 rounded-xl shrink-0 ${iconClass}`}>
                 <Icon size={20} strokeWidth={2} />
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 font-roboto">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 font-roboto leading-snug">
                   {title}
                 </h3>
                 {badgeText && (

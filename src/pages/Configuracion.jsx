@@ -145,18 +145,21 @@ function TabGeneral({ showToast }) {
       {settings.map((s) => {
         const e = edited[s.key] || { value: '', name: '', description: '' }
         return (
-          <div key={s.key} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <code className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">{s.key}</code>
+          <div key={s.key} className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-custom-gris-claro/10 dark:border-slate-800 overflow-hidden">
+            <div className="flex items-center justify-between gap-3 bg-custom-azul-oscuro text-white text-xs font-bold uppercase tracking-wider px-4 py-3">
+              <span className="font-mono normal-case tracking-normal">{s.key}</span>
+            </div>
+            <div className="p-5 space-y-3">
+            <div className="flex items-center justify-end">
               <button
                 onClick={() => handleSave(s.key)}
                 disabled={saving[s.key]}
-                className="flex items-center gap-1.5 text-xs font-semibold bg-custom-celeste text-white px-3 py-1.5 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md transition-all disabled:opacity-50 cursor-pointer"
               >
                 {saving[s.key] ? (
                   <RefreshCw size={13} className="animate-spin" />
                 ) : (
-                  <Save size={13} />
+                  <Save size={14} className="text-custom-amarillo" />
                 )}
                 Guardar
               </button>
@@ -189,6 +192,7 @@ function TabGeneral({ showToast }) {
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-nunito focus:outline-none focus:ring-2 focus:ring-custom-celeste"
                 />
               </div>
+            </div>
             </div>
           </div>
         )
@@ -406,7 +410,7 @@ function SponsorModal({ sponsor, onClose, onSaved, showToast }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 text-sm font-semibold bg-custom-celeste text-white px-5 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md transition-all disabled:opacity-50 cursor-pointer"
           >
             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
             {isEdit ? 'Guardar cambios' : 'Crear patrocinador'}
@@ -470,14 +474,14 @@ function TabPatrocinadores({ showToast }) {
         </p>
         <button
           onClick={() => { setEditingSponsor(null); setModalOpen(true) }}
-          className="flex items-center gap-2 bg-custom-celeste text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white hover:shadow-md transition-all cursor-pointer whitespace-nowrap"
         >
-          <Plus size={15} /> Nuevo patrocinador
+          <Plus size={16} className="text-custom-amarillo" /> Nuevo patrocinador
         </button>
       </div>
 
       {sponsors.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-10 text-center shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-custom-gris-claro/10 dark:border-slate-800 p-10 text-center">
           <ImageIcon size={36} className="mx-auto mb-3 text-slate-300" />
           <p className="text-slate-500 font-nunito text-sm">No hay patrocinadores registrados.</p>
           <button
@@ -490,7 +494,11 @@ function TabPatrocinadores({ showToast }) {
       ) : (
         <div className="grid gap-3">
           {sponsors.map((s) => (
-            <div key={s.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-start sm:items-center gap-4">
+            <div key={s.id} className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-custom-gris-claro/10 dark:border-slate-800 overflow-hidden">
+              <div className="bg-custom-azul-oscuro text-white text-xs font-bold uppercase tracking-wider px-4 py-3">
+                {s.name}
+              </div>
+              <div className="p-4 flex items-start sm:items-center gap-4">
               {/* Logo */}
               <div className="w-14 h-14 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 mt-0.5 sm:mt-0">
                 {s.logoUrl ? (
@@ -505,7 +513,7 @@ function TabPatrocinadores({ showToast }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-slate-800 font-nunito text-sm">{s.name}</p>
                   <span className="text-[11px] text-slate-500 bg-slate-100 font-medium px-2 py-0.5 rounded-md">
-                    {s._count?.courseDetails ?? 0} curso(s) vinculado(s)
+                    {s._count?.courseSponsors ?? 0} curso(s) vinculado(s)
                   </span>
                 </div>
                 {s.description && (
@@ -544,6 +552,7 @@ function TabPatrocinadores({ showToast }) {
                 >
                   <Trash2 size={15} />
                 </button>
+              </div>
               </div>
             </div>
           ))}

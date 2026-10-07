@@ -6,6 +6,10 @@ const COURSE_STATUS_UI = {
   2: { label: 'Inactivo', color: 'bg-slate-500/10 text-slate-700 border-slate-300 dark:text-slate-400', badgeColor: 'bg-slate-500' },
   3: { label: 'Pendiente', color: 'bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-400', badgeColor: 'bg-amber-500' },
   4: { label: 'Finalizado', color: 'bg-gray-500/10 text-gray-700 border-gray-300 dark:text-gray-400', badgeColor: 'bg-gray-500' },
+  8: { label: 'Inscripción Abierta', color: 'bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:text-emerald-400', badgeColor: 'bg-emerald-500' },
+  9: { label: 'Últimos Cupos', color: 'bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-400', badgeColor: 'bg-amber-500' },
+  10: { label: 'Cupo Completo', color: 'bg-rose-500/10 text-rose-700 border-rose-300 dark:text-rose-400', badgeColor: 'bg-rose-500' },
+  11: { label: 'Curso Finalizado', color: 'bg-gray-500/10 text-gray-700 border-gray-300 dark:text-gray-400', badgeColor: 'bg-gray-500' },
 }
 
 function toIsoDate(value) {
@@ -66,7 +70,9 @@ function mapApiCourse(item) {
     enrolledCount: item.enrolledCount ?? 0,
     dayIds: item.dayIds || (item.courseDays || []).map((d) => d.dayId),
     courseDays: item.courseDays || [],
-    sponsor: item.sponsor || null,
+    sponsors: item.sponsors || [],
+    sponsorIds: item.sponsorIds || (item.sponsors || []).map((sponsor) => sponsor.id).filter(Boolean),
+    sponsor: item.sponsor || (item.sponsors || [])[0] || null,
     detail: item.detail || {
       description: item.courseDetail?.description || '',
       quota: item.courseDetail?.quota ?? 0,
@@ -99,7 +105,7 @@ function toApiPayload(courseData) {
     classesQuantity: Number(courseData.classesQuantity ?? courseData.classes_quantity ?? courseData.detail?.classes_quantity ?? 32),
     titleRequired: Boolean(courseData.titleRequired),
     endorsementBy: courseData.endorsementBy || courseData.detail?.endorsement_by || undefined,
-    sponsorName: courseData.sponsorName || courseData.sponsor?.name || undefined,
+    sponsorIds: Array.isArray(courseData.sponsorIds) ? courseData.sponsorIds : [],
     dayIds: Array.isArray(courseData.dayIds) ? courseData.dayIds.map(Number) : [],
   }
 }
@@ -156,7 +162,7 @@ export async function fetchInstructorsForCourses() {
   try {
     const response = await GET('/api/v1/instructores')
     const list = response?.data || []
-    return list.filter((person) => String(person.role_name || '').toUpperCase() === 'INSTRUCTOR')
+    return list.filter((person) => String(person.role_name || '').toLowerCase() === 'instructor')
   } catch (error) {
     console.warn('No se pudieron obtener los instructores:', error.message)
     return []

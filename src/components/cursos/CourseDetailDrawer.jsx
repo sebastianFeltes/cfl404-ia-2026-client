@@ -151,9 +151,15 @@ function CourseDetailDrawer({ course, isOpen, onClose, onEdit, onDeactivate, has
               <div className="col-span-2">
                 <InfoRow label="Aval institucional" value={course.detail?.endorsement_by} />
               </div>
-              {course.sponsor?.name && (
+              {(course.sponsors?.length > 0 || course.sponsor?.name) && (
                 <div className="col-span-2">
-                  <InfoRow label="Patrocinador" value={course.sponsor.name} />
+                  <InfoRow
+                    label="Patrocinadores"
+                    value={(course.sponsors?.length
+                      ? course.sponsors.map((sponsor) => sponsor.name)
+                      : [course.sponsor.name]
+                    ).join(', ')}
+                  />
                 </div>
               )}
             </div>

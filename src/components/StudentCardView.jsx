@@ -23,17 +23,17 @@ import {
 
 function isPostulanteCheck(student) {
   if (!student) return false
-  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
-  const role = String(student.role_name || '').toUpperCase()
-  const status = String(student.status || '').toUpperCase()
+  if (student.status_id === 2 || String(student.status || '').toLowerCase() === 'inactivo') return false
+  const role = String(student.role_name || '').toLowerCase()
+  const status = String(student.status || '').toLowerCase()
   return (
     Boolean(student.is_aspirante) ||
-    role === 'POSTULANTE' ||
-    role === 'ASPIRANTE' ||
+    role === 'postulante' ||
+    role === 'aspirante' ||
     student.status_id === 3 ||
-    status === 'PENDIENTE' ||
-    status === 'POSTULANTE' ||
-    status === 'ASPIRANTE'
+    status === 'pendiente' ||
+    status === 'postulante' ||
+    status === 'aspirante'
   )
 }
 
@@ -322,7 +322,7 @@ export default function StudentCardView({
             </button>
             {canCreate && (
               <button
-                onClick={() => onAddStudent && onAddStudent(isPostulantesTab ? 'Postulante' : 'Alumno')}
+                onClick={() => onAddStudent && onAddStudent(isPostulantesTab ? 'postulante' : 'alumno')}
                 className={`px-3.5 py-1.5 text-white rounded-lg text-xs font-nunito font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
                   isPostulantesTab 
                     ? 'bg-custom-celeste hover:bg-custom-celeste/95' 

@@ -36,29 +36,29 @@ import { instructores as mockInstructores } from '../components/instructores/moc
 // Helper para detectar postulantes
 const isPostulante = (student) => {
   if (!student) return false
-  const role = String(student.role_name || '').toUpperCase()
-  const status = String(student.status || '').toUpperCase()
+  const role = String(student.role_name || '').toLowerCase()
+  const status = String(student.status || '').toLowerCase()
   return (
     Boolean(student.is_aspirante) ||
-    role === 'POSTULANTE' ||
-    role === 'ASPIRANTE' ||
+    role === 'postulante' ||
+    role === 'aspirante' ||
     student.status_id === 3 ||
-    status === 'PENDIENTE' ||
-    status === 'POSTULANTE' ||
-    status === 'ASPIRANTE'
+    status === 'pendiente' ||
+    status === 'postulante' ||
+    status === 'aspirante'
   )
 }
 
 // Fallback de alumnos para visualización inicial si la API está vacía o desconectada
 const FALLBACK_STUDENTS = [
-  { id: 1, first_name: 'Esteban', last_name: 'Gómez', dni: '40123456', status: 'Activo', status_id: 1, is_present: true, course_name: 'Operador de PC', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 2, first_name: 'Lucía', last_name: 'Martínez', dni: '41987654', status: 'Activo', status_id: 1, is_present: true, course_name: 'Instalaciones Eléctricas', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 3, first_name: 'Franco', last_name: 'Pérez', dni: '43555222', status: 'Activo', status_id: 1, is_present: false, course_name: 'Soldadura Básica', studentDetail: { dniCopy: true, formCopy: true, titleCopy: false } },
-  { id: 4, first_name: 'Sofía', last_name: 'Díaz', dni: '42111888', status: 'Pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Cocina & Manipulación', studentDetail: { dniCopy: false, formCopy: true, titleCopy: false } },
-  { id: 5, first_name: 'Mateo', last_name: 'Benítez', dni: '39444111', status: 'Pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Impresión 3D', studentDetail: { dniCopy: true, formCopy: false, titleCopy: false } },
-  { id: 6, first_name: 'Camila', last_name: 'Ríos', dni: '44888999', status: 'Activo', status_id: 1, is_present: true, course_name: 'Operador de PC', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 7, first_name: 'Nicolás', last_name: 'Alvarez', dni: '40777333', status: 'Activo', status_id: 1, is_present: true, course_name: 'Marketing Digital', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 8, first_name: 'Valentina', last_name: 'Sosa', dni: '42999444', status: 'Pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Soldadura Básica', studentDetail: { dniCopy: false, formCopy: true, titleCopy: false } },
+  { id: 1, first_name: 'Esteban', last_name: 'Gómez', dni: '40123456', status: 'activo', status_id: 1, is_present: true, course_name: 'Operador de PC', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
+  { id: 2, first_name: 'Lucía', last_name: 'Martínez', dni: '41987654', status: 'activo', status_id: 1, is_present: true, course_name: 'Instalaciones Eléctricas', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
+  { id: 3, first_name: 'Franco', last_name: 'Pérez', dni: '43555222', status: 'activo', status_id: 1, is_present: false, course_name: 'Soldadura Básica', studentDetail: { dniCopy: true, formCopy: true, titleCopy: false } },
+  { id: 4, first_name: 'Sofía', last_name: 'Díaz', dni: '42111888', status: 'pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Cocina & Manipulación', studentDetail: { dniCopy: false, formCopy: true, titleCopy: false } },
+  { id: 5, first_name: 'Mateo', last_name: 'Benítez', dni: '39444111', status: 'pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Impresión 3D', studentDetail: { dniCopy: true, formCopy: false, titleCopy: false } },
+  { id: 6, first_name: 'Camila', last_name: 'Ríos', dni: '44888999', status: 'activo', status_id: 1, is_present: true, course_name: 'Operador de PC', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
+  { id: 7, first_name: 'Nicolás', last_name: 'Alvarez', dni: '40777333', status: 'activo', status_id: 1, is_present: true, course_name: 'Marketing Digital', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
+  { id: 8, first_name: 'Valentina', last_name: 'Sosa', dni: '42999444', status: 'pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Soldadura Básica', studentDetail: { dniCopy: false, formCopy: true, titleCopy: false } },
 ]
 
 export default function Dashboard() {
@@ -67,7 +67,7 @@ export default function Dashboard() {
   const user = outletCtx.user || authUser
 
   // Rol real del usuario autenticado
-  const originalDbRole = user?.rol || 'DIRECTOR'
+  const originalDbRole = user?.rol || 'director'
   const originalRoleUi = mapDbRoleToUi(originalDbRole)
 
   // Rol simulado para previsualizar perspectivas en el Dashboard
@@ -537,35 +537,35 @@ export default function Dashboard() {
   }, [activeRole, loading, metrics])
 
   const firstName = user?.nombres?.trim() || 'Directivo/a'
-  const currentRoleLabel = roleLabel(activeRole)
+  const currentRoleLabel = isSimulated ? roleLabel(activeRole) : roleLabel(user?.rol)
 
   return (
-    <div className="max-w-[1400px] w-full mx-auto font-nunito space-y-7 pb-14 animate-fade-in">
+    <div className="max-w-[1400px] w-full mx-auto font-nunito space-y-5 sm:space-y-7 pb-10 sm:pb-14 animate-fade-in">
       {/* ── 1. ENCABEZADO INSTITUCIONAL DEL DASHBOARD ── */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-1">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-custom-azul-oscuro/10 dark:bg-custom-celeste/15 text-custom-azul-oscuro dark:text-custom-celeste flex items-center justify-center shadow-xs">
-              <LayoutDashboard size={24} strokeWidth={2.2} />
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 pt-1">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-2xl bg-custom-azul-oscuro/10 dark:bg-custom-celeste/15 text-custom-azul-oscuro dark:text-custom-celeste flex items-center justify-center shadow-xs shrink-0">
+              <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.2} />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold text-custom-azul-oscuro dark:text-custom-celeste font-roboto tracking-tight">
-                  Dashboard Creativo
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-3xl font-bold text-custom-azul-oscuro dark:text-custom-celeste font-roboto tracking-tight leading-tight">
+                  Dashboard
                 </h1>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-custom-azul-oscuro text-white shadow-xs">
+                <span className="text-[11px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-custom-azul-oscuro text-white shadow-xs">
                   {currentRoleLabel}
                 </span>
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Hola, <span className="font-semibold text-slate-800 dark:text-slate-200">{firstName}</span>. Resumen rápido del estado del CFL Nº 404 de Berisso.
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-snug">
+                Hola, <span className="font-semibold text-slate-800 dark:text-slate-200">{firstName}</span>. Resumen del CFL Nº 404 de Berisso.
               </p>
             </div>
           </div>
         </div>
 
         {/* Acciones de Cabecera */}
-        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold border border-slate-200/80 dark:border-slate-700/60">
             <Calendar size={14} className="text-custom-azul-oscuro dark:text-custom-celeste" />
             <span>Ciclo Lectivo 2026</span>
@@ -575,7 +575,7 @@ export default function Dashboard() {
             type="button"
             onClick={loadDashboardData}
             disabled={loading}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/70 text-slate-700 dark:text-slate-200 shadow-xs cursor-pointer disabled:opacity-60"
+            className="flex flex-1 md:flex-none items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all duration-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/70 text-slate-700 dark:text-slate-200 shadow-xs cursor-pointer disabled:opacity-60"
             title="Sincronizar métricas con la base de datos"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin text-custom-celeste' : ''} />
@@ -597,7 +597,7 @@ export default function Dashboard() {
       <DashboardAlerts alerts={alertsForRole} />
 
       {/* ── 4. TARJETAS DE KPIS PRINCIPALES DEL ROL ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
         {roleKpis.map((kpi, idx) => (
           <StatCard
             key={idx}
@@ -632,25 +632,25 @@ export default function Dashboard() {
             badgeColor="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
           >
             {/* Detalles del curso actual */}
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
+            <div className="p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-3">
+              <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
+                <div className="min-w-0">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                     Curso Oficial Asignado
                   </span>
-                  <h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-roboto">
+                  <h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-roboto leading-snug">
                     Operador de Herramientas Digitales (PC)
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Docente a cargo: Prof. Valentina Rivadeneira
                   </p>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#166193]/10 text-[#166193] dark:text-custom-celeste shrink-0">
+                <span className="self-start text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#166193]/10 text-[#166193] dark:text-custom-celeste shrink-0">
                   Aula 3
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 pt-1 text-xs">
                 <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                   <Calendar size={13} className="text-[#166193] dark:text-custom-celeste shrink-0" />
                   <span>Lunes y Miércoles</span>
@@ -673,7 +673,7 @@ export default function Dashboard() {
                     style={{ width: '92%' }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between text-[11px] text-slate-500">
                   <span>1 inasistencia registrada</span>
                   <span>Límite de regularidad: 4 faltas</span>
                 </div>
@@ -705,33 +705,33 @@ export default function Dashboard() {
                 Requisitos de Matrícula Oficial
               </span>
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
+                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
                     Fotocopia de DNI (Frente y Dorso)
                   </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Verificado</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Verificado</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
+                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
                     Planilla Oficial de Inscripción firmada
                   </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Presentada</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Presentada</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
+                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
                     Certificado de Estudios Previos
                   </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Aprobado</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Aprobado</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
+                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
                     Ficha de Salud y Apto Físico
                   </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Completado</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Completado</span>
                 </div>
               </div>
             </div>
@@ -866,26 +866,26 @@ export default function Dashboard() {
                 Control Documental de Legajos
               </span>
               <div className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-1.5 min-w-0">
+                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0 mt-0.5" />
                     Fotocopias de DNI cotejadas
                   </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">95%</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">95%</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-1.5 min-w-0">
+                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0 mt-0.5" />
                     Planillas de inscripción física
                   </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">89%</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">89%</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                    <AlertTriangle size={13} className="text-amber-500" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-1.5 min-w-0">
+                    <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
                     Constancias de título secundario/primario
                   </span>
-                  <span className="font-bold text-amber-600">76%</span>
+                  <span className="font-bold text-amber-600 shrink-0">76%</span>
                 </div>
               </div>
             </div>
@@ -963,7 +963,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
                 <span className="text-[11px] font-bold text-slate-400 uppercase block">Cuotas Cooperadora</span>
-                <span className="text-xl font-extrabold text-custom-azul-oscuro dark:text-custom-celeste">
+                <span className="text-lg sm:text-xl font-extrabold text-custom-azul-oscuro dark:text-custom-celeste break-words">
                   ${metrics.totalCooperadora.toLocaleString('es-AR')}
                 </span>
                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -973,7 +973,7 @@ export default function Dashboard() {
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
                 <span className="text-[11px] font-bold text-slate-400 uppercase block">Caja Buffet (Neto)</span>
-                <span className="text-xl font-extrabold text-emerald-600">
+                <span className="text-lg sm:text-xl font-extrabold text-emerald-600 break-words">
                   ${metrics.balanceBuffet.toLocaleString('es-AR')}
                 </span>
                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -1015,10 +1015,10 @@ export default function Dashboard() {
       )}
 
       {/* ── 7. FOOTER DE ESTADO Y SINCRONIZACIÓN ── */}
-      <div className="border-t border-slate-200/80 dark:border-slate-800 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 font-nunito">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Sistema conectado al Centro de Formación Laboral Nº 404 · Berisso</span>
+      <div className="border-t border-slate-200/80 dark:border-slate-800 pt-4 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 font-nunito">
+        <div className="flex items-start gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mt-1 shrink-0" />
+          <span className="leading-snug">Sistema conectado al Centro de Formación Laboral Nº 404 · Berisso</span>
         </div>
         <p>
           Última actualización:{' '}

@@ -29,11 +29,11 @@ import BadgeStatus from '../BadgeStatus'
 import { canCrud, roleLabel, canonicalRole } from '../../utils/roles'
 
 const AVAILABLE_ROLES = [
-  { id: 7, name: 'INSTRUCTOR', label: 'Instructor / Docente' },
-  { id: 6, name: 'PRECEPTORIA', label: 'Preceptoría' },
-  { id: 5, name: 'SECRETARIA', label: 'Secretaría' },
-  { id: 4, name: 'REGENTE', label: 'Regente' },
-  { id: 3, name: 'DIRECTOR', label: 'Director / Directivo' },
+  { id: 7, name: 'instructor', label: 'Instructor / Docente' },
+  { id: 6, name: 'preceptoria', label: 'Preceptoría' },
+  { id: 5, name: 'secretaria', label: 'Secretaría' },
+  { id: 4, name: 'regente', label: 'Regente' },
+  { id: 3, name: 'director', label: 'Director / Directivo' },
 ]
 
 const INITIAL_FORM_STATE = {
@@ -42,7 +42,7 @@ const INITIAL_FORM_STATE = {
   email: '',
   dni: '',
   status_id: 1, // Default Activo
-  role_id: 7,   // Default INSTRUCTOR (ID 7)
+  role_id: 7,   // Default instructor (ID 7)
   phone: '',
   address: '',
   profile_photo_url: '',
@@ -59,14 +59,14 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
   const roleOptions = useMemo(() => {
     const isExcluded = (id, name) => {
       const canonical = canonicalRole(name)
-      const n = String(name || '').toUpperCase()
+      const n = String(name || '').toLowerCase()
       return (
         Number(id) === 1 ||
         Number(id) === 2 ||
-        canonical === 'GOD' ||
-        canonical === 'ADMIN' ||
-        n.includes('ADMIN') ||
-        n.includes('DIOS')
+        canonical === 'god' ||
+        canonical === 'admin' ||
+        n.includes('admin') ||
+        n.includes('dios')
       )
     }
 
@@ -97,9 +97,9 @@ function InstructorFormDrawer({ instructor, isOpen, onClose, onSubmit, onDelete,
   // Solo los roles con CRUD completo pueden modificar datos generales
   const isReadOnly = !hasCrud
 
-  // Solo los roles 1 (GOD), 2 (ADMIN), 3 (DIRECTOR), 4 (REGENTE) pueden modificar cursos a cargo
+  // Solo los roles 1 (god), 2 (admin), 3 (director), 4 (regente) pueden modificar cursos a cargo
   const canEditCourses = useMemo(() => {
-    return canCrud(userRole) || [1, 2, 3, 4, '1', '2', '3', '4', 'GOD', 'ADMIN', 'DIRECTOR', 'REGENTE'].includes(userRole)
+    return canCrud(userRole) || [1, 2, 3, 4, '1', '2', '3', '4', 'god', 'admin', 'director', 'regente'].includes(userRole)
   }, [userRole])
 
   // Cerrar desplegable si se hace clic fuera del componente

@@ -6,6 +6,7 @@ import './App.css'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { canonicalRole } from './utils/roles'
 import ErrorBoundary from './components/ErrorBoundary'
+import IncompleteProfileNotice from './components/IncompleteProfileNotice'
 
 import AppLayout from './layouts/AppLayout'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -19,19 +20,21 @@ import TerminosCondiciones from './pages/TerminosCondiciones'
 
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
+import Inscripcion from './pages/Inscripcion'
 
 import Dashboard from './pages/Dashboard'
 import Asistencia from './pages/Asistencia'
+import QrScanner from './pages/QrScanner'
 import Alumnos from './pages/Alumnos'
 import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
 import CooperadoraAdmin from './pages/CooperadoraAdmin'
 import Configuracion from './pages/Configuracion'
 
-const DASHBOARD_ALLOWED_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA', 'INSTRUCTOR', 'ALUMNO', 'POSTULANTE']
-const STAFF_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
-const COOPERADORA_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE', 'SECRETARIA', 'PRECEPTORIA']
-const CONFIG_ROLES = ['GOD', 'DIRECTOR', 'REGENTE']
+const DASHBOARD_ALLOWED_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria', 'instructor', 'alumno', 'postulante']
+const STAFF_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria']
+const COOPERADORA_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria']
+const CONFIG_ROLES = ['god', 'director', 'regente']
 
 function LoadingScreen() {
   return (
@@ -104,12 +107,19 @@ function AppRoutes() {
 
       <Route path='/login' element={<LoginPage />} />
 
+      <Route path='/qr' element={
+        <PrivateRoute>
+          <QrScanner />
+        </PrivateRoute>
+      } />
+
       <Route element={
         <PrivateRoute>
           <DashboardLayout />
         </PrivateRoute>
       }>
         <Route path='perfil' element={<ProfilePage />} />
+        <Route path='inscripcion' element={<Inscripcion />} />
       </Route>
 
       <Route element={
@@ -158,6 +168,7 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <IncompleteProfileNotice />
             <AppRoutes />
           </BrowserRouter>
         </AuthProvider>

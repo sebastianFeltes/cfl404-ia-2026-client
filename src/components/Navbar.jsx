@@ -80,6 +80,7 @@ export default function Navbar() {
             <img
               src={safeImageSrc(user.fotoUrl)}
               alt=""
+              referrerPolicy="no-referrer"
               className="w-8 h-8 rounded-lg object-cover shrink-0 ring-1 ring-white/30"
             />
           ) : (

@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Award, ChevronDown, ChevronUp, ArrowRight, FileText, Building2, CheckCircle2 } from 'lucide-react';
-import { OFFICIAL_ENDORSEMENT } from '../data/coursesData';
+import CourseCover from './CourseCover';
 
-export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueue, forceMobileMode }) {
+export default function CourseCard({ course, onSelectCourse, onEnroll, enrollLabel = 'Inscribirme', forceMobileMode }) {
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
-  const sponsor = course.sponsor || {
-    name: 'TecPlata',
-    logo: '/images/tecplata_logo.jpg',
-    mention: 'Patrocinado por TecPlata',
-    badge: 'TecPlata'
-  };
+  const listedSponsors = Array.isArray(course.sponsors) && course.sponsors.length > 0
+    ? course.sponsors
+    : course.sponsor
+      ? [course.sponsor]
+      : [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const preenrollmentOpen = !course.preenrollment_date || todayStr >= course.preenrollment_date;
+  const sponsor = listedSponsors[0] || null;
+
+  const sponsorMention = listedSponsors.length > 1
+    ? `Patrocinado por ${listedSponsors.map((item) => item.name).join(', ')}`
+    : (sponsor?.mention || (sponsor ? `Patrocinado por ${sponsor.name}` : ''));
+
+  const hours = course.detail?.hour_quantity
+  const classes = course.detail?.classes_quantity
 
   const toggleAccordion = () => {
     setIsAccordionOpen(!isAccordionOpen);
@@ -21,11 +26,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
 
   const handleAction = (e) => {
     e.stopPropagation();
-    if (onOpenQueue && preenrollmentOpen) {
-      onOpenQueue(course);
-    } else if (onLogin) {
-      onLogin();
-    }
+    onEnroll?.(course);
   };
 
   return (
@@ -47,15 +48,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
           <div className="flex items-center gap-3 min-w-0">
             {/* Thumbnail */}
             <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-200 shadow-sm">
-              <img
-                src={course.image}
-                alt={course.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/images/Herreria.webp';
-                }}
-              />
+              <CourseCover course={course} className="w-full h-full" imgClassName="w-full h-full object-cover" />
             </div>
 
             {/* Course Title & Category */}
@@ -98,15 +91,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
         >
           {/* Expanded Image */}
           <div className="relative h-44 rounded-xl overflow-hidden mb-3 border border-gray-200 shadow-inner">
-            <img
-              src={course.image}
-              alt={course.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/images/Herreria.webp';
-              }}
-            />
+            <CourseCover course={course} className="w-full h-full" imgClassName="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
             <div className="absolute bottom-2 left-3 right-3 text-white">
               <p className="text-xs font-semibold text-gray-200">{course.stage}</p>
@@ -122,7 +107,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
 
             <div className="flex items-center gap-1.5 pt-2 border-t border-gray-200/60">
               <Clock className="w-3.5 h-3.5 text-[#166193]" />
-              <span><strong>Duración:</strong> {course.detail?.hour_quantity || 120} hs ({course.detail?.classes_quantity || 32} clases)</span>
+              <span><strong>Duración:</strong> {hours ? `${hours} hs` : 'Horas a confirmar'} ({classes ? `${classes} clases` : 'clases a confirmar'})</span>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -151,7 +136,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
               onClick={handleAction}
               className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors shadow-sm cursor-pointer"
             >
-              <span>Inscribirme</span>
+              <span>{enrollLabel}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -167,15 +152,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
         
         {/* Card Top Image Header */}
         <div className="relative h-48 w-full overflow-hidden bg-gray-100">
-          <img
-            src={course.image}
-            alt={course.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/images/Herreria.webp';
-            }}
-          />
+          <CourseCover course={course} className="w-full h-full" imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"></div>
 
@@ -231,11 +208,11 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
           <div className="grid grid-cols-2 gap-2 text-xs text-[#585856] pt-3 border-t border-gray-100 bg-gray-50/50 p-2.5 rounded-xl">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-[#166193] shrink-0" />
-              <span>{course.detail?.hour_quantity || 120} hs Cátedra</span>
+              <span>{hours ? `${hours} hs Cátedra` : 'Horas a confirmar'}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Award className="w-3.5 h-3.5 text-[#166193] shrink-0" />
-              <span>{course.detail?.classes_quantity || 32} Clases</span>
+              <span>{classes ? `${classes} Clases` : 'Clases a confirmar'}</span>
             </div>
           </div>
 
@@ -252,7 +229,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
                 ) : (
                   <Building2 className="w-3.5 h-3.5 text-[#166193] shrink-0" />
                 )}
-                <span className="truncate">{sponsor.mention}</span>
+                <span className="truncate">{sponsorMention}</span>
               </div>
             )}
           </div>
@@ -271,7 +248,7 @@ export default function CourseCard({ course, onSelectCourse, onLogin, onOpenQueu
               onClick={handleAction}
               className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[#166193] cursor-pointer"
             >
-              <span>Inscribirme</span>
+              <span>{enrollLabel}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

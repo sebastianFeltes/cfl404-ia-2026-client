@@ -42,10 +42,10 @@ export default function StudentDetailDrawer({
   userRole = 'director'
 }) {
   const isPostulante = Boolean(student?.is_aspirante) || 
-    String(student?.role_name || '').toUpperCase() === 'POSTULANTE' || 
-    String(student?.role_name || '').toUpperCase() === 'ASPIRANTE' || 
+    String(student?.role_name || '').toLowerCase() === 'postulante' || 
+    String(student?.role_name || '').toLowerCase() === 'aspirante' || 
     student?.status_id === 3 || 
-    String(student?.status || '').toUpperCase() === 'PENDIENTE'
+    String(student?.status || '').toLowerCase() === 'pendiente'
 
   const canEdit = userRole === 'director' || userRole === 'secretaria'
   const canDelete = userRole === 'director'

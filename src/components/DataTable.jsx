@@ -6,17 +6,17 @@ import { Inbox, Plus, ChevronLeft, ChevronRight, ChevronDown, ShieldAlert, Exter
 
 function isPostulanteCheck(student) {
   if (!student) return false
-  if (student.status_id === 2 || String(student.status || '').toUpperCase() === 'INACTIVO') return false
-  const role = String(student.role_name || '').toUpperCase()
-  const status = String(student.status || '').toUpperCase()
+  if (student.status_id === 2 || String(student.status || '').toLowerCase() === 'inactivo') return false
+  const role = String(student.role_name || '').toLowerCase()
+  const status = String(student.status || '').toLowerCase()
   return (
     Boolean(student.is_aspirante) ||
-    role === 'POSTULANTE' ||
-    role === 'ASPIRANTE' ||
+    role === 'postulante' ||
+    role === 'aspirante' ||
     student.status_id === 3 ||
-    status === 'PENDIENTE' ||
-    status === 'POSTULANTE' ||
-    status === 'ASPIRANTE'
+    status === 'pendiente' ||
+    status === 'postulante' ||
+    status === 'aspirante'
   )
 }
 
@@ -119,7 +119,7 @@ function DataTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs" aria-label={isPostulantesTab ? "Tabla de alumnos postulantes" : "Tabla de estudiantes"}>
           <thead>
-            <tr className="bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-nunito uppercase tracking-wider font-extrabold text-[11px]">
+            <tr className="bg-custom-azul-oscuro text-white text-xs font-bold uppercase tracking-wider border-b border-custom-azul-oscuro">
               {tableHeaders.map((header, index) => (
                 <th 
                   key={index} 
@@ -306,7 +306,7 @@ function DataTable({
             </button>
             {canCreate && (
               <button
-                onClick={() => onAddStudent && onAddStudent(isPostulantesTab ? 'Postulante' : 'Alumno')}
+                onClick={() => onAddStudent && onAddStudent(isPostulantesTab ? 'postulante' : 'alumno')}
                 className={`px-3.5 py-1.5 text-white rounded-lg text-xs font-nunito font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
                   isPostulantesTab 
                     ? 'bg-custom-celeste hover:bg-custom-celeste/95' 

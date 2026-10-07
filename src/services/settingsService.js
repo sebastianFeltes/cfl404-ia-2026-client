@@ -3,7 +3,7 @@ import { GET, POST, PATCH, DELETE } from './api.js'
 // ── Settings públicos ──────────────────────────────────────────────────────────
 export const getKpis = () => GET('/api/settings/kpis')
 
-// ── Settings protegidos (GOD / DIRECTOR / REGENTE) ───────────────────────────
+// ── Settings protegidos (god / director / regente) ───────────────────────────
 export const getAllSettings = () => GET('/api/v1/settings')
 
 export const createSetting = (data) => POST('/api/v1/settings', data)
@@ -21,6 +21,9 @@ export const updateSponsor = (id, data) => PATCH(`/api/v1/sponsors/${id}`, data)
 
 export const deleteSponsor = (id) => DELETE('/api/v1/sponsors', id)
 
-// ── Asignación de sponsor a curso ─────────────────────────────────────────────
+// ── Asignación de sponsors a curso ────────────────────────────────────────────
+export const assignSponsors = (courseId, sponsorIds) =>
+  PATCH(`/api/v1/courses/${courseId}/sponsor`, { sponsorIds })
+
 export const assignSponsor = (courseId, sponsorId) =>
   PATCH(`/api/v1/courses/${courseId}/sponsor`, { sponsorId })

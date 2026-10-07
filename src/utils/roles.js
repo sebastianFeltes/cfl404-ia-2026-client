@@ -1,56 +1,59 @@
 /**
- * Roles canónicos de la base (MAYÚSCULAS), sin colapsar GOD/DIRECTOR/SECRETARIA.
+ * Roles canónicos de la base (minúscula), sin colapsar god/director/secretaria.
  *
  * mapDbRoleToUi() sigue agrupando para Alumnos y el layout (director/secretaria/…).
  * canCrud/canRead usan el rol canónico para Instructores.
  */
 export function canonicalRole(role) {
-  const r = String(role || '').trim().toUpperCase()
+  const r = String(role || '').trim().toLowerCase()
 
-  if (['DIOS', 'SUPERADMIN', 'ROOT'].includes(r)) return 'GOD'
-  if (r === 'ADMINISTRADOR') return 'ADMIN'
-  if (r === 'DIRECTIVO') return 'DIRECTOR'
-  if (r === 'SECRETARÍA') return 'SECRETARIA'
-  if (r === 'PRECEPTOR') return 'PRECEPTORIA'
-  if (['PROFESOR', 'PROFESORES', 'TEACHER', 'TEACHERS', 'DOCENTE', 'DOCENTES', 'INSTRUCTOR', 'INSTRUCTORES'].includes(r)) return 'INSTRUCTOR'
-  if (['STUDENT', 'STUDENTS', 'ESTUDIANTE', 'ESTUDIANTES', 'ALUMNO', 'ALUMNOS'].includes(r)) return 'ALUMNO'
-  if (['ASPIRANTE', 'ASPIRANTES', 'POSTULANTE', 'POSTULANTES'].includes(r)) return 'POSTULANTE'
-  if (r === 'DIRECTOR') return 'DIRECTOR'
+  if (['dios', 'superadmin', 'root'].includes(r)) return 'god'
+  if (r === 'administrador') return 'admin'
+  if (r === 'directivo') return 'director'
+  if (r === 'secretaría' || r === 'secretaria') return 'secretaria'
+  if (r === 'preceptor') return 'preceptoria'
+  if (['profesor', 'profesores', 'teacher', 'teachers', 'docente', 'docentes', 'instructor', 'instructores'].includes(r)) return 'instructor'
+  if (['student', 'students', 'estudiante', 'estudiantes', 'alumno', 'alumnos'].includes(r)) return 'alumno'
+  if (['aspirante', 'aspirantes', 'postulante', 'postulantes'].includes(r)) return 'postulante'
+  if (r === 'contralor') return 'contralor'
+  if (r === 'director') return 'director'
+  if (r === 'regente') return 'regente'
+  if (r === 'admin') return 'admin'
+  if (r === 'god') return 'god'
+  if (r === 'preceptoria') return 'preceptoria'
 
-  return r || 'ALUMNO'
+  return r || 'alumno'
 }
 
 /**
  * Agrupa el rol de la base al identificador corto de las pantallas de alumnos.
- * GOD / ADMIN / DIRECTOR / REGENTE → director
- * SECRETARIA / PRECEPTORIA → secretaria
- * INSTRUCTOR → instructor
+ * god / admin / director / regente → director
+ * secretaria / preceptoria → secretaria
+ * instructor → instructor
  * resto → estudiante
  */
 export function mapDbRoleToUi(role) {
   const r = canonicalRole(role)
 
-  if (['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE'].includes(r)) return 'director'
-  if (['SECRETARIA', 'PRECEPTORIA'].includes(r)) return 'secretaria'
-  if (r === 'INSTRUCTOR') return 'instructor'
+  if (['god', 'admin', 'director', 'regente'].includes(r)) return 'director'
+  if (['secretaria', 'preceptoria'].includes(r)) return 'secretaria'
+  if (r === 'instructor') return 'instructor'
   return 'estudiante'
 }
 
 export function roleLabel(role) {
   const normalized = canonicalRole(role)
   const labels = {
-    GOD: 'Dios del Sistema',
-    ADMIN: 'Administrador',
-    DIRECTOR: 'Director/a',
-    REGENTE: 'Regente',
-    SECRETARIA: 'Secretaría',
-    PRECEPTORIA: 'Preceptoría',
-    INSTRUCTOR: 'Instructor/a',
-    ALUMNO: 'Alumno/a',
-    POSTULANTE: 'Postulante',
-    director: 'Directivo',
+    god: 'Dios del Sistema',
+    admin: 'Administrador',
+    director: 'Director/a',
+    regente: 'Regente',
     secretaria: 'Secretaría',
-    instructor: 'Docente',
+    preceptoria: 'Preceptoría',
+    instructor: 'Instructor/a',
+    alumno: 'Alumno/a',
+    postulante: 'Postulante',
+    contralor: 'Contralor',
     estudiante: 'Estudiante',
   }
 
@@ -58,13 +61,13 @@ export function roleLabel(role) {
 }
 
 /** Roles con permiso CRUD completo en Instructores */
-export const CRUD_ROLES = ['GOD', 'ADMIN', 'DIRECTOR', 'REGENTE']
+export const CRUD_ROLES = ['god', 'admin', 'director', 'regente']
 
 /** Roles con solo lectura en Instructores */
-export const READ_ONLY_ROLES = ['SECRETARIA', 'PRECEPTORIA']
+export const READ_ONLY_ROLES = ['secretaria', 'preceptoria']
 
 /** Roles sin acceso a Instructores */
-export const NO_ACCESS_ROLES = ['INSTRUCTOR', 'ALUMNO', 'POSTULANTE']
+export const NO_ACCESS_ROLES = ['instructor', 'alumno', 'postulante']
 
 /** Todos los roles con algún nivel de acceso a Instructores */
 export const ACCESS_ROLES = [...CRUD_ROLES, ...READ_ONLY_ROLES]
@@ -81,4 +84,25 @@ export const canRead = (role) => {
   const canonical = canonicalRole(role)
   if (ACCESS_ROLES.includes(canonical)) return true
   return ['director', 'secretaria'].includes(mapDbRoleToUi(role))
+}
+
+/** Roles con acceso a la planilla de asistencia (staff) */
+export const ATTENDANCE_READ_ROLES = [...ACCESS_ROLES]
+
+/** Verifica acceso de lectura a la planilla de asistencia */
+export const canReadAttendance = (role) => {
+  const canonical = canonicalRole(role)
+  if (ATTENDANCE_READ_ROLES.includes(canonical)) return true
+  return ['director', 'secretaria'].includes(mapDbRoleToUi(role))
+}
+
+/** Emails con acceso explícito al lector QR */
+export const QR_SCANNER_EMAILS = ['programma.ad.futura@gmail.com']
+
+/** Verifica acceso al lector QR */
+export const canScanQr = (role, email) => {
+  const canonical = canonicalRole(role)
+  if (canonical === 'contralor' || canonical === 'god') return true
+  const normalizedEmail = String(email ?? '').trim().toLowerCase()
+  return QR_SCANNER_EMAILS.includes(normalizedEmail)
 }

@@ -1,7 +1,5 @@
 import React from 'react';
 import { Search, Filter, Calendar, Clock } from 'lucide-react';
-import { CATEGORIES } from '../data/coursesData';
-
 export default function CourseFilters({
   searchTerm,
   setSearchTerm,
@@ -9,7 +7,8 @@ export default function CourseFilters({
   setSelectedStage,
   selectedCategory,
   setSelectedCategory,
-  totalResults
+  totalResults,
+  categories = ['Todos'],
 }) {
   return (
     <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-md border border-gray-200/80 mb-8 space-y-6">
@@ -135,7 +134,7 @@ export default function CourseFilters({
             Área Temática:
           </span>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}

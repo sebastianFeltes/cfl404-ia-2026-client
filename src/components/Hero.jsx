@@ -1,8 +1,29 @@
 import { Link } from 'react-router'
 import hombre from '../assets/hombre_soldando.webp'
 import BrandSlider from './BrandSlider'
+import { useAuth } from '../context/AuthContext'
+import { canonicalRole } from '../utils/roles'
+
+const DASHBOARD_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria', 'instructor', 'alumno', 'postulante']
 
 export default function Hero() {
+  const { isAuthenticated, user } = useAuth()
+  const logoTo = !isAuthenticated
+    ? null
+    : DASHBOARD_ROLES.includes(canonicalRole(user?.rol))
+      ? '/admin/dashboard'
+      : '/perfil'
+
+  const logoClass = 'block group'
+  const logoImg = (className) => (
+    <img
+      src="/logo_texto_hero.svg"
+      alt="CFL 404 Logo"
+      className={className}
+      style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.85))' }}
+    />
+  )
+
   return (
     <section
       id="hero"
@@ -62,16 +83,15 @@ export default function Hero() {
 
       {/* ── Logo en el Hero (Desktop: Izquierda al medio / levemente más arriba) ── */}
       <div className="hidden md:block absolute md:left-12 lg:left-16 md:top-[42%] md:-translate-y-1/2 z-20 pointer-events-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <a href="#" className="block group" aria-label="Inicio">
-          <img
-            src="/logo_texto_hero.svg"
-            alt="CFL 404 Logo"
-            className="md:w-56 lg:w-72 h-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            style={{
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.85))',
-            }}
-          />
-        </a>
+        {logoTo ? (
+          <Link to={logoTo} className={logoClass} aria-label="Ir al panel">
+            {logoImg('md:w-56 lg:w-72 h-auto object-contain transition-transform duration-300 group-hover:scale-105')}
+          </Link>
+        ) : (
+          <a href="#" className={logoClass} aria-label="Inicio">
+            {logoImg('md:w-56 lg:w-72 h-auto object-contain transition-transform duration-300 group-hover:scale-105')}
+          </a>
+        )}
       </div>
 
       {/* ── Contenido principal ── */}
@@ -80,16 +100,15 @@ export default function Hero() {
 
           {/* Logo en Mobile (Centrado justo arriba del título) */}
           <div className="block md:hidden mb-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <a href="#" className="block group" aria-label="Inicio">
-              <img
-                src="/logo_texto_hero.svg"
-                alt="CFL 404 Logo"
-                className="w-32 sm:w-40 h-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                style={{
-                  filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.85))',
-                }}
-              />
-            </a>
+            {logoTo ? (
+              <Link to={logoTo} className={logoClass} aria-label="Ir al panel">
+                {logoImg('w-32 sm:w-40 h-auto object-contain transition-transform duration-300 group-hover:scale-105')}
+              </Link>
+            ) : (
+              <a href="#" className={logoClass} aria-label="Inicio">
+                {logoImg('w-32 sm:w-40 h-auto object-contain transition-transform duration-300 group-hover:scale-105')}
+              </a>
+            )}
           </div>
 
           {/* Headline principal */}

@@ -43,14 +43,17 @@ export const courseSchema = z.object({
     .min(1, 'La cantidad de clases debe ser mayor a 0'),
 
   maxAbsences: z.coerce.number().min(0).optional(),
-  statusId: z.coerce.number().min(1).max(4),
+  statusId: z.coerce.number().refine(
+    (id) => [1, 2, 3, 4, 8, 9, 10, 11].includes(id),
+    { message: 'Estado de curso no válido' },
+  ),
   description: z.string({
     error: 'La descripción del curso es obligatoria',
   }).min(10, 'La descripción detallada debe tener al menos 10 caracteres'),
 
   titleRequired: z.coerce.boolean().optional(),
   endorsementBy: z.string().optional().nullable(),
-  sponsorName: z.string().optional().nullable(),
+  sponsorIds: z.array(z.string()).optional(),
   dayIds: z.array(z.coerce.number()).optional(),
 }).superRefine((data, ctx) => {
   const message = validateCourseStageDates({

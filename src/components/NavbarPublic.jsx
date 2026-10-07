@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router';
 import { GraduationCap, Menu, X, BookOpen, LogIn, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { canonicalRole } from '../utils/roles';
 
 /**
  * NavbarPublic — barra de navegación para el módulo público de Cursos.
@@ -12,9 +13,34 @@ import { useAuth } from '../context/AuthContext';
  *   • Acceso a la plataforma: "Ingresar" (→ /login con Google) o "Mi Perfil" si hay sesión
  *   • Menú hamburguesa responsive para mobile
  */
+function BrandMark() {
+  return (
+    <>
+      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#166193] shadow-md group-hover:scale-105 transition-transform">
+        <GraduationCap className="w-8 h-8" />
+      </div>
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1.5">
+          <span className="font-extrabold text-xl tracking-tight font-['Roboto_Flex'] text-white">
+            CFP <span className="text-[#FDEA14]">Nº 404</span>
+          </span>
+          <span className="text-[10px] bg-[#37ACDE] text-white font-semibold px-1.5 py-0.5 rounded uppercase">
+            Cursos
+          </span>
+        </div>
+        <span className="text-xs text-gray-200 font-['Nunito'] font-medium">
+          Módulo de Oferta Educativa
+        </span>
+      </div>
+    </>
+  )
+}
+
 export default function NavbarPublic({ selectedRole, setSelectedRole }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const dashboardRoles = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria', 'instructor', 'alumno', 'postulante'];
+  const logoTo = dashboardRoles.includes(canonicalRole(user?.rol)) ? '/admin/dashboard' : '/perfil';
 
   const roles = [
     { id: 'publico', label: 'Modo Público' },
@@ -63,24 +89,15 @@ export default function NavbarPublic({ selectedRole, setSelectedRole }) {
         <div className="flex items-center justify-between h-20">
           
           {/* Brand / Logo */}
-          <a href="#hero" className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#FDEA14] rounded-lg p-1">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#166193] shadow-md group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-8 h-8" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl tracking-tight font-['Roboto_Flex'] text-white">
-                  CFP <span className="text-[#FDEA14]">Nº 404</span>
-                </span>
-                <span className="text-[10px] bg-[#37ACDE] text-white font-semibold px-1.5 py-0.5 rounded uppercase">
-                  Cursos
-                </span>
-              </div>
-              <span className="text-xs text-gray-200 font-['Nunito'] font-medium">
-                Módulo de Oferta Educativa
-              </span>
-            </div>
-          </a>
+          {isAuthenticated ? (
+            <Link to={logoTo} className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#FDEA14] rounded-lg p-1">
+              <BrandMark />
+            </Link>
+          ) : (
+            <a href="#hero" className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#FDEA14] rounded-lg p-1">
+              <BrandMark />
+            </a>
+          )}
 
           {/* Desktop Nav Items */}
           <nav className="hidden md:flex items-center gap-8 font-['Nunito'] text-sm font-semibold">

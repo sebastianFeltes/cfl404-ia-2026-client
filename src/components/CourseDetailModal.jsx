@@ -1,27 +1,28 @@
 import React from 'react';
-import { Calendar, Clock, Award, ShieldCheck, ArrowRight, Building2, CheckCircle2 } from 'lucide-react';
+import { Calendar, Award, ShieldCheck, ArrowRight, Building2 } from 'lucide-react';
 import { OFFICIAL_ENDORSEMENT } from '../data/coursesData';
+import CourseCover from './CourseCover';
 
-export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueue }) {
+export default function CourseDetailModal({ course, onClose, onEnroll, enrollLabel = 'Inscribirme' }) {
   if (!course) return null;
 
-  const sponsor = course.sponsor || {
-    name: 'TecPlata',
-    logo: '/images/tecplata_logo.jpg',
-    mention: 'Patrocinado por TecPlata - Terminal Portuaria',
-    badge: 'TecPlata'
-  };
+  const sponsors = Array.isArray(course.sponsors) && course.sponsors.length > 0
+    ? course.sponsors
+    : course.sponsor
+      ? [course.sponsor]
+      : [];
+
+  const badge = course.enrollmentStatus || course.status;
+  const hours = course.detail?.hour_quantity;
+  const classes = course.detail?.classes_quantity;
+  const endorsement = course.detail?.endorsement_by || OFFICIAL_ENDORSEMENT;
 
   const todayStr = new Date().toISOString().split('T')[0];
   const preenrollmentOpen = !course.preenrollment_date || todayStr >= course.preenrollment_date;
 
   const handleActionClick = () => {
     onClose();
-    if (onOpenQueue && preenrollmentOpen) {
-      onOpenQueue(course);
-    } else if (onLogin) {
-      onLogin();
-    }
+    onEnroll?.(course);
   };
 
   return (
@@ -35,15 +36,7 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
         
         {/* Modal Top Header Bar (SIN botón de cruz X) */}
         <div className="relative h-56 sm:h-64 w-full shrink-0 bg-gray-900">
-          <img
-            src={course.image}
-            alt={course.name}
-            className="w-full h-full object-cover opacity-80"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/images/Herreria.webp';
-            }}
-          />
+          <CourseCover course={course} className="w-full h-full" imgClassName="w-full h-full object-cover opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1D1E1C] via-[#1D1E1C]/40 to-transparent"></div>
 
           {/* Title, Category & Stage Overlay */}
@@ -55,8 +48,8 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
               <span className="bg-white/20 backdrop-blur-md text-white text-xs font-semibold px-2.5 py-1 rounded-md">
                 {course.stage}
               </span>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${course.status?.color || 'bg-emerald-500/10 text-emerald-700'}`}>
-                {course.status?.label || 'Inscripción Abierta'}
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${badge?.color || 'bg-emerald-500/10 text-emerald-700'}`}>
+                {badge?.label || 'Inscripción Abierta'}
               </span>
             </div>
 
@@ -73,12 +66,12 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
             <div>
               <span className="text-xs text-[#585856] font-semibold block">Horas Cátedra</span>
-              <span className="text-base font-bold text-[#166193]">{course.detail?.hour_quantity || 120} hs</span>
+              <span className="text-base font-bold text-[#166193]">{hours ? `${hours} hs` : 'A confirmar'}</span>
             </div>
 
             <div>
               <span className="text-xs text-[#585856] font-semibold block">Cantidad de Clases</span>
-              <span className="text-base font-bold text-[#166193]">{course.detail?.classes_quantity || 32} clases</span>
+              <span className="text-base font-bold text-[#166193]">{classes ? `${classes} clases` : 'A confirmar'}</span>
             </div>
           </div>
 
@@ -139,14 +132,13 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
                 Aval Institucional Oficial
               </h4>
               <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                Este curso cuenta con la certificación oficial del <strong>{OFFICIAL_ENDORSEMENT}</strong>. Título oficial con validez laboral.
+                Este curso cuenta con la certificación oficial del <strong>{endorsement}</strong>. Título oficial con validez laboral.
               </p>
             </div>
           </div>
 
-          {/* Patrocinador Dinámico (Con Logo de TecPlata u otros) */}
-          {sponsor && (
-            <div className="p-4 bg-sky-500/10 rounded-2xl border border-sky-200 flex items-center justify-between gap-4">
+          {sponsors.map((sponsor) => (
+            <div key={sponsor.id || sponsor.name} className="p-4 bg-sky-500/10 rounded-2xl border border-sky-200 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 {sponsor.logo ? (
                   <div className="p-2 bg-white rounded-xl shadow-sm border border-sky-200 shrink-0">
@@ -172,7 +164,7 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
               </div>
               <Building2 className="w-6 h-6 text-[#166193] shrink-0 opacity-60 hidden sm:block" />
             </div>
-          )}
+          ))}
 
         </div>
 
@@ -201,7 +193,7 @@ export default function CourseDetailModal({ course, onClose, onLogin, onOpenQueu
               onClick={handleActionClick}
               className="flex-1 sm:flex-initial bg-[#166193] hover:bg-[#37ACDE] text-white font-bold px-8 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-[#37ACDE]/40"
             >
-              <span>Inscribirme</span>
+              <span>{enrollLabel}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
