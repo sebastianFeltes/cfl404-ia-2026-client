@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, Award, ChevronDown, ChevronUp, ArrowRight, FileText, Building2, CheckCircle2 } from 'lucide-react';
 import CourseCover from './CourseCover';
 
-export default function CourseCard({ course, onSelectCourse, onEnroll, enrollLabel = 'Inscribirme', forceMobileMode }) {
+export default function CourseCard({ course, onSelectCourse, onEnroll, enrollLabel = 'Inscribirme', enrollDisabled = false, forceMobileMode }) {
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
   const listedSponsors = Array.isArray(course.sponsors) && course.sponsors.length > 0
@@ -26,8 +26,13 @@ export default function CourseCard({ course, onSelectCourse, onEnroll, enrollLab
 
   const handleAction = (e) => {
     e.stopPropagation();
+    if (enrollDisabled) return;
     onEnroll?.(course);
   };
+
+  const enrollClass = enrollDisabled
+    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+    : 'bg-[#166193] hover:bg-[#37ACDE] text-white cursor-pointer';
 
   return (
     <div className={`group transition-all duration-300 rounded-2xl bg-white border border-gray-200 shadow-sm hover:shadow-xl hover:border-[#37ACDE]/40 overflow-hidden ${
@@ -133,11 +138,13 @@ export default function CourseCard({ course, onSelectCourse, onEnroll, enrollLab
             </button>
 
             <button
+              type="button"
               onClick={handleAction}
-              className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors shadow-sm cursor-pointer"
+              disabled={enrollDisabled}
+              className={`flex-1 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors shadow-sm ${enrollClass}`}
             >
               <span>{enrollLabel}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              {!enrollDisabled && <ArrowRight className="w-3.5 h-3.5" />}
             </button>
           </div>
 
@@ -245,11 +252,13 @@ export default function CourseCard({ course, onSelectCourse, onEnroll, enrollLab
             </button>
 
             <button
+              type="button"
               onClick={handleAction}
-              className="flex-1 bg-[#166193] hover:bg-[#37ACDE] text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[#166193] cursor-pointer"
+              disabled={enrollDisabled}
+              className={`flex-1 font-bold py-2.5 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[#166193] ${enrollClass}`}
             >
               <span>{enrollLabel}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              {!enrollDisabled && <ArrowRight className="w-3.5 h-3.5" />}
             </button>
           </div>
 

@@ -12,6 +12,8 @@ import {
   Link as LinkIcon,
   Upload,
   RefreshCw,
+  Megaphone,
+  Landmark,
 } from 'lucide-react'
 
 import {
@@ -21,7 +23,12 @@ import {
   createSponsor,
   updateSponsor,
   deleteSponsor,
+  getAvisos,
+  createAviso,
+  updateAviso,
+  archiveAviso,
 } from '../services/settingsService'
+import { GET } from '../services/api'
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ message, type = 'success', onClose }) {
@@ -604,9 +611,313 @@ function TabPatrocinadores({ showToast }) {
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────────
+const EMPTY_AVISO = {
+  title: '',
+  body: '',
+  type: 'academico',
+  audience: 'alumnos',
+  courseId: '',
+  priority: 0,
+  publication: 'borrador',
+  startsAt: '',
+  endsAt: '',
+}
+
+function toDateInput(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function TabAvisos({ showToast }) {
+  const [avisos, setAvisos] = useState([])
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState(EMPTY_AVISO)
+  const [editingId, setEditingId] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [avisoData, courseData] = await Promise.all([
+        getAvisos(),
+        GET('/courses').catch(() => []),
+      ])
+      setAvisos(avisoData.avisos || [])
+      const list = Array.isArray(courseData) ? courseData : courseData.courses || []
+      setCourses(list)
+    } catch {
+      showToast('Error al cargar avisos', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  useEffect(() => { load() }, [load])
+
+  const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }))
+
+  const startEdit = (aviso) => {
+    setEditingId(aviso.id)
+    setForm({
+      title: aviso.title,
+      body: aviso.body,
+      type: aviso.type,
+      audience: aviso.audience,
+      courseId: aviso.courseId || '',
+      priority: aviso.priority ?? 0,
+      publication: aviso.publication,
+      startsAt: toDateInput(aviso.startsAt),
+      endsAt: toDateInput(aviso.endsAt),
+    })
+  }
+
+  const payload = () => ({
+    title: form.title.trim(),
+    body: form.body.trim(),
+    type: form.type,
+    audience: form.audience,
+    courseId: form.courseId || null,
+    priority: Number(form.priority) || 0,
+    publication: form.publication,
+    startsAt: form.startsAt || null,
+    endsAt: form.endsAt || null,
+  })
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      if (editingId) await updateAviso(editingId, payload())
+      else await createAviso(payload())
+      setForm(EMPTY_AVISO)
+      setEditingId(null)
+      showToast(editingId ? 'Aviso actualizado' : 'Aviso creado')
+      await load()
+    } catch (error) {
+      showToast(error.message || 'No se pudo guardar el aviso', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleArchive = async (id) => {
+    try {
+      await archiveAviso(id)
+      showToast('Aviso archivado')
+      await load()
+    } catch (error) {
+      showToast(error.message || 'No se pudo archivar', 'error')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <h2 className="text-sm font-bold text-slate-700 font-nunito">
+          {editingId ? 'Editar aviso' : 'Nuevo aviso'}
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <input className="border rounded-lg px-3 py-2 text-sm" placeholder="Título" value={form.title} onChange={(e) => setField('title', e.target.value)} />
+          <input className="border rounded-lg px-3 py-2 text-sm" type="number" placeholder="Prioridad" value={form.priority} onChange={(e) => setField('priority', e.target.value)} />
+          <textarea className="border rounded-lg px-3 py-2 text-sm md:col-span-2" rows={3} placeholder="Cuerpo" value={form.body} onChange={(e) => setField('body', e.target.value)} />
+          <select className="border rounded-lg px-3 py-2 text-sm" value={form.type} onChange={(e) => setField('type', e.target.value)}>
+            <option value="academico">Académico</option>
+            <option value="operativo">Operativo</option>
+            <option value="informativo">Informativo</option>
+          </select>
+          <select className="border rounded-lg px-3 py-2 text-sm" value={form.audience} onChange={(e) => setField('audience', e.target.value)}>
+            <option value="alumnos">Alumnos</option>
+            <option value="todos">Todos</option>
+          </select>
+          <select className="border rounded-lg px-3 py-2 text-sm" value={form.courseId} onChange={(e) => setField('courseId', e.target.value)}>
+            <option value="">Sin curso</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.id}>{course.name}</option>
+            ))}
+          </select>
+          <select className="border rounded-lg px-3 py-2 text-sm" value={form.publication} onChange={(e) => setField('publication', e.target.value)}>
+            <option value="borrador">Borrador</option>
+            <option value="publicado">Publicado</option>
+            <option value="archivado">Archivado</option>
+          </select>
+          <label className="text-xs text-slate-500">
+            Desde
+            <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" type="datetime-local" value={form.startsAt} onChange={(e) => setField('startsAt', e.target.value)} />
+          </label>
+          <label className="text-xs text-slate-500">
+            Hasta
+            <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" type="datetime-local" value={form.endsAt} onChange={(e) => setField('endsAt', e.target.value)} />
+          </label>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" disabled={saving} onClick={handleSave} className="bg-custom-azul-oscuro text-white text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer disabled:opacity-60">
+            <Save size={14} className="inline mr-1" />
+            {saving ? 'Guardando…' : 'Guardar'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={() => { setEditingId(null); setForm(EMPTY_AVISO) }} className="text-sm px-4 py-2 rounded-lg border cursor-pointer">
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {loading ? <p className="text-sm text-slate-500">Cargando avisos…</p> : (
+        <div className="space-y-3">
+          {avisos.map((aviso) => (
+            <div key={aviso.id} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-semibold text-slate-800">{aviso.title}</p>
+                <p className="text-sm text-slate-600">{aviso.body}</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {aviso.type} · {aviso.audience} · {aviso.publication}
+                  {aviso.course?.name ? ` · ${aviso.course.name}` : ''}
+                  {` · prioridad ${aviso.priority}`}
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button type="button" onClick={() => startEdit(aviso)} className="p-2 rounded-lg border cursor-pointer" aria-label="Editar aviso">
+                  <Pencil size={14} />
+                </button>
+                <button type="button" onClick={() => handleArchive(aviso.id)} className="p-2 rounded-lg border cursor-pointer" aria-label="Archivar aviso">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {avisos.length === 0 && <p className="text-sm text-slate-500">No hay avisos cargados.</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TabContenido({ showToast }) {
+  const [contacto, setContacto] = useState({ phone: '', email: '', address: '', city: '', schedule: '', institutionName: '' })
+  const [banco, setBanco] = useState({ banco: '', alias: '', cbu: '', cuit: '', whatsappNumber: '', whatsappMessage: '', monthlyAmount: '' })
+  const [beneficios, setBeneficios] = useState([])
+  const [contactoBase, setContactoBase] = useState(null)
+  const [bancoBase, setBancoBase] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      GET('/api/mobile/contacto-publico'),
+      GET('/api/mobile/cooperadora-publica'),
+      GET('/api/mobile/beneficios-publicos'),
+    ]).then(([contact, coop, benefits]) => {
+      setContactoBase(contact)
+      setContacto({
+        phone: contact.phone || '',
+        email: contact.email || '',
+        address: contact.address || '',
+        city: contact.city || '',
+        schedule: contact.schedule || '',
+        institutionName: contact.institutionName || '',
+      })
+      setBancoBase(coop.bank || {})
+      setBanco({
+        banco: coop.bank?.banco || '',
+        alias: coop.bank?.alias || '',
+        cbu: coop.bank?.cbu || '',
+        cuit: coop.bank?.cuit || '',
+        whatsappNumber: coop.bank?.whatsappNumber || '',
+        whatsappMessage: coop.bank?.whatsappMessage || '',
+        monthlyAmount: coop.monthlyAmount ?? '',
+      })
+      setBeneficios(Array.isArray(benefits.beneficios) ? benefits.beneficios : [])
+    }).catch(() => showToast('No se pudo cargar el contenido de la app', 'error'))
+  }, [showToast])
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      await updateSetting('mobile.contacto', {
+        value: JSON.stringify({ ...(contactoBase || {}), ...contacto }),
+        name: 'Contacto de la app',
+      })
+      await updateSetting('mobile.cooperadora', {
+        value: JSON.stringify({
+          ...(bancoBase || {}),
+          ...banco,
+          monthlyAmount: Number(banco.monthlyAmount) || 0,
+        }),
+        name: 'Cooperadora de la app',
+      })
+      await updateSetting('mobile.beneficios', {
+        value: JSON.stringify(beneficios),
+        name: 'Beneficios de la app',
+      })
+      showToast('Contenido de la app guardado')
+    } catch (error) {
+      showToast(error.message || 'No se pudo guardar', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const field = (label, value, onChange) => (
+    <label className="text-xs text-slate-500 block">
+      {label}
+      <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-slate-800" value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  )
+
+  return (
+    <div className="space-y-6">
+      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+        <h2 className="text-sm font-bold text-slate-700">Contacto</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {field('Teléfono', contacto.phone, (value) => setContacto((p) => ({ ...p, phone: value })))}
+          {field('Email', contacto.email, (value) => setContacto((p) => ({ ...p, email: value })))}
+          {field('Dirección', contacto.address, (value) => setContacto((p) => ({ ...p, address: value })))}
+          {field('Ciudad', contacto.city, (value) => setContacto((p) => ({ ...p, city: value })))}
+          {field('Horario', contacto.schedule, (value) => setContacto((p) => ({ ...p, schedule: value })))}
+          {field('Institución', contacto.institutionName, (value) => setContacto((p) => ({ ...p, institutionName: value })))}
+        </div>
+      </section>
+      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+        <h2 className="text-sm font-bold text-slate-700">Cooperadora</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {field('Banco', banco.banco, (value) => setBanco((p) => ({ ...p, banco: value })))}
+          {field('Alias', banco.alias, (value) => setBanco((p) => ({ ...p, alias: value })))}
+          {field('CBU', banco.cbu, (value) => setBanco((p) => ({ ...p, cbu: value })))}
+          {field('CUIT', banco.cuit, (value) => setBanco((p) => ({ ...p, cuit: value })))}
+          {field('WhatsApp', banco.whatsappNumber, (value) => setBanco((p) => ({ ...p, whatsappNumber: value })))}
+          {field('Monto mensual', banco.monthlyAmount, (value) => setBanco((p) => ({ ...p, monthlyAmount: value })))}
+        </div>
+      </section>
+      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-700">Beneficios</h2>
+          <button type="button" className="text-sm font-semibold text-custom-azul-oscuro cursor-pointer" onClick={() => setBeneficios((prev) => [...prev, { id: Date.now(), nombre: '', rubro: '', descuento: '', telefono: '', descripcion: '' }])}>
+            <Plus size={14} className="inline" /> Agregar
+          </button>
+        </div>
+        {beneficios.map((item, index) => (
+          <div key={item.id || index} className="grid gap-2 md:grid-cols-2 border rounded-xl p-3">
+            {field('Nombre', item.nombre || '', (value) => setBeneficios((prev) => prev.map((row, i) => i === index ? { ...row, nombre: value } : row)))}
+            {field('Rubro', item.rubro || '', (value) => setBeneficios((prev) => prev.map((row, i) => i === index ? { ...row, rubro: value } : row)))}
+            {field('Descuento', item.descuento || '', (value) => setBeneficios((prev) => prev.map((row, i) => i === index ? { ...row, descuento: value } : row)))}
+            {field('Teléfono', item.telefono || '', (value) => setBeneficios((prev) => prev.map((row, i) => i === index ? { ...row, telefono: value } : row)))}
+          </div>
+        ))}
+      </section>
+      <button type="button" disabled={saving} onClick={save} className="bg-custom-azul-oscuro text-white text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer disabled:opacity-60">
+        {saving ? 'Guardando…' : 'Guardar contenido'}
+      </button>
+    </div>
+  )
+}
+
 const TABS = [
   { id: 'general', label: 'Configuración General', icon: Settings2 },
   { id: 'patrocinadores', label: 'Patrocinadores', icon: ImageIcon },
+  { id: 'avisos', label: 'Avisos', icon: Megaphone },
+  { id: 'contenido', label: 'App y web', icon: Landmark },
 ]
 
 export default function Configuracion() {
@@ -655,6 +966,8 @@ export default function Configuracion() {
       <div>
         {activeTab === 'general' && <TabGeneral showToast={showToast} />}
         {activeTab === 'patrocinadores' && <TabPatrocinadores showToast={showToast} />}
+        {activeTab === 'avisos' && <TabAvisos showToast={showToast} />}
+        {activeTab === 'contenido' && <TabContenido showToast={showToast} />}
       </div>
 
       {/* Toast */}

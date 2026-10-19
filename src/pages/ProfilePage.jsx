@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import NotificationToast from '../components/NotificationToast';
+import { GET } from '../services/api';
 import { canonicalRole } from '../utils/roles';
 import { Camera, Shield, Lock, Info, ExternalLink, CheckCircle, User } from 'lucide-react';
 
@@ -28,7 +29,9 @@ export default function ProfilePage() {
     user?.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : (user?.detail?.dob ? user.detail.dob.split('T')[0] : '')
   );
 
+  const [inscripciones, setInscripciones] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmSave, setConfirmSave] = useState(false);
   const [toast, setToast] = useState({
     message: location.state?.enrollmentNotice || '',
     type: location.state?.enrollmentNotice ? 'error' : 'success',
@@ -48,6 +51,34 @@ export default function ProfilePage() {
   const isNombresLocked = formDisabled || (!isPostulante && Boolean(user?.nombres?.trim()));
   const isApellidosLocked = formDisabled || (!isPostulante && Boolean(user?.apellidos?.trim()));
   const isDniLocked = formDisabled || (!isPostulante && Boolean(user?.dni?.trim()));
+
+  useEffect(() => {
+    if (role !== 'postulante') {
+      setInscripciones([]);
+      return undefined;
+    }
+    let cancelled = false;
+    GET('/api/v1/preinscripciones/turno')
+      .then((data) => {
+        if (cancelled) return;
+        const waiting = (data.tickets || []).map((item) => ({
+          ...item,
+          label: item.status === 'listo'
+            ? 'Listo para confirmar'
+            : `En espera${item.position ? ` · posición ${item.position}` : ''}`,
+        }));
+        const confirmed = (data.enrollments || [])
+          .filter((item) => !waiting.some((ticket) => ticket.courseId === item.courseId))
+          .map((item) => ({ ...item, label: 'Inscripto' }));
+        setInscripciones([...confirmed, ...waiting]);
+      })
+      .catch(() => {
+        if (!cancelled) setInscripciones([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
 
   useEffect(() => {
     if (!user) return;
@@ -88,27 +119,34 @@ export default function ProfilePage() {
     }
   };
 
+  const profilePayload = () => ({
+    nombres: isNombresLocked ? user?.nombres : nombres,
+    apellidos: isApellidosLocked ? user?.apellidos : apellidos,
+    dni: isDniLocked ? user?.dni : dni,
+    fotoUrl,
+    aceptaTerminos,
+    telefono,
+    telefonoSecundario,
+    direccion,
+    nacionalidad,
+    genero,
+    nivelEducacion,
+    fechaNacimiento: fechaNacimiento || null,
+  });
+
   const handleSaveChanges = (e) => {
     if (e) e.preventDefault();
-    if (formDisabled) return;
+    if (formDisabled || !hasUnsavedChanges) return;
     if (!aceptaTerminos) {
       triggerToast('Debes aceptar los términos y condiciones y declarar la veracidad de los datos.', 'error');
       return;
     }
-    persistProfile({
-      nombres: isNombresLocked ? user?.nombres : nombres,
-      apellidos: isApellidosLocked ? user?.apellidos : apellidos,
-      dni: isDniLocked ? user?.dni : dni,
-      fotoUrl,
-      aceptaTerminos,
-      telefono,
-      telefonoSecundario,
-      direccion,
-      nacionalidad,
-      genero,
-      nivelEducacion,
-      fechaNacimiento: fechaNacimiento || null,
-    });
+    setConfirmSave(true);
+  };
+
+  const confirmPersist = () => {
+    setConfirmSave(false);
+    persistProfile(profilePayload());
   };
 
   const handleCancel = () => {
@@ -137,20 +175,6 @@ export default function ProfilePage() {
     ];
     const nextPhoto = newPhotos[(newPhotos.indexOf(fotoUrl) + 1) % newPhotos.length];
     setFotoUrl(nextPhoto);
-    persistProfile({
-      nombres: isNombresLocked ? user?.nombres : nombres,
-      apellidos: isApellidosLocked ? user?.apellidos : apellidos,
-      dni: isDniLocked ? user?.dni : dni,
-      fotoUrl: nextPhoto,
-      aceptaTerminos,
-      telefono,
-      telefonoSecundario,
-      direccion,
-      nacionalidad,
-      genero,
-      nivelEducacion,
-      fechaNacimiento: fechaNacimiento || null,
-    });
   };
 
   const initialPhone = user?.telefono || user?.detail?.phone || '';
@@ -171,12 +195,42 @@ export default function ProfilePage() {
     nacionalidad !== initialNacionality ||
     genero !== initialGender ||
     nivelEducacion !== initialAcademic ||
-    fechaNacimiento !== initialDob
+    fechaNacimiento !== initialDob ||
+    fotoUrl !== (user?.fotoUrl || '') ||
+    aceptaTerminos !== Boolean(user?.aceptaTerminos)
   );
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto pb-8 sm:pb-12 font-roboto">
       <ToastNotification toast={toast} setToast={setToast} />
+      {confirmSave && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-profile-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+            <h3 id="confirm-profile-title" className="font-nunito text-lg font-extrabold text-custom-gris-oscuro">
+              ¿Guardar los datos del perfil?
+            </h3>
+            <p className="mt-2 text-sm text-custom-gris-claro leading-relaxed">
+              Se van a actualizar los datos personales de tu cuenta en el CFL 404.
+            </p>
+            <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmSave(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-custom-gris-oscuro cursor-pointer"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={confirmPersist}
+                className="px-4 py-2.5 rounded-xl bg-custom-azul-oscuro text-white text-sm font-bold cursor-pointer"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2">
@@ -230,7 +284,23 @@ export default function ProfilePage() {
                 }`}>
                 {user?.rol || user?.tipo || 'Estudiante'}
               </span>
+              {isPostulante && (
+                <span className="text-xs font-mono font-bold text-custom-azul-oscuro">
+                  N° {user?.applicantNumber ?? '—'}
+                </span>
+              )}
             </div>
+            {isPostulante && (
+              <ul className="mt-3 space-y-1 text-xs text-custom-gris-oscuro">
+                {inscripciones.length === 0 && <li>Sin preinscripciones activas</li>}
+                {inscripciones.map((item) => (
+                  <li key={`${item.status}-${item.courseId}`}>
+                    <span className="font-bold">{item.label}</span>
+                    {item.courseName ? ` · ${item.courseName}` : ''}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -336,14 +406,16 @@ export default function ProfilePage() {
                   Cancelar
                 </button>
               )}
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 h-11 sm:h-10 px-5 bg-custom-azul-oscuro hover:bg-[#1f7ebf] text-white rounded-xl text-sm font-bold font-nunito transition-colors duration-200 cursor-pointer shadow-md hover:shadow active:scale-[0.98] disabled:opacity-60"
-              >
-                <CheckCircle size={17} strokeWidth={2.2} className="text-white shrink-0" />
-                <span>{isSaving ? 'Guardando…' : 'Guardar datos'}</span>
-              </button>
+              {hasUnsavedChanges && (
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 h-11 sm:h-10 px-5 bg-custom-azul-oscuro hover:bg-[#1f7ebf] text-white rounded-xl text-sm font-bold font-nunito transition-colors duration-200 cursor-pointer shadow-md hover:shadow active:scale-[0.98] disabled:opacity-60"
+                >
+                  <CheckCircle size={17} strokeWidth={2.2} className="text-white shrink-0" />
+                  <span>{isSaving ? 'Guardando…' : 'Guardar datos'}</span>
+                </button>
+              )}
             </div>
           )}
         </div>

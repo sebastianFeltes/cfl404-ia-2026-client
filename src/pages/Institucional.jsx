@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react'
 import { Search, MapPin, Tag, X, Phone, Check, Award, GraduationCap, Building2, Users2 } from 'lucide-react'
-import { comercios, stats } from '../utils/mockData'
 import { getKpis } from '../services/settingsService'
+import { GET } from '../services/api'
 import Tooltip from '../components/Tooltip'
-
-// Valores de fallback a partir del mockData (mismo formato que la API)
-const FALLBACK_KPIS = stats.map((s, i) => ({
-    id: i + 1,
-    key: `kpi_${i + 1}`,
-    name: s.label,
-    value: s.value,
-    description: s.description,
-}))
 
 function Institucional() {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedComercio, setSelectedComercio] = useState(null)
-    const [kpis, setKpis] = useState(FALLBACK_KPIS)
-    const [kpisLoading, setKpisLoading] = useState(false)
+    const [kpis, setKpis] = useState([])
+    const [comercios, setComercios] = useState([])
+    const [kpisLoading, setKpisLoading] = useState(true)
 
-    // Cargar KPIs desde la base de datos (actualiza el fallback cuando el servidor responde)
     useEffect(() => {
-        getKpis()
-            .then((data) => { if (data?.length) setKpis(data) })
-            .catch((err) => console.error('Error al cargar KPIs:', err))
+        let cancelled = false
+        setKpisLoading(true)
+        Promise.allSettled([
+            getKpis(),
+            GET('/api/mobile/beneficios-publicos'),
+        ]).then(([kpiRes, beneficiosRes]) => {
+            if (cancelled) return
+            if (kpiRes.status === 'fulfilled' && Array.isArray(kpiRes.value) && kpiRes.value.length) {
+                setKpis(kpiRes.value)
+            } else {
+                setKpis([])
+            }
+            const list = beneficiosRes.status === 'fulfilled' ? beneficiosRes.value?.beneficios : []
+            setComercios(Array.isArray(list) ? list : [])
+        }).finally(() => {
+            if (!cancelled) setKpisLoading(false)
+        })
+        return () => { cancelled = true }
     }, [])
 
     // Filter businesses based on search input (name or category/rubro)
@@ -32,7 +38,7 @@ function Institucional() {
         if (!query) return true
         return (
             comercio.nombre.toLowerCase().includes(query) ||
-            comercio.rubro.toLowerCase().includes(query)
+            String(comercio.rubro || '').toLowerCase().includes(query)
         );
     });
 
@@ -114,6 +120,10 @@ function Institucional() {
                                     </div>
                                 </div>
                             ))
+                        ) : kpis.length === 0 ? (
+                            <p className="sm:col-span-2 text-center text-sm text-custom-gris-claro">
+                                Las cifras institucionales se cargan desde Configuración.
+                            </p>
                         ) : (
                             kpis.map((kpi, index) => (
                                 <div
@@ -194,7 +204,7 @@ function Institucional() {
                                                 {comercio.nombre}
                                             </h3>
                                             <span className="text-xs font-semibold text-custom-celeste uppercase tracking-wider mt-0.5">
-                                                {comercio.rubro.split(',')[0]}
+                                                {String(comercio.rubro || 'Comercio').split(',')[0]}
                                             </span>
                                             <div className="flex items-center gap-1.5 text-custom-gris-claro text-sm mt-2">
                                                 <MapPin className="w-4 h-4 text-custom-gris-claro/70 flex-shrink-0" />
@@ -304,7 +314,7 @@ function Institucional() {
                                 Líneas del Catálogo
                             </h4>
                             <ul className="flex flex-col gap-2">
-                                {selectedComercio.catalogo.map((item, idx) => (
+                                {(selectedComercio.catalogo || []).map((item, idx) => (
                                     <li key={idx} className="flex items-start gap-2.5 text-sm text-custom-gris-claro">
                                         <div className="flex-shrink-0 mt-0.5 w-4 h-4 rounded-full bg-custom-celeste/10 flex items-center justify-center text-custom-celeste">
                                             <Check className="w-3 h-3" />

@@ -92,6 +92,7 @@ export const ATTENDANCE_READ_ROLES = [...ACCESS_ROLES]
 /** Verifica acceso de lectura a la planilla de asistencia */
 export const canReadAttendance = (role) => {
   const canonical = canonicalRole(role)
+  if (canonical === 'instructor') return true
   if (ATTENDANCE_READ_ROLES.includes(canonical)) return true
   return ['director', 'secretaria'].includes(mapDbRoleToUi(role))
 }

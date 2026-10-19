@@ -112,9 +112,9 @@ function toApiPayload(courseData) {
 
 export { courseMatchesStage }
 
-export async function fetchCourses() {
+export async function fetchCourses({ mine = false } = {}) {
   try {
-    const data = await GET('/courses')
+    const data = await GET(mine ? '/courses?scope=mine' : '/courses')
     if (Array.isArray(data) && data.length > 0) {
       return data.map(mapApiCourse)
     }

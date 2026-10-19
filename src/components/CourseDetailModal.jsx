@@ -1,9 +1,10 @@
 import React from 'react';
 import { Calendar, Award, ShieldCheck, ArrowRight, Building2 } from 'lucide-react';
 import { OFFICIAL_ENDORSEMENT } from '../data/coursesData';
+import { courseQuotaBadge } from '../utils/courseEnrollment';
 import CourseCover from './CourseCover';
 
-export default function CourseDetailModal({ course, onClose, onEnroll, enrollLabel = 'Inscribirme' }) {
+export default function CourseDetailModal({ course, onClose, onEnroll, enrollLabel = 'Inscribirme', enrollDisabled = false }) {
   if (!course) return null;
 
   const sponsors = Array.isArray(course.sponsors) && course.sponsors.length > 0
@@ -12,7 +13,9 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
       ? [course.sponsor]
       : [];
 
-  const badge = course.enrollmentStatus || course.status;
+  const badge = courseQuotaBadge(course);
+  const quota = Number(course.detail?.quota ?? course.quota ?? 0);
+  const available = Number(course.availableQuota);
   const hours = course.detail?.hour_quantity;
   const classes = course.detail?.classes_quantity;
   const endorsement = course.detail?.endorsement_by || OFFICIAL_ENDORSEMENT;
@@ -21,6 +24,7 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
   const preenrollmentOpen = !course.preenrollment_date || todayStr >= course.preenrollment_date;
 
   const handleActionClick = () => {
+    if (enrollDisabled) return;
     onClose();
     onEnroll?.(course);
   };
@@ -48,8 +52,8 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
               <span className="bg-white/20 backdrop-blur-md text-white text-xs font-semibold px-2.5 py-1 rounded-md">
                 {course.stage}
               </span>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${badge?.color || 'bg-emerald-500/10 text-emerald-700'}`}>
-                {badge?.label || 'Inscripción Abierta'}
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${badge.className}`}>
+                {badge.label}
               </span>
             </div>
 
@@ -72,6 +76,13 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
             <div>
               <span className="text-xs text-[#585856] font-semibold block">Cantidad de Clases</span>
               <span className="text-base font-bold text-[#166193]">{classes ? `${classes} clases` : 'A confirmar'}</span>
+            </div>
+
+            <div>
+              <span className="text-xs text-[#585856] font-semibold block">Cupos libres</span>
+              <span className={`text-base font-bold ${Number.isFinite(available) && available <= 0 ? 'text-rose-700' : 'text-[#166193]'}`}>
+                {Number.isFinite(available) ? `${available} de ${quota}` : 'A confirmar'}
+              </span>
             </div>
           </div>
 
@@ -191,10 +202,15 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
             <button
               type="button"
               onClick={handleActionClick}
-              className="flex-1 sm:flex-initial bg-[#166193] hover:bg-[#37ACDE] text-white font-bold px-8 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-[#37ACDE]/40"
+              disabled={enrollDisabled}
+              className={`flex-1 sm:flex-initial font-bold px-8 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 focus:ring-4 focus:ring-[#37ACDE]/40 ${
+                enrollDisabled
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'
+                  : 'bg-[#166193] hover:bg-[#37ACDE] text-white cursor-pointer'
+              }`}
             >
               <span>{enrollLabel}</span>
-              <ArrowRight className="w-4 h-4" />
+              {!enrollDisabled && <ArrowRight className="w-4 h-4" />}
             </button>
           </div>
         </div>

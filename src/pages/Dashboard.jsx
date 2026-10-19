@@ -11,8 +11,6 @@ import {
   Calendar,
   UserCheck,
   FileText,
-  CheckCircle2,
-  AlertTriangle,
   Award,
   Sparkles,
   Clock,
@@ -22,7 +20,6 @@ import { useAuth } from '../context/AuthContext'
 import { mapDbRoleToUi, roleLabel } from '../utils/roles'
 import StatCard from '../components/StatCard'
 
-import RoleSelector from '../components/dashboard/RoleSelector'
 import ModuleSummaryCard from '../components/dashboard/ModuleSummaryCard'
 import DashboardQuickActions from '../components/dashboard/DashboardQuickActions'
 import DashboardAlerts from '../components/dashboard/DashboardAlerts'
@@ -30,8 +27,6 @@ import DashboardAlerts from '../components/dashboard/DashboardAlerts'
 import { fetchCourses } from '../services/coursesService'
 import { getCooperadoraPagos, getBuffetMovements } from '../services/cooperadoraService'
 import { GET } from '../services/api'
-import { coursesData as coursesDataFallback } from '../data/coursesData'
-import { instructores as mockInstructores } from '../components/instructores/mockData'
 
 // Helper para detectar postulantes
 const isPostulante = (student) => {
@@ -49,18 +44,6 @@ const isPostulante = (student) => {
   )
 }
 
-// Fallback de alumnos para visualización inicial si la API está vacía o desconectada
-const FALLBACK_STUDENTS = [
-  { id: 1, first_name: 'Esteban', last_name: 'Gómez', dni: '40123456', status: 'activo', status_id: 1, is_present: true, course_name: 'Operador de PC', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 2, first_name: 'Lucía', last_name: 'Martínez', dni: '41987654', status: 'activo', status_id: 1, is_present: true, course_name: 'Instalaciones Eléctricas', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 3, first_name: 'Franco', last_name: 'Pérez', dni: '43555222', status: 'activo', status_id: 1, is_present: false, course_name: 'Soldadura Básica', studentDetail: { dniCopy: true, formCopy: true, titleCopy: false } },
-  { id: 4, first_name: 'Sofía', last_name: 'Díaz', dni: '42111888', status: 'pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Cocina & Manipulación', studentDetail: { dniCopy: false, formCopy: true, titleCopy: false } },
-  { id: 5, first_name: 'Mateo', last_name: 'Benítez', dni: '39444111', status: 'pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Impresión 3D', studentDetail: { dniCopy: true, formCopy: false, titleCopy: false } },
-  { id: 6, first_name: 'Camila', last_name: 'Ríos', dni: '44888999', status: 'activo', status_id: 1, is_present: true, course_name: 'Operador de PC', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 7, first_name: 'Nicolás', last_name: 'Alvarez', dni: '40777333', status: 'activo', status_id: 1, is_present: true, course_name: 'Marketing Digital', studentDetail: { dniCopy: true, formCopy: true, titleCopy: true } },
-  { id: 8, first_name: 'Valentina', last_name: 'Sosa', dni: '42999444', status: 'pendiente', status_id: 3, is_aspirante: true, is_present: false, course_name: 'Soldadura Básica', studentDetail: { dniCopy: false, formCopy: true, titleCopy: false } },
-]
-
 export default function Dashboard() {
   const outletCtx = useOutletContext() || {}
   const { user: authUser } = useAuth()
@@ -70,9 +53,7 @@ export default function Dashboard() {
   const originalDbRole = user?.rol || 'director'
   const originalRoleUi = mapDbRoleToUi(originalDbRole)
 
-  // Rol simulado para previsualizar perspectivas en el Dashboard
-  const [activeRole, setActiveRole] = useState(originalRoleUi)
-  const isSimulated = activeRole !== originalRoleUi
+  const activeRole = originalRoleUi
 
   // Estados de datos sincronizados
   const [courses, setCourses] = useState([])
@@ -84,6 +65,8 @@ export default function Dashboard() {
     balanceBuffet: 0,
     movimientosRecientes: [],
   })
+  const [myEnrollments, setMyEnrollments] = useState([])
+  const [myTickets, setMyTickets] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState(new Date())
@@ -94,34 +77,33 @@ export default function Dashboard() {
     const currentYear = new Date().getFullYear()
 
     try {
-      const [coursesRes, studentsRes, instructorsRes, coopPagosRes, buffetRes] =
+      const [coursesRes, studentsRes, instructorsRes, coopPagosRes, buffetRes, turnoRes] =
         await Promise.allSettled([
           fetchCourses(),
           GET('/api/v1/alumnos'),
           GET('/api/v1/instructores'),
           getCooperadoraPagos(currentYear),
           getBuffetMovements({ year: currentYear }),
+          GET('/api/v1/preinscripciones/turno'),
         ])
 
       // 1. Cursos
-      if (coursesRes.status === 'fulfilled' && Array.isArray(coursesRes.value) && coursesRes.value.length > 0) {
+      if (coursesRes.status === 'fulfilled' && Array.isArray(coursesRes.value)) {
         setCourses(coursesRes.value)
       } else {
-        setCourses(coursesDataFallback || [])
+        setCourses([])
       }
 
-      // 2. Alumnos
-      if (studentsRes.status === 'fulfilled' && studentsRes.value?.data && Array.isArray(studentsRes.value.data) && studentsRes.value.data.length > 0) {
+      if (studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value?.data)) {
         setStudents(studentsRes.value.data)
       } else {
-        setStudents(FALLBACK_STUDENTS)
+        setStudents([])
       }
 
-      // 3. Instructores
-      if (instructorsRes.status === 'fulfilled' && instructorsRes.value?.data && Array.isArray(instructorsRes.value.data) && instructorsRes.value.data.length > 0) {
+      if (instructorsRes.status === 'fulfilled' && Array.isArray(instructorsRes.value?.data)) {
         setInstructors(instructorsRes.value.data)
       } else {
-        setInstructors(mockInstructores || [])
+        setInstructors([])
       }
 
       // 4. Cooperadora & Buffet
@@ -132,11 +114,15 @@ export default function Dashboard() {
 
       if (coopPagosRes.status === 'fulfilled' && coopPagosRes.value) {
         const pMap = coopPagosRes.value.paymentsMap || {}
-        aportantes = Object.keys(pMap).length
+        aportantes = 0
         Object.values(pMap).forEach((cuotas) => {
-          Object.values(cuotas).forEach((pago) => {
-            totalCuotas += Number(pago?.amount || 0)
+          let paid = false
+          Object.values(cuotas || {}).forEach((pago) => {
+            if (!pago?.pagado) return
+            totalCuotas += Number(pago.monto ?? pago.amount ?? 0)
+            paid = true
           })
+          if (paid) aportantes += 1
         })
       }
 
@@ -149,24 +135,20 @@ export default function Dashboard() {
         })
       }
 
-      // Si no hay datos en vivo aún en la base de datos de cooperadora, calculamos un baseline coherente
-      if (totalCuotas === 0 && buffetNeto === 0) {
-        totalCuotas = 145000
-        aportantes = 38
-        buffetNeto = 52400
-        movs = [
-          { id: 1, tipo: 'ingreso', detalle: 'Venta de meriendas turno mañana', monto: 12500, fecha: new Date().toISOString() },
-          { id: 2, tipo: 'egreso', detalle: 'Compra de insumos de cafetería', monto: 8400, fecha: new Date().toISOString() },
-          { id: 3, tipo: 'ingreso', detalle: 'Aporte extraordinario buffet', monto: 18000, fecha: new Date().toISOString() },
-        ]
-      }
-
       setCooperadoraData({
         totalRecaudado: totalCuotas,
         alumnosAportantes: aportantes,
         balanceBuffet: buffetNeto,
         movimientosRecientes: movs.slice(0, 4),
       })
+
+      if (turnoRes.status === 'fulfilled' && turnoRes.value) {
+        setMyEnrollments(Array.isArray(turnoRes.value.enrollments) ? turnoRes.value.enrollments : [])
+        setMyTickets(Array.isArray(turnoRes.value.tickets) ? turnoRes.value.tickets : [])
+      } else {
+        setMyEnrollments([])
+        setMyTickets([])
+      }
 
       setLastUpdated(new Date())
     } catch (error) {
@@ -188,21 +170,13 @@ export default function Dashboard() {
     const regulares = students.filter((s) => !isPostulante(s))
     const postulantes = students.filter((s) => isPostulante(s))
     const activos = regulares.filter((s) => s.status_id === 1 || String(s.status).toLowerCase() === 'activo')
-    const presentesHoy = regulares.filter((s) => s.is_present)
-    const pctAsistenciaAlumnos = regulares.length > 0 ? Math.round((presentesHoy.length / regulares.length) * 100) : 85
 
-    // Documentación pendiente en alumnos/postulantes
-    const docPendienteCount = students.filter((s) => {
-      const det = s.studentDetail || {}
-      return !det.dniCopy || !det.formCopy || !det.titleCopy
-    }).length
-
-    // Cursos
-    const cursosActivos = courses.filter((c) => (c.statusId ?? c.status?.id) === 1)
-    const cupoTotal = courses.reduce((acc, c) => acc + (c.quota ?? c.detail?.quota ?? 20), 0)
-    const cupoDisponible = courses.reduce((acc, c) => acc + (c.availableQuota ?? Math.max(0, (c.quota ?? 20) - (c.enrolledCount ?? 0))), 0)
+    const runningIds = new Set([1, 8, 9, 10])
+    const cursosActivos = courses.filter((c) => runningIds.has(Number(c.statusId ?? c.status?.id)))
+    const cupoTotal = courses.reduce((acc, c) => acc + Number(c.quota ?? c.detail?.quota ?? 0), 0)
+    const cupoDisponible = courses.reduce((acc, c) => acc + Number(c.availableQuota ?? 0), 0)
     const cupoOcupado = Math.max(0, cupoTotal - cupoDisponible)
-    const pctOcupacionCursos = cupoTotal > 0 ? Math.round((cupoOcupado / cupoTotal) * 100) : 78
+    const pctOcupacionCursos = cupoTotal > 0 ? Math.round((cupoOcupado / cupoTotal) * 100) : 0
 
     const primeraEtapa = courses.filter((c) => c.stageKey === 'primera')
     const segundaEtapa = courses.filter((c) => c.stageKey === 'segunda')
@@ -218,10 +192,7 @@ export default function Dashboard() {
     return {
       alumnosTotal: regulares.length,
       alumnosActivos: activos.length,
-      alumnosPresentes: presentesHoy.length,
       postulantesCount: postulantes.length,
-      pctAsistenciaAlumnos,
-      docPendienteCount,
       cursosTotal: courses.length,
       cursosActivos: cursosActivos.length,
       cupoTotal,
@@ -269,7 +240,7 @@ export default function Dashboard() {
       } else {
         list.push({
           type: 'info',
-          title: 'Ciclo lectivo en desarrollo',
+          title: 'Ciclo lectivo',
           message: `${metrics.cursosActivos} cursos en dictado presencial con ${metrics.pctOcupacionCursos}% de ocupación.`,
           tag: 'Informativo',
           linkTo: '/admin/cursos',
@@ -340,6 +311,11 @@ export default function Dashboard() {
 
   // KPIs dinámicos según el rol activo
   const roleKpis = useMemo(() => {
+    const mine = courses.filter((course) => user?.id && String(course.instructorId) === String(user.id))
+    const studentsMine = mine.reduce((acc, course) => acc + Number(course.enrolledCount || 0), 0)
+    const hoursMine = mine.reduce((acc, course) => acc + Number(course.detail?.hour_quantity || 0), 0)
+    const waiting = myTickets.filter((ticket) => ticket.status === 'esperando').length
+    const ready = myTickets.filter((ticket) => ticket.status === 'listo').length
     switch (activeRole) {
       case 'secretaria':
         return [
@@ -352,18 +328,18 @@ export default function Dashboard() {
             colorClass: 'border-amber-500',
             iconColorClass: 'text-amber-600 bg-amber-500/10',
             description: 'preinscripciones por validar',
-            tooltip: 'Aspirantes que deben entregar fotocopias de DNI y título en secretaría',
+            tooltip: 'Personas con rol postulante o estado pendiente',
           },
           {
-            title: 'Asistencia en Aula Hoy',
-            value: loading ? '...' : `${metrics.pctAsistenciaAlumnos}%`,
-            icon: ClipboardCheck,
-            trend: `${metrics.alumnosPresentes} presentes`,
-            trendType: 'up',
+            title: 'Alumnos regulares',
+            value: loading ? '...' : metrics.alumnosTotal,
+            icon: Users,
+            trend: `${metrics.alumnosActivos} activos`,
+            trendType: 'neutral',
             colorClass: 'border-emerald-500',
             iconColorClass: 'text-emerald-600 bg-emerald-500/10',
-            description: 'alumnos registrados hoy',
-            tooltip: 'Porcentaje de estudiantes presentes en clases presenciales',
+            description: 'matrícula sin postulantes',
+            tooltip: 'Alumnos cargados en el sistema, sin contar postulantes',
           },
           {
             title: 'Vacantes Disponibles',
@@ -374,115 +350,94 @@ export default function Dashboard() {
             colorClass: 'border-[#37A6DE]',
             iconColorClass: 'text-[#166193] bg-[#37A6DE]/15',
             description: 'cupos libres para inscribir',
-            tooltip: 'Lugares restantes para asignación inmediata de aspirantes',
+            tooltip: 'Cupo menos inscripciones que ocupan lugar',
           },
           {
-            title: 'Legajos Incompletos',
-            value: loading ? '...' : metrics.docPendienteCount,
-            icon: FileText,
-            trend: 'Requiere cotejo',
-            trendType: metrics.docPendienteCount > 0 ? 'down' : 'neutral',
+            title: 'Cursos en oferta',
+            value: loading ? '...' : metrics.cursosActivos,
+            icon: ClipboardCheck,
+            trend: `${metrics.cursosTotal} en el catálogo`,
+            trendType: 'neutral',
             colorClass: 'border-[#166193]',
             iconColorClass: 'text-[#166193] bg-[#166193]/10',
-            description: 'falta DNI o certificado',
-            tooltip: 'Estudiantes o aspirantes con documentación física faltante',
+            description: 'abiertos o con cupo',
+            tooltip: 'Cursos activos, con inscripción abierta, últimos cupos o cupo completo',
           },
         ]
       case 'instructor':
         return [
           {
             title: 'Mis Cursos Asignados',
-            value: loading ? '...' : 2,
+            value: loading ? '...' : mine.length,
             icon: BookOpen,
-            trend: 'En dictado',
-            trendType: 'up',
+            trend: 'A tu cargo',
+            trendType: 'neutral',
             colorClass: 'border-[#166193]',
             iconColorClass: 'text-[#166193] bg-[#166193]/10',
-            description: 'comisiones activas a cargo',
-            tooltip: 'Cursos formativos donde estás designado como docente titular',
+            description: 'cursos donde sos instructor',
+            tooltip: 'Cursos cuyo instructor es tu usuario',
           },
           {
             title: 'Estudiantes a Cargo',
-            value: loading ? '...' : 38,
+            value: loading ? '...' : studentsMine,
             icon: Users,
-            trend: '94% activos',
-            trendType: 'up',
+            trend: 'ocupan cupo',
+            trendType: 'neutral',
             colorClass: 'border-[#37A6DE]',
             iconColorClass: 'text-[#166193] bg-[#37A6DE]/15',
-            description: 'alumnos matriculados en tus cursos',
-            tooltip: 'Nómina total de estudiantes bajo tu seguimiento pedagógico',
+            description: 'inscriptos en tus cursos',
+            tooltip: 'Inscripciones que ocupan cupo en tus cursos',
           },
           {
-            title: 'Presentismo Promedio',
-            value: loading ? '...' : '89%',
-            icon: ClipboardCheck,
-            trend: '+4% vs mes ant.',
-            trendType: 'up',
-            colorClass: 'border-emerald-500',
-            iconColorClass: 'text-emerald-600 bg-emerald-500/10',
-            description: 'asistencia en tus clases',
-            tooltip: 'Tasa promedio de asistencia en tus días y horarios',
-          },
-          {
-            title: 'Carga Horaria Semanal',
-            value: loading ? '...' : '12 hs',
+            title: 'Horas cátedra',
+            value: loading ? '...' : `${hoursMine} hs`,
             icon: Award,
-            trend: 'Turno Tarde/Vesp.',
+            trend: 'del programa',
             trendType: 'neutral',
             colorClass: 'border-amber-500',
             iconColorClass: 'text-amber-600 bg-amber-500/10',
-            description: 'horas cátedra en aula',
-            tooltip: 'Carga horaria asignada en el cronograma institucional',
+            description: 'suma de tus cursos',
+            tooltip: 'Suma de las horas cátedra cargadas en el detalle de tus cursos',
           },
         ]
       case 'estudiante':
       case 'estudiantes':
       case 'alumno':
       case 'alumnos':
+      case 'postulante':
         return [
           {
-            title: 'Mis Cursos en Curso',
-            value: loading ? '...' : 1,
+            title: 'Cursos inscriptos',
+            value: loading ? '...' : myEnrollments.length,
             icon: BookOpen,
-            trend: 'Regular',
-            trendType: 'up',
+            trend: myEnrollments.length ? 'Con cupo' : 'Sin inscripción',
+            trendType: 'neutral',
             colorClass: 'border-[#166193]',
             iconColorClass: 'text-[#166193] bg-[#166193]/10',
-            description: 'Operador de Herramientas Digitales',
-            tooltip: 'Curso oficial en el que estás actualmente matriculado',
+            description: 'preinscripciones confirmadas',
+            tooltip: 'Cursos en los que ocupás un cupo',
           },
           {
-            title: 'Mi Asistencia Acumulada',
-            value: loading ? '...' : '92%',
-            icon: ClipboardCheck,
-            trend: 'Excelente',
-            trendType: 'up',
-            colorClass: 'border-emerald-500',
-            iconColorClass: 'text-emerald-600 bg-emerald-500/10',
-            description: 'límite de faltas: 4 clases',
-            tooltip: 'Porcentaje de clases presenciales en las que registraste asistencia',
-          },
-          {
-            title: 'Horas Cátedra Cursadas',
-            value: loading ? '...' : '36 hs',
-            icon: Award,
-            trend: 'En avance',
-            trendType: 'up',
-            colorClass: 'border-[#37A6DE]',
-            iconColorClass: 'text-[#166193] bg-[#37A6DE]/15',
-            description: 'de 120 hs totales de programa',
-            tooltip: 'Carga horaria completada en el ciclo formativo',
-          },
-          {
-            title: 'Estado del Legajo',
-            value: loading ? '...' : 'Validado',
-            icon: FileText,
-            trend: '100% completo',
-            trendType: 'up',
+            title: 'En espera',
+            value: loading ? '...' : waiting,
+            icon: Clock,
+            trend: ready ? `${ready} listo para confirmar` : 'Sin turno listo',
+            trendType: ready ? 'up' : 'neutral',
             colorClass: 'border-amber-500',
             iconColorClass: 'text-amber-600 bg-amber-500/10',
-            description: 'documentación física entregada',
-            tooltip: 'Toda tu documentación fue verificada por secretaría',
+            description: 'turnos de la cola',
+            tooltip: 'Pedidos de preinscripción que todavía no ocupan cupo',
+          },
+          {
+            title: 'Estado del legajo',
+            value: loading ? '...' : (user?.estado || '—'),
+            icon: FileText,
+            trend: user?.rol || '',
+            trendType: 'neutral',
+            colorClass: 'border-[#37A6DE]',
+            iconColorClass: 'text-[#166193] bg-[#37A6DE]/15',
+            description: 'según tu usuario',
+            tooltip: 'Estado guardado en tu ficha',
           },
         ]
       case 'director':
@@ -525,19 +480,19 @@ export default function Dashboard() {
             title: 'Cooperadora & Buffet',
             value: loading ? '...' : `$${metrics.totalFinanzas.toLocaleString('es-AR')}`,
             icon: Wallet,
-            trend: '+12% este mes',
-            trendType: 'up',
+            trend: `${metrics.alumnosAportantes} aportantes`,
+            trendType: 'neutral',
             colorClass: 'border-amber-500',
             iconColorClass: 'text-amber-600 bg-amber-500/10',
-            description: 'recaudado en 2026',
+            description: `cuotas y buffet, ${new Date().getFullYear()}`,
             tooltip: 'Total recaudado acumulado entre cuotas de alumnos y buffet',
           },
         ]
     }
-  }, [activeRole, loading, metrics])
+  }, [activeRole, loading, metrics, courses, user, myEnrollments, myTickets])
 
   const firstName = user?.nombres?.trim() || 'Directivo/a'
-  const currentRoleLabel = isSimulated ? roleLabel(activeRole) : roleLabel(user?.rol)
+  const currentRoleLabel = roleLabel(user?.rol)
 
   return (
     <div className="max-w-[1400px] w-full mx-auto font-nunito space-y-5 sm:space-y-7 pb-10 sm:pb-14 animate-fade-in">
@@ -584,16 +539,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── 2. SELECTOR DE PERSPECTIVA DE ROL ── */}
-      <RoleSelector
-        activeRole={activeRole}
-        onRoleChange={setActiveRole}
-        originalRole={roleLabel(originalRoleUi)}
-        isSimulated={isSimulated}
-        onResetOriginal={() => setActiveRole(originalRoleUi)}
-      />
-
-      {/* ── 3. ALERTAS OPERATIVAS RELEVANTES ── */}
+      {/* ── 2. ALERTAS OPERATIVAS RELEVANTES ── */}
       <DashboardAlerts alerts={alertsForRole} />
 
       {/* ── 4. TARJETAS DE KPIS PRINCIPALES DEL ROL ── */}
@@ -618,132 +564,58 @@ export default function Dashboard() {
       <DashboardQuickActions role={activeRole} />
 
       {/* ── 6. RESÚMENES PROFUNDOS DE CADA MÓDULO ── */}
-      {['estudiante', 'estudiantes', 'alumno', 'alumnos'].includes(String(activeRole || '').toLowerCase()) ? (
+      {['estudiante', 'estudiantes', 'alumno', 'alumnos', 'postulante'].includes(String(activeRole || '').toLowerCase()) ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Tarjeta 1 Estudiante: Mi Cursada y Horarios */}
           <ModuleSummaryCard
-            title="Mi Cursada & Horarios"
-            subtitle="Detalles de tu comisión, días de clase y asistencia"
+            title="Mis preinscripciones"
+            subtitle="Cursos que ocupan cupo y turnos de la cola"
             icon={BookOpen}
             iconClass="text-custom-azul-oscuro bg-custom-azul-oscuro/10"
-            linkTo="/perfil"
-            linkLabel="Ver mi perfil"
-            badgeText="Regular · En Curso"
-            badgeColor="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+            linkTo="/inscripcion"
+            linkLabel="Ver oferta"
+            badgeText={user?.estado || 'Sin estado'}
+            badgeColor="bg-sky-50 text-[#166193] dark:bg-sky-950/50 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
           >
-            {/* Detalles del curso actual */}
-            <div className="p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-3">
-              <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
-                <div className="min-w-0">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Curso Oficial Asignado
-                  </span>
-                  <h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-roboto leading-snug">
-                    Operador de Herramientas Digitales (PC)
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Docente a cargo: Prof. Valentina Rivadeneira
+            <div className="space-y-2">
+              {myEnrollments.length === 0 && myTickets.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Todavía no tenés cursos inscriptos ni turnos en espera.
+                </p>
+              ) : null}
+              {myEnrollments.map((item) => (
+                <div key={`enr-${item.courseId}`} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{item.courseName || 'Curso'}</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300">Inscripto · orden {item.position ?? '—'}</p>
+                </div>
+              ))}
+              {myTickets.map((item) => (
+                <div key={`ticket-${item.courseId}-${item.status}`} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{item.courseName || 'Curso'}</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    {item.status === 'listo' ? 'Listo para confirmar' : `En espera · posición ${item.position ?? '—'}`}
                   </p>
                 </div>
-                <span className="self-start text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#166193]/10 text-[#166193] dark:text-custom-celeste shrink-0">
-                  Aula 3
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 pt-1 text-xs">
-                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                  <Calendar size={13} className="text-[#166193] dark:text-custom-celeste shrink-0" />
-                  <span>Lunes y Miércoles</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                  <Clock size={13} className="text-[#166193] dark:text-custom-celeste shrink-0" />
-                  <span>14:00 a 17:00 hs</span>
-                </div>
-              </div>
-
-              {/* Barra de Asistencia Personal */}
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Mi Presentismo</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">92% (Excelente)</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-full rounded-full transition-all duration-700"
-                    style={{ width: '92%' }}
-                  />
-                </div>
-                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between text-[11px] text-slate-500">
-                  <span>1 inasistencia registrada</span>
-                  <span>Límite de regularidad: 4 faltas</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Aviso pedagógico */}
-            <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
-              <Sparkles size={16} className="text-[#166193] dark:text-custom-celeste shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                Para solicitar certificados de alumno regular o constancias de examen para presentar en tu trabajo, podés tramitarlas en secretaría.
-              </p>
+              ))}
             </div>
           </ModuleSummaryCard>
 
           {/* Tarjeta 2 Estudiante: Mi Legajo y Documentación */}
           <ModuleSummaryCard
-            title="Estado de Mi Legajo & Certificación"
-            subtitle="Documentación física cotejada y titulación oficial"
-            icon={Award}
+            title="Tu ficha"
+            subtitle="Datos de la cuenta con la que entraste"
+            icon={FileText}
             iconClass="text-amber-600 bg-amber-500/10"
             linkTo="/perfil"
-            linkLabel="Gestionar legajo"
-            badgeText="Legajo Completo"
-            badgeColor="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+            linkLabel="Completar perfil"
+            badgeText={user?.rol || 'usuario'}
+            badgeColor="bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200 dark:border-amber-800"
           >
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-2.5">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                Requisitos de Matrícula Oficial
-              </span>
-              <div className="space-y-2 text-xs">
-                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                    Fotocopia de DNI (Frente y Dorso)
-                  </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Verificado</span>
-                </div>
-                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                    Planilla Oficial de Inscripción firmada
-                  </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Presentada</span>
-                </div>
-                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                    Certificado de Estudios Previos
-                  </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Aprobado</span>
-                </div>
-                <div className="flex flex-col gap-0.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between gap-x-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-2 min-w-0">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                    Ficha de Salud y Apto Físico
-                  </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 pl-6 min-[420px]:pl-0 shrink-0">Completado</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Aval del título */}
-            <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 space-y-1">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-                <Award size={15} className="text-amber-500" />
-                <span>Certificación de Formación Laboral Oficial</span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Al aprobar el curso con el 80% de asistencia, recibirás tu diploma con validez oficial emitido por la Dirección General de Cultura y Educación de la Provincia de Buenos Aires.
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-2 text-sm">
+              <p className="text-slate-700 dark:text-slate-200">
+                <span className="font-bold">Estado:</span> {user?.estado || 'sin estado'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                La asistencia de cada clase se registra con la credencial en el lector QR. El cotejo de DNI y título se hace en secretaría y no queda marcado en esta pantalla.
               </p>
             </div>
           </ModuleSummaryCard>
@@ -845,7 +717,7 @@ export default function Dashboard() {
                   {metrics.alumnosTotal}
                 </span>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  {metrics.alumnosPresentes} presentes en aula hoy
+                  {metrics.alumnosActivos} con estado activo
                 </p>
               </div>
 
@@ -857,36 +729,6 @@ export default function Dashboard() {
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Aspirantes a validar en secretaría
                 </p>
-              </div>
-            </div>
-
-            {/* Checklist de Documentación */}
-            <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 space-y-2">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                Control Documental de Legajos
-              </span>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-1.5 min-w-0">
-                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0 mt-0.5" />
-                    Fotocopias de DNI cotejadas
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">95%</span>
-                </div>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-1.5 min-w-0">
-                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0 mt-0.5" />
-                    Planillas de inscripción física
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 shrink-0">89%</span>
-                </div>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-slate-600 dark:text-slate-400 flex items-start gap-1.5 min-w-0">
-                    <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-                    Constancias de título secundario/primario
-                  </span>
-                  <span className="font-bold text-amber-600 shrink-0">76%</span>
-                </div>
               </div>
             </div>
 

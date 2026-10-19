@@ -209,6 +209,24 @@ export default function Alumnos() {
     setViewStudent(student)
   }
 
+  const handleRemoveCourse = async (student, course) => {
+    if (!puedeEditar || !course?.courseId) return
+    const res = await DELETE(`/api/v1/alumnos/${student.id}/cursos`, course.courseId)
+    const updated = res?.data
+    setViewStudent((prev) => {
+      if (!prev || prev.id !== student.id) return prev
+      if (updated) return { ...prev, ...updated }
+      const courses = (prev.courses || []).filter((item) => item.courseId !== course.courseId)
+      return {
+        ...prev,
+        courses,
+        course_name: courses[0]?.name || 'Sin curso asignado',
+        course: courses[0]?.name || 'Sin curso asignado',
+      }
+    })
+    await fetchStudents()
+  }
+
   const handleEdit = (id) => {
     if (!puedeEditar) return
     const student = students.find(s => s.id === id)
@@ -780,6 +798,7 @@ export default function Alumnos() {
         }}
         onPromote={handlePromoteToStudent}
         onViewCourse={handleViewCourse}
+        onRemoveCourse={handleRemoveCourse}
         userRole={userRole}
       />
 

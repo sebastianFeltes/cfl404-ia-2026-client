@@ -155,4 +155,32 @@ html, body {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
+
+  /* Credencial del alumno: solo esa hoja, con los colores de la app */
+  body.print-credential #root {
+    display: none !important;
+  }
+
+  body.print-credential .credential-print {
+    display: flex !important;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    align-items: flex-start;
+    justify-content: center;
+    background: #ffffff !important;
+    padding: 12mm 0 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.print-credential .credential-sheet {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    box-shadow: none !important;
+  }
+}
+
+.credential-print {
+  display: none;
 }

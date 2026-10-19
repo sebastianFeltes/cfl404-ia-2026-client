@@ -41,6 +41,8 @@ const INITIAL_FORM_STATE = {
   isAnnual: false,
   quota: 20,
   hourQuantity: 120,
+  whatsappGroupUrl: '',
+  resourcesUrl: '',
   classesQuantity: 32,
   maxAbsences: 4,
   description: '',
@@ -109,6 +111,8 @@ function CourseFormDrawer({
         isAnnual: Boolean(course.isAnnual || course.is_annual),
         quota: course.quota ?? course.detail?.quota ?? 20,
         hourQuantity: course.detail?.hour_quantity ?? course.courseDetail?.hourQuantity ?? 120,
+        whatsappGroupUrl: course.detail?.whatsappGroupUrl || '',
+        resourcesUrl: course.detail?.resourcesUrl || '',
         classesQuantity: course.detail?.classes_quantity ?? course.courseDetail?.classesQuantity ?? 32,
         maxAbsences: course.maxAbsences ?? course.max_absences ?? 4,
         description: course.detail?.description || course.courseDetail?.description || '',
@@ -186,6 +190,8 @@ function CourseFormDrawer({
       statusId: Number(formData.statusId),
       quota: Number(formData.quota),
       hourQuantity: Number(formData.hourQuantity),
+      whatsappGroupUrl: formData.whatsappGroupUrl || null,
+      resourcesUrl: formData.resourcesUrl || null,
       classesQuantity: Number(formData.classesQuantity),
       maxAbsences: Number(formData.maxAbsences),
       isAnnual: Boolean(formData.isAnnual),
@@ -505,6 +511,14 @@ function CourseFormDrawer({
                 <label htmlFor="hourQuantity" className="block font-bold mb-1">Horas cátedra *</label>
                 <input type="number" id="hourQuantity" name="hourQuantity" value={formData.hourQuantity} onChange={handleChange} disabled={isReadOnly} className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950" />
                 {errors.hourQuantity && <FieldError message={errors.hourQuantity} />}
+              </div>
+              <div>
+                <label htmlFor="whatsappGroupUrl" className="block font-bold mb-1">Grupo de WhatsApp</label>
+                <input id="whatsappGroupUrl" name="whatsappGroupUrl" value={formData.whatsappGroupUrl || ''} onChange={handleChange} disabled={isReadOnly} className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950" />
+              </div>
+              <div>
+                <label htmlFor="resourcesUrl" className="block font-bold mb-1">Recursos</label>
+                <input id="resourcesUrl" name="resourcesUrl" value={formData.resourcesUrl || ''} onChange={handleChange} disabled={isReadOnly} className="w-full p-2.5 border border-custom-gris-claro/30 dark:border-slate-700 rounded-lg bg-gray-50/50 dark:bg-slate-950" />
               </div>
               <div>
                 <label htmlFor="classesQuantity" className="block font-bold mb-1">Cantidad de clases *</label>

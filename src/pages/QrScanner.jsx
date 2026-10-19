@@ -30,48 +30,48 @@ export default function QrScanner() {
   const hasAccess = canScanQr(accessRole, userEmail)
 
   const inputRef = useRef(null)
-  const scanQueueRef = useRef(Promise.resolve())
-  const feedbackIdRef = useRef(0)
+  const scanSeqRef = useRef(0)
   const [scanBuffer, setScanBuffer] = useState('')
-  const [feedbacks, setFeedbacks] = useState([])
+  const [feedback, setFeedback] = useState(null)
 
   const focusInput = useCallback(() => {
     requestAnimationFrame(() => inputRef.current?.focus())
   }, [])
 
   const dismissFeedback = useCallback((id) => {
-    setFeedbacks((prev) => prev.filter((item) => item.id !== id))
-  }, [])
-
-  const pushFeedback = useCallback((payload) => {
-    feedbackIdRef.current += 1
-    setFeedbacks((prev) => [...prev.slice(-2), { id: feedbackIdRef.current, ...payload }])
+    setFeedback((current) => (current?.id === id ? null : current))
   }, [])
 
   const submitToken = useCallback(async (rawToken) => {
     const token = extractAttendanceTokenFromBuffer(rawToken) || String(rawToken ?? '').trim()
     if (!token) return
-
-    scanQueueRef.current = scanQueueRef.current.then(async () => {
-      try {
-        const response = await POST(API_SCAN, { attendance_token: token })
-        pushFeedback({
-          type: 'success',
-          message: response.message,
-          student: response.student,
-          results: response.results,
-        })
-      } catch (err) {
-        pushFeedback({
-          type: 'error',
-          message: err.message || 'Error al registrar asistencia',
-        })
-      } finally {
-        setScanBuffer('')
-        focusInput()
-      }
-    })
-  }, [focusInput, pushFeedback])
+    scanSeqRef.current += 1
+    const scanId = scanSeqRef.current
+    setScanBuffer('')
+    focusInput()
+    try {
+      const response = await POST(API_SCAN, { attendance_token: token })
+      if (scanId !== scanSeqRef.current) return
+      setFeedback({
+        id: scanId,
+        type: 'success',
+        message: response.message,
+        student: response.student,
+        results: response.results,
+      })
+    } catch (err) {
+      if (scanId !== scanSeqRef.current) return
+      setFeedback({
+        id: scanId,
+        type: 'error',
+        message: err.message || 'Error al registrar asistencia',
+        student: err.data?.student || null,
+        results: err.data?.results,
+      })
+    } finally {
+      focusInput()
+    }
+  }, [focusInput])
 
   const processScanBuffer = useCallback((value) => {
     const token = extractAttendanceTokenFromBuffer(value)
@@ -166,23 +166,23 @@ export default function QrScanner() {
 
       {/* Mitad inferior: video institucional */}
       <section className="h-1/2 min-h-0 relative bg-black">
-        <video
-          className="absolute inset-0 h-full w-full object-cover"
-          src="/video_qr_screen.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          aria-label="Video institucional del CFL 404"
-        />
+        {!feedback && (
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            src="/video_qr_screen.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            aria-label="Video institucional del CFL 404"
+          />
+        )}
         <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0a2f52]/80 to-transparent pointer-events-none" />
       </section>
 
-      <div className="fixed top-6 right-6 z-50 flex flex-col gap-3 items-end pointer-events-none max-h-[45vh] overflow-hidden">
-        {feedbacks.map((feedback) => (
-          <ScanFeedbackModal key={feedback.id} feedback={feedback} onDismiss={dismissFeedback} />
-        ))}
-      </div>
+      {feedback && (
+        <ScanFeedbackModal feedback={feedback} onDismiss={dismissFeedback} />
+      )}
     </div>
   )
 }

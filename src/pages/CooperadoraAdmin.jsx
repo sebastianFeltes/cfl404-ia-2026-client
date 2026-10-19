@@ -295,6 +295,8 @@ export default function CooperadoraAdmin() {
     return {
       totalCooperadora,
       balanceBuffet,
+      totalIngresosBuffet,
+      totalEgresosBuffet,
       totalGeneral: totalCooperadora + balanceBuffet,
       alumnosConPagos,
       totalAlumnos: students.length,
@@ -423,8 +425,6 @@ export default function CooperadoraAdmin() {
           title="Total Cooperadora"
           value={`$${kpis.totalCooperadora.toLocaleString('es-AR')}`}
           icon={Wallet}
-          trend="+12%"
-          trendType="up"
           colorClass="border-custom-azul-oscuro"
           iconColorClass="text-custom-azul-oscuro bg-custom-azul-oscuro/10"
           description={`recaudado en ${selectedYear}`}
@@ -435,8 +435,6 @@ export default function CooperadoraAdmin() {
           title="Caja Buffet (Neto)"
           value={`$${kpis.balanceBuffet.toLocaleString('es-AR')}`}
           icon={ShoppingBag}
-          trend="+8%"
-          trendType="up"
           colorClass="border-emerald-500"
           iconColorClass="text-emerald-600 bg-emerald-500/10"
           description="ingresos menos gastos"
@@ -459,8 +457,6 @@ export default function CooperadoraAdmin() {
           title="Total General Acumulado"
           value={`$${kpis.totalGeneral.toLocaleString('es-AR')}`}
           icon={DollarSign}
-          trend="+15%"
-          trendType="up"
           colorClass="border-custom-amarillo"
           iconColorClass="text-yellow-600 bg-custom-amarillo/10"
           description="cooperadora + buffet"
@@ -640,13 +636,39 @@ export default function CooperadoraAdmin() {
           onOpenNewModal={() => setIsBuffetDrawerOpen(true)}
         />
       ) : (
-        /* Balance tab placeholder */
-        <div className="flex flex-col items-center justify-center py-24 gap-4 text-slate-400 dark:text-slate-600">
-          <BarChart2 className="h-14 w-14 opacity-30" />
-          <p className="text-lg font-bold text-slate-500 dark:text-slate-500">Sección en desarrollo</p>
-          <p className="text-sm text-slate-400 dark:text-slate-600 max-w-xs text-center">
-            Próximamente podrás ver el balance general de cooperadora y buffet en esta sección.
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard
+            title="Cuotas cobradas"
+            value={`$${kpis.totalCooperadora.toLocaleString('es-AR')}`}
+            icon={Wallet}
+            description={`${kpis.alumnosConPagos} de ${kpis.totalAlumnos} alumnos`}
+            colorClass="border-[#166193]"
+            iconColorClass="text-[#166193] bg-[#166193]/10"
+          />
+          <StatCard
+            title="Cuotas del mes"
+            value={`$${kpis.cuotasMesActual.toLocaleString('es-AR')}`}
+            icon={Calendar}
+            description="mes en curso"
+            colorClass="border-[#37A6DE]"
+            iconColorClass="text-[#166193] bg-[#37A6DE]/15"
+          />
+          <StatCard
+            title="Buffet"
+            value={`$${kpis.balanceBuffet.toLocaleString('es-AR')}`}
+            icon={ShoppingBag}
+            description={`ingresos $${kpis.totalIngresosBuffet.toLocaleString('es-AR')} · egresos $${kpis.totalEgresosBuffet.toLocaleString('es-AR')}`}
+            colorClass="border-amber-500"
+            iconColorClass="text-amber-600 bg-amber-500/10"
+          />
+          <StatCard
+            title="Total del año"
+            value={`$${kpis.totalGeneral.toLocaleString('es-AR')}`}
+            icon={BarChart2}
+            description={`año ${selectedYear}`}
+            colorClass="border-emerald-500"
+            iconColorClass="text-emerald-600 bg-emerald-500/10"
+          />
         </div>
       )}
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, useLocation, useNavigate, Link } from 'react-router';
 import { GoogleLogin } from '@react-oauth/google';
-import { ShieldCheck, AlertTriangle, ExternalLink } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import fotoSoldando from '../assets/hombre_soldando.PNG';
 import { canonicalRole } from '../utils/roles';
 
@@ -20,7 +20,7 @@ function safeRedirectPath(pathname, role) {
 }
 
 export default function LoginPage() {
-  const { user, isAuthenticated, isLoading, loginWithGoogle } = useAuth();
+  const { user, isAuthenticated, isLoading, loginWithGoogle, loginWithPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,6 +28,9 @@ export default function LoginPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [dni, setDni] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const redirectTo = safeRedirectPath(location.state?.from?.pathname, user?.rol);
 
@@ -73,6 +76,27 @@ export default function LoginPage() {
     setErrorMsg('Google canceló el inicio de sesión o no pudo completarlo. Intentá nuevamente.');
   };
 
+  const handlePasswordLogin = async (event) => {
+    event.preventDefault();
+    if (!acceptedTerms) {
+      setErrorMsg('Debés aceptar los términos y condiciones antes de ingresar.');
+      return;
+    }
+    setErrorMsg('');
+    setIsSubmitting(true);
+    try {
+      const result = await loginWithPassword(dni, password, { remember: rememberMe });
+      const target = location.state?.from?.pathname
+        ? safeRedirectPath(location.state.from.pathname, result?.user?.rol)
+        : safeRedirectPath(undefined, result?.user?.rol);
+      navigate(target, { replace: true });
+    } catch (err) {
+      setErrorMsg(err.message || 'No pudimos validar el DNI y la contraseña.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center font-nunito p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px] border border-gray-100">
@@ -112,7 +136,7 @@ export default function LoginPage() {
                 ¡Bienvenido/a de nuevo!
               </h2>
               <p className="text-custom-gris-claro text-sm">
-                Ingresá con tu cuenta de Google para acceder a la plataforma.
+                Ingresá con tu DNI y contraseña, o con tu cuenta de Google.
               </p>
             </div>
 
@@ -131,6 +155,58 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-5">
+              <form className="space-y-4" onSubmit={handlePasswordLogin}>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-custom-gris-claro">DNI</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="username"
+                    value={dni}
+                    onChange={(event) => setDni(event.target.value)}
+                    placeholder="Sin puntos"
+                    className="mt-1 w-full h-11 rounded-xl border border-slate-200 px-3 text-sm text-custom-gris-oscuro outline-none focus:border-custom-celeste"
+                  />
+                </label>
+                <div>
+                  <label htmlFor="login-password" className="text-xs font-bold uppercase tracking-wide text-custom-gris-claro">
+                    Contraseña
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      id="login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="w-full h-11 rounded-xl border border-slate-200 pl-3 pr-11 text-sm text-custom-gris-oscuro outline-none focus:border-custom-celeste"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-custom-gris-claro hover:text-custom-gris-oscuro"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-11 rounded-full bg-custom-azul-oscuro text-white text-sm font-bold disabled:opacity-60"
+                >
+                  {isSubmitting ? 'Ingresando…' : 'Ingresar'}
+                </button>
+              </form>
+
+              <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-custom-gris-claro">
+                <span className="h-px flex-1 bg-slate-200" />
+                o
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+
               {/* Botón oficial de Google Identity Services */}
               <div className="flex justify-center min-h-[44px]">
                 {isSubmitting ? (

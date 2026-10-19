@@ -24,6 +24,7 @@ function normalizeUser(payload) {
     apellidos: payload.apellidos || payload.lastName || '',
     correo: payload.correo || payload.email || '',
     dni: payload.dni || '',
+    applicantNumber: payload.applicantNumber ?? payload.applicant_number ?? null,
     rol: payload.rol || payload.role?.name || payload.role || '',
     estado: payload.estado || payload.status || '',
     institucion: payload.institucion || "CFL N°404 'Berisso'",
@@ -129,6 +130,12 @@ export function AuthProvider({ children }) {
     return { user: nextUser, isNewAccount: Boolean(data.isNewAccount), message: data.message };
   }, [applySession]);
 
+  const loginWithPassword = useCallback(async (dni, password, { remember: rememberSession = true } = {}) => {
+    const data = await POST('/api/auth/login', { dni, password, remember: rememberSession });
+    const nextUser = applySession(data.token, data.user ?? data, rememberSession);
+    return { user: nextUser, message: data.message };
+  }, [applySession]);
+
   const loginAsDemo = useCallback(async (accountType = 'alumno', { remember: rememberSession = true } = {}) => {
     const data = await POST('/api/auth/dev-login', { accountType });
     return applySession(data.token, data.user ?? data, rememberSession);
@@ -158,8 +165,8 @@ export function AuthProvider({ children }) {
   }, [remember]);
 
   const value = useMemo(
-    () => ({ token, user, isAuthenticated, isLoading, loginEpoch, login, loginWithGoogle, loginAsDemo, logout, updateUser }),
-    [token, user, isAuthenticated, isLoading, loginEpoch, login, loginWithGoogle, loginAsDemo, logout, updateUser],
+    () => ({ token, user, isAuthenticated, isLoading, loginEpoch, login, loginWithGoogle, loginWithPassword, loginAsDemo, logout, updateUser }),
+    [token, user, isAuthenticated, isLoading, loginEpoch, login, loginWithGoogle, loginWithPassword, loginAsDemo, logout, updateUser],
   );
 
   return (

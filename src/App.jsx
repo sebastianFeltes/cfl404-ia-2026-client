@@ -17,6 +17,7 @@ import Cooperadora from './pages/Cooperadora'
 import Cookies from './pages/Cookies'
 import Privacidad from './pages/Privacidad'
 import TerminosCondiciones from './pages/TerminosCondiciones'
+import Contactos from './pages/Contactos'
 
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
@@ -30,6 +31,7 @@ import Instructores from './pages/Instructores'
 import CursosAdmin from './pages/CursosAdmin'
 import CooperadoraAdmin from './pages/CooperadoraAdmin'
 import Configuracion from './pages/Configuracion'
+import NotFound from './pages/NotFound'
 
 const DASHBOARD_ALLOWED_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria', 'instructor', 'alumno', 'postulante']
 const STAFF_ROLES = ['god', 'admin', 'director', 'regente', 'secretaria', 'preceptoria']
@@ -98,11 +100,7 @@ function AppRoutes() {
         <Route path='cookies' element={<Cookies />} />
         <Route path='privacidad' element={<Privacidad />} />
         <Route path='terminos-condiciones' element={<TerminosCondiciones />} />
-        <Route path='contactos' element={
-          <div className="flex-grow flex items-center justify-center p-12 text-custom-gris-claro font-nunito text-center">
-            <p>Sección Contactos en desarrollo...</p>
-          </div>
-        } />
+        <Route path='contactos' element={<Contactos />} />
       </Route>
 
       <Route path='/login' element={<LoginPage />} />
@@ -157,6 +155,8 @@ function AppRoutes() {
       }>
         <Route path='admin/configuracion' element={<Configuracion />} />
       </Route>
+
+      <Route path='*' element={<NotFound />} />
     </Routes>
   )
 }

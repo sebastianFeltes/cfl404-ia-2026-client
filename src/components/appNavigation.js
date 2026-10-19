@@ -62,7 +62,7 @@ export const navSections = [
     icon: GraduationCap,
     path: '/admin/alumnos',
     title: 'Matrícula y nómina de estudiantes',
-    roles: [...DIRECTION_ROLES, ...SECRETARIA_ROLES, 'instructor'],
+    roles: [...DIRECTION_ROLES, ...SECRETARIA_ROLES],
   },
   {
     id: 'cooperadora',
@@ -70,7 +70,7 @@ export const navSections = [
     icon: Wallet,
     path: '/admin/cooperadora',
     title: 'Gestión de pagos de cooperadora y buffet',
-    roles: DIRECTION_ROLES,
+    roles: [...DIRECTION_ROLES, ...SECRETARIA_ROLES],
   },
   {
     id: 'config',
@@ -78,7 +78,7 @@ export const navSections = [
     icon: Settings2,
     path: '/admin/configuracion',
     title: 'Ajustes del sistema, cooperadora y patrocinadores',
-    roles: DIRECTION_ROLES,
+    roles: ['god', 'director', 'regente'],
   },
 ]
 
@@ -88,6 +88,9 @@ export function isLearnerRole(role) {
 }
 
 export function sectionsForRole(role) {
+  if (role === 'contralor') {
+    return navSections.filter((section) => section.id === 'qr')
+  }
   return navSections.filter((section) => section.roles === null || section.roles.includes(role))
 }
 

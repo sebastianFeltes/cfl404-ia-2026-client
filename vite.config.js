@@ -17,7 +17,7 @@ function contentSecurityPolicy({ hmr }) {
     "img-src 'self' https: data:",
     "font-src 'self' data: https://fonts.gstatic.com",
     connectSrc,
-    "frame-src https://accounts.google.com",
+    "frame-src https://accounts.google.com https://maps.google.com https://www.google.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
   ].join('; ')

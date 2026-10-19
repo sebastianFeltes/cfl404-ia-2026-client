@@ -1,18 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Copy, Check, Info, Landmark, ChevronRight } from 'lucide-react'
 import Tooltip from '../components/Tooltip'
-
-// ─── Datos de la Cooperadora ─────────────────────────────────────────────────
-const DATOS_BANCARIOS = {
-    banco: 'Banco Provincia de Buenos Aires',
-    alias: 'coop.cfl.404',
-    cbu: '0140032801503305438550',
-    cuit: '30-71753985-7',
-}
-
-const WHATSAPP_NUMERO = '5492213192360'
-const WHATSAPP_MENSAJE =
-    'Hola, me contacto para enviar el comprobante de transferencia para la Cooperadora del CFL 404.'
+import { GET } from '../services/api'
 
 // ─── Componente Toast ─────────────────────────────────────────────────────────
 function Toast({ visible }) {
@@ -76,6 +65,18 @@ function CopyRow({ label, value, onCopy }) {
 function Cooperadora() {
     const [toastVisible, setToastVisible] = useState(false)
     const [toastTimer, setToastTimer] = useState(null)
+    const [bank, setBank] = useState(null)
+    const [monthlyAmount, setMonthlyAmount] = useState(null)
+    const [error, setError] = useState('')
+
+    useEffect(() => {
+        GET('/api/mobile/cooperadora-publica')
+            .then((data) => {
+                setBank(data.bank || null)
+                setMonthlyAmount(data.monthlyAmount ?? null)
+            })
+            .catch((err) => setError(err.message || 'No se pudieron cargar los datos bancarios'))
+    }, [])
 
     const handleCopy = useCallback(() => {
         if (toastTimer) clearTimeout(toastTimer)
@@ -85,8 +86,8 @@ function Cooperadora() {
     }, [toastTimer])
 
     const handleWhatsApp = () => {
-        const texto = encodeURIComponent(WHATSAPP_MENSAJE)
-        window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${texto}`, '_blank', 'noopener,noreferrer')
+        const texto = encodeURIComponent(bank?.whatsappMessage || '')
+        window.open(`https://wa.me/${bank?.whatsappNumber || ''}?text=${texto}`, '_blank', 'noopener,noreferrer')
     }
 
     return (
@@ -151,25 +152,19 @@ function Cooperadora() {
                     <div className="inline-flex items-center gap-2 bg-custom-azul-oscuro/5 border border-custom-azul-oscuro/10 rounded-xl px-4 py-2 mb-5">
                         <span className="text-xs font-black text-custom-azul-oscuro uppercase tracking-widest">Banco</span>
                         <span className="font-nunito font-bold text-custom-azul-oscuro text-sm">
-                            {DATOS_BANCARIOS.banco}
+                            {bank?.banco || '—'}
                         </span>
                     </div>
 
                     {/* Filas copiables */}
                     <div className="flex flex-col">
-                        <CopyRow label="ALIAS" value={DATOS_BANCARIOS.alias} onCopy={handleCopy} />
-                        <CopyRow label="CBU"   value={DATOS_BANCARIOS.cbu}   onCopy={handleCopy} />
-                        {/* CUIT no es copiable */}
-                        <div className="flex items-center gap-2 py-3">
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-bold text-custom-gris-claro uppercase tracking-widest mb-0.5">
-                                    CUIT
-                                </span>
-                                <span className="font-nunito font-bold text-custom-gris-oscuro text-sm sm:text-base">
-                                    {DATOS_BANCARIOS.cuit}
-                                </span>
-                            </div>
-                        </div>
+                        <CopyRow label="ALIAS" value={bank?.alias || ''} onCopy={handleCopy} />
+                        <CopyRow label="CBU"   value={bank?.cbu || ''}   onCopy={handleCopy} />
+                        <CopyRow label="CUIT" value={bank?.cuit || ''} onCopy={handleCopy} />
+                        {monthlyAmount != null && (
+                            <p className="pt-3 text-sm text-custom-gris-claro">Cuota sugerida: ${Number(monthlyAmount).toLocaleString('es-AR')}</p>
+                        )}
+                        {error && <p className="pt-3 text-sm text-red-600">{error}</p>}
                     </div>
                 </section>
 

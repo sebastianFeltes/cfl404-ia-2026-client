@@ -1,5 +1,6 @@
 // Archivo: src/components/StudentDetailDrawer.jsx
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { 
   X, 
@@ -13,22 +14,21 @@ import {
   BookOpen, 
   Award, 
   CheckSquare, 
-  Square, 
   Printer, 
   UserCheck,
   QrCode,
   ShieldAlert,
   Copy,
   Check,
-  GraduationCap,
-  DoorOpen,
   AlertCircle,
   ExternalLink,
-  Pencil
+  Pencil,
+  Trash2
 } from 'lucide-react'
 import { Link } from 'react-router'
 import StudentAvatar from './StudentAvatar'
 import BadgeStatus from './BadgeStatus'
+import StudentCredential from './StudentCredential'
 
 export default function StudentDetailDrawer({ 
   student, 
@@ -39,6 +39,7 @@ export default function StudentDetailDrawer({
   onPromote,
   onExport,
   onViewCourse,
+  onRemoveCourse,
   userRole = 'director'
 }) {
   const isPostulante = Boolean(student?.is_aspirante) || 
@@ -52,17 +53,58 @@ export default function StudentDetailDrawer({
 
   const [showQrModal, setShowQrModal] = useState(false)
   const [copiedToken, setCopiedToken] = useState(false)
+  const [selectedCourseId, setSelectedCourseId] = useState('')
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const [removingCourse, setRemovingCourse] = useState(false)
+  const [removeError, setRemoveError] = useState('')
+
+  const enrollments = Array.isArray(student?.courses) && student.courses.length > 0
+    ? student.courses
+    : (student?.course_name && student.course_name !== 'Sin curso asignado' && student.course_name !== 'Sin curso'
+      ? [{
+          courseId: student.studentCourses?.[0]?.courseId || null,
+          name: student.course_name,
+          schedule: [student.course_days, student.course_schedule].filter(Boolean).join(' · ') || 'Sin horario',
+        }]
+      : [])
+  const enrollmentKey = enrollments.map((item) => item.courseId || item.name).join('|')
+  const selectedCourse = enrollments.find((item) => String(item.courseId || item.name) === String(selectedCourseId)) || enrollments[0] || null
+
+  useEffect(() => {
+    setSelectedCourseId(enrollments[0] ? String(enrollments[0].courseId || enrollments[0].name) : '')
+    setConfirmRemove(false)
+    setRemoveError('')
+  }, [student?.id, enrollmentKey])
+
+  const handleRemoveCourse = async () => {
+    if (!selectedCourse?.courseId || !onRemoveCourse) return
+    setRemovingCourse(true)
+    setRemoveError('')
+    try {
+      await onRemoveCourse(student, selectedCourse)
+      setConfirmRemove(false)
+    } catch (error) {
+      setRemoveError(error.message || 'No se pudo quitar el curso')
+    } finally {
+      setRemovingCourse(false)
+    }
+  }
 
   // Token de asistencia generado a partir del ID del alumno
-  const attendanceToken = student 
-    ? (student.attendance_token || `CFL404-ATT-${student.id}`) 
+  const attendanceToken = student
+    ? (student.attendance_token || `CFL404-ATT-${student.id}`)
     : ''
-  const qrUrl = student 
-    ? `http://localhost:5173/admin/asistencia/scan?token=${encodeURIComponent(attendanceToken)}&id=${student.id}` 
-    : ''
-  const qrImgSrc = student 
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}&margin=8` 
-    : ''
+  const credentialName = student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : ''
+
+  const handlePrintCredential = () => {
+    document.body.classList.add('print-credential')
+    const cleanup = () => {
+      document.body.classList.remove('print-credential')
+      window.removeEventListener('afterprint', cleanup)
+    }
+    window.addEventListener('afterprint', cleanup)
+    window.print()
+  }
 
   const handleCopyToken = () => {
     if (!attendanceToken) return
@@ -77,21 +119,17 @@ export default function StudentDetailDrawer({
     extra_phone: student.extra_phone || student.studentDetail?.extraPhone || student.extraPhone || '—',
     email: student.email || '—',
     extra_email: student.extra_email || student.studentDetail?.extraEmail || student.extraEmail || '—',
-    dob: student.dob || student.studentDetail?.dob || '14/05/2002',
+    dob: student.dob || student.studentDetail?.dob || '—',
     gender: student.gender || student.studentDetail?.gender || 'No especificado',
     nacionality: student.nacionality || student.studentDetail?.nacionality || 'Argentina',
-    academic_level: student.academic_level || student.studentDetail?.academicLevel || 'Secundario Completo',
-    enrollment_date: student.enrollment_date || student.createdAt || '10/03/2026',
+    academic_level: student.academic_level || student.studentDetail?.academicLevel || '—',
+    enrollment_date: student.enrollment_date || '—',
     course_name: student.course_name || student.course || 'Sin curso asignado',
-    instructor_name: student.instructor_name || (student.course_name && student.course_name !== 'Sin curso asignado' ? 'Prof. Carlos Benítez' : 'A designar'),
-    course_schedule: student.course_schedule || (student.course_name && student.course_name !== 'Sin curso asignado' ? '17:30 a 20:45 hs' : 'A confirmar'),
-    classroom_name: student.classroom_name || (student.course_name && student.course_name !== 'Sin curso asignado' ? 'Aula 1 (Planta Baja)' : 'Sin aula asignada'),
-    course_days: student.course_days || (student.course_name && student.course_name !== 'Sin curso asignado' ? 'Lunes, Miércoles y Viernes' : 'A coordinar'),
-    max_absences: student.max_absences ?? 5,
-    attendance_status: student.is_present ? 'Presente en aula' : (student.asistencia || 'Regular'),
-    has_dni_copy: student.dni_copy ?? true,
-    has_form_copy: student.form_copy ?? true,
-    has_title_copy: student.title_copy ?? (student.status_id !== 3),
+    instructor_name: student.instructor_name || 'Sin instructor',
+    course_schedule: student.course_schedule || 'Sin horario',
+    classroom_name: student.classroom_name || 'Sin aula',
+    course_days: student.course_days || 'Sin días cargados',
+    max_absences: student.max_absences ?? null,
   } : {}
 
   const estadoTextos = {
@@ -169,8 +207,10 @@ export default function StudentDetailDrawer({
                 {student.first_name} {student.last_name}
               </h2>
               <p className="text-xs text-custom-celeste font-nunito mt-1 mb-2">
-                {isPostulante ? 'ID Postulante: ' : 'ID Alumno: '}
-                <span className="font-mono font-bold text-white">#{student.id}</span>
+                {isPostulante ? 'N° postulante: ' : 'ID Alumno: '}
+                <span className="font-mono font-bold text-white">
+                  {isPostulante ? (student.applicant_number ?? '—') : `#${student.id}`}
+                </span>
               </p>
               <div className="flex items-center gap-2">
                 <BadgeStatus status={isPostulante ? 'postulante' : student.status_id} />
@@ -226,44 +266,80 @@ export default function StudentDetailDrawer({
                 {isPostulante ? 'Curso Solicitado en Preinscripción' : 'Información de Cursada'}
               </dt>
               <div className="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-3.5">
-                <DataRow 
-                  icon={BookOpen} 
-                  label={isPostulante ? "Curso Elegido" : "Curso Asignado"} 
-                  value={details.course_name} 
-                  title="Ver detalles del curso correspondiente" 
-                  highlight
-                  onClick={details.course_name && details.course_name !== 'Sin curso asignado' ? () => onViewCourse && onViewCourse(details.course_name, student) : null}
-                />
-
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
-                  <DataRow 
-                    icon={GraduationCap} 
-                    label="Docente a Cargo" 
-                    value={details.instructor_name} 
-                    title="Instructor responsable del curso" 
-                  />
-                  <DataRow 
-                    icon={DoorOpen} 
-                    label="Aula Asignada" 
-                    value={details.classroom_name} 
-                    title="Espacio físico asignado en sede" 
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
-                  <DataRow 
-                    icon={Calendar} 
-                    label="Días de Cursada" 
-                    value={details.course_days} 
-                    title="Días de clase presencial" 
-                  />
-                  <DataRow 
-                    icon={Clock} 
-                    label="Horario" 
-                    value={details.course_schedule} 
-                    title="Franja horaria del curso" 
-                  />
-                </div>
+                {enrollments.length === 0 ? (
+                  <p className="text-sm font-semibold text-slate-500">Sin cursos inscriptos</p>
+                ) : (
+                  <>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-custom-gris-claro">
+                      {isPostulante ? 'Cursos de la preinscripción' : 'Cursos inscriptos'}
+                      <select
+                        value={selectedCourse ? String(selectedCourse.courseId || selectedCourse.name) : ''}
+                        onChange={(event) => {
+                          setSelectedCourseId(event.target.value)
+                          setConfirmRemove(false)
+                          setRemoveError('')
+                        }}
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold normal-case tracking-normal text-custom-gris-oscuro"
+                      >
+                        {enrollments.map((item) => (
+                          <option key={item.courseId || item.name} value={String(item.courseId || item.name)}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <DataRow
+                      icon={BookOpen}
+                      label="Curso"
+                      value={selectedCourse?.name}
+                      title="Nombre del curso"
+                      highlight
+                      onClick={selectedCourse?.name ? () => onViewCourse && onViewCourse(selectedCourse.name, student) : null}
+                    />
+                    <DataRow
+                      icon={Clock}
+                      label="Horario"
+                      value={selectedCourse?.schedule || 'Sin horario'}
+                      title="Días y horario de cursada"
+                    />
+                    {canEdit && selectedCourse?.courseId && (
+                      confirmRemove ? (
+                        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 space-y-2">
+                          <p className="text-xs font-semibold text-rose-800">
+                            ¿Quitar {selectedCourse.name}? El cupo vuelve a quedar libre.
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={handleRemoveCourse}
+                              disabled={removingCourse}
+                              className="px-3 py-2 rounded-lg bg-rose-700 text-white text-xs font-bold cursor-pointer disabled:opacity-60"
+                            >
+                              {removingCourse ? 'Quitando…' : 'Quitar curso'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmRemove(false)}
+                              className="px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemove(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-rose-300 text-rose-700 text-xs font-bold cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                          Quitar este curso
+                        </button>
+                      )
+                    )}
+                    {removeError && <p className="text-xs font-semibold text-rose-700">{removeError}</p>}
+                  </>
+                )}
 
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800">
                   <DataRow 
@@ -294,14 +370,12 @@ export default function StudentDetailDrawer({
             {/* Sección: Documentación Presentada */}
             <div>
               <dt className="text-[11px] font-bold uppercase tracking-wider text-custom-gris-claro dark:text-slate-400 font-nunito mb-3 flex items-center gap-1.5">
-                <CheckSquare size={14} className="text-custom-azul-oscuro dark:text-custom-celeste" /> 
-                Documentación Entregada (Papeles Físicos)
+                <CheckSquare size={14} className="text-custom-azul-oscuro dark:text-custom-celeste" />
+                Documentación
               </dt>
-              <div className="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 space-y-2">
-                <DocItem label="Copia DNI (Frente y Dorso)" checked={details.has_dni_copy} />
-                <DocItem label="Ficha de Inscripción Firmada" checked={details.has_form_copy} />
-                <DocItem label="Copia Certificado / Título Secundario" checked={details.has_title_copy} />
-              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80">
+                El cotejo de DNI y título se hace en secretaría. Esta ficha no marca esas copias como entregadas.
+              </p>
               {isPostulante && (
                 <div className="text-[11px] text-amber-800 dark:text-amber-300 mt-2.5 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-xl border border-amber-200 dark:border-amber-900/40 leading-relaxed space-y-1 font-nunito">
                   <p className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
@@ -363,7 +437,7 @@ export default function StudentDetailDrawer({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl z-10 text-center p-6 space-y-4"
+              className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full max-h-[92vh] overflow-y-auto shadow-2xl z-10 text-center p-6 space-y-4"
             >
               {/* Header Modal */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -389,29 +463,13 @@ export default function StudentDetailDrawer({
                 </button>
               </div>
 
-              {/* Tarjeta de Alumno + QR */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-3">
-                <div>
-                  <h4 className="font-bold text-base text-slate-900 dark:text-slate-100 font-roboto">
-                    {student.first_name} {student.last_name}
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-nunito">
-                    DNI: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{student.dni}</span> | {details.course_name}
-                  </p>
-                </div>
+              <StudentCredential
+                name={credentialName}
+                dni={student.dni}
+                token={attendanceToken}
+              />
 
-                {/* QR Code Container */}
-                <div className="bg-white p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner flex flex-col items-center justify-center">
-                  <img
-                    src={qrImgSrc}
-                    alt={`Código QR Asistencia ${student.first_name} ${student.last_name}`}
-                    className="w-44 h-44 rounded-lg object-contain"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-2 font-mono">
-                    ID #{student.id} • Scan de Asistencia
-                  </span>
-                </div>
-
+              <div className="text-left space-y-3">
                 {/* Token Box */}
                 <div className="text-left space-y-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-nunito">
@@ -442,7 +500,7 @@ export default function StudentDetailDrawer({
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrintCredential}
                   className="flex-1 py-2 bg-custom-azul-oscuro hover:bg-custom-azul-oscuro/95 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Printer size={14} className="text-custom-amarillo" />
@@ -453,6 +511,17 @@ export default function StudentDetailDrawer({
           </div>
         )}
       </AnimatePresence>
+      {showQrModal && student && createPortal(
+        <div className="credential-print">
+          <StudentCredential
+            name={credentialName}
+            dni={student.dni}
+            token={attendanceToken}
+            variant="print"
+          />
+        </div>,
+        document.body,
+      )}
     </>
   )}
 </AnimatePresence>
@@ -504,23 +573,5 @@ function DataRow({ icon: Icon, label, value, title, highlight = false, href = nu
         )}
       </div>
     </dd>
-  )
-}
-
-function DocItem({ label, checked }) {
-  return (
-    <div className="flex items-center gap-2 text-xs font-nunito">
-      {checked ? (
-        <>
-          <CheckSquare className="h-4 w-4 text-custom-celeste shrink-0" />
-          <span className="font-semibold text-slate-700 dark:text-slate-300">{label}</span>
-        </>
-      ) : (
-        <>
-          <Square className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />
-          <span className="text-red-500 dark:text-red-400 font-medium">{label} (Pendiente)</span>
-        </>
-      )}
-    </div>
   )
 }

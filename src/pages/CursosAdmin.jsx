@@ -32,7 +32,7 @@ import {
   deactivateCourseService,
 } from '../services/coursesService'
 import { courseMatchesStage, getCourseStageFromDates, toDateInputValue } from '../utils/courseStage'
-import { canCrud } from '../utils/roles'
+import { canCrud, canonicalRole } from '../utils/roles'
 
 const COLS = [
   { label: 'Curso', width: '28%', align: 'left' },
@@ -127,6 +127,7 @@ function CourseSummaryCard({ course, puedeEditar, onView, onEdit }) {
 export default function CursosAdmin() {
   const context = useOutletContext()
   const puedeEditar = canCrud(context?.user?.rol || context?.userRole)
+  const soloSusCursos = canonicalRole(context?.user?.rol || context?.userRole) === 'instructor'
 
   const [courses, setCourses] = useState([])
   const [families, setFamilies] = useState([])
@@ -161,7 +162,7 @@ export default function CursosAdmin() {
     setLoading(true)
     try {
       const [coursesData, familiesData, daysData, instructorsData] = await Promise.all([
-        fetchCourses(),
+        fetchCourses({ mine: soloSusCursos }),
         fetchFamilies(),
         fetchDays(),
         fetchInstructorsForCourses(),
@@ -175,7 +176,7 @@ export default function CursosAdmin() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [soloSusCursos])
 
   useEffect(() => {
     loadData()

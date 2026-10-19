@@ -27,3 +27,11 @@ export const assignSponsors = (courseId, sponsorIds) =>
 
 export const assignSponsor = (courseId, sponsorId) =>
   PATCH(`/api/v1/courses/${courseId}/sponsor`, { sponsorId })
+
+export const getAvisos = () => GET('/api/v1/avisos')
+
+export const createAviso = (data) => POST('/api/v1/avisos', data)
+
+export const updateAviso = (id, data) => PATCH(`/api/v1/avisos/${id}`, data)
+
+export const archiveAviso = (id) => DELETE('/api/v1/avisos', id)

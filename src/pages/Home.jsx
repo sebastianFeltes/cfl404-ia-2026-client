@@ -6,10 +6,13 @@ import CourseFilters from '../components/CourseFilters';
 import CourseCard from '../components/CourseCard';
 import CourseDetailModal from '../components/CourseDetailModal';
 import { fetchCourses, fetchFamilies } from '../services/coursesService';
+import { GET, POST } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { canonicalRole } from '../utils/roles';
 import { ENROLLMENT_PROFILE_NOTICE, hasBasicEnrollmentData } from '../utils/enrollmentProfile';
-import { AlertCircle, Download } from 'lucide-react';
+import { compareCoursesByStart, enrollActionFor } from '../utils/courseEnrollment';
+import EnrollmentAlert from '../components/EnrollmentAlert';
+import { AlertCircle } from 'lucide-react';
 
 export default function Home({ embedded = false }) {
   const navigate = useNavigate();
@@ -67,12 +70,49 @@ export default function Home({ embedded = false }) {
     return { mode: 'ready', label: 'Inscribirme' };
   }, [isAuthenticated, user]);
 
-  // Toast Feedback State
-  const [toast, setToast] = useState(null);
+  const [alert, setAlert] = useState(null);
+  const [turnos, setTurnos] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
 
-  const showToast = (message, type = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
+  const refreshTurnos = async () => {
+    if (!isAuthenticated || canonicalRole(user?.rol) !== 'postulante') {
+      setTurnos([]);
+      setEnrollments([]);
+      return;
+    }
+    try {
+      const data = await GET('/api/v1/preinscripciones/turno');
+      setTurnos(Array.isArray(data?.tickets) ? data.tickets : []);
+      setEnrollments(Array.isArray(data?.enrollments) ? data.enrollments : []);
+    } catch {
+      setTurnos([]);
+      setEnrollments([]);
+    }
+  };
+
+  const reloadCourses = async () => {
+    try {
+      const courseList = await fetchCourses();
+      setCourses(courseList);
+    } catch {
+      // El catálogo visible se mantiene si la recarga falla.
+    }
+  };
+
+  useEffect(() => {
+    refreshTurnos();
+  }, [isAuthenticated, user?.id, user?.rol]);
+
+  const enrollAction = (course) => enrollActionFor(course, {
+    isAuthenticated,
+    role: canonicalRole(user?.rol),
+    tickets: turnos,
+    enrollments,
+    profileIncomplete: enrollAccess.mode === 'profile',
+  });
+
+  const showAlert = (message, type, title) => {
+    setAlert({ message, type, title });
   };
 
   // Stage & Category Filter Logic
@@ -116,7 +156,7 @@ export default function Home({ embedded = false }) {
       }
 
       return true;
-    });
+    }).sort(compareCoursesByStart);
   }, [courses, selectedStage, selectedCategory, searchTerm]);
 
   // Cómputo único y seguro de cadenas para el Banner (Evita 'removeChild' DOM reconciliation errors)
@@ -132,30 +172,49 @@ export default function Home({ embedded = false }) {
     return 'Catálogo completo de capacitaciones profesionales.';
   }, [selectedStage]);
 
-  const handleEnroll = () => {
-    if (enrollAccess.mode === 'login') {
+  const handleEnroll = async (course) => {
+    const action = enrollAction(course);
+    if (action.disabled) return;
+    if (action.mode === 'login' || enrollAccess.mode === 'login') {
       navigate('/login');
       return;
     }
-    if (enrollAccess.mode === 'profile') {
+    if (action.mode === 'profile' || enrollAccess.mode === 'profile') {
       navigate('/perfil', { state: { enrollmentNotice: ENROLLMENT_PROFILE_NOTICE } });
       return;
     }
-    showToast('Tu perfil está listo para inscribirte. La cola de inscripción se conecta en el próximo paso.', 'info');
+    if (!course?.id) return;
+    try {
+      const result = await POST('/api/v1/preinscripciones', { courseId: course.id });
+      await Promise.all([refreshTurnos(), reloadCourses()]);
+      if (result.status === 'esperando') {
+        showAlert(
+          `Estás en espera. Tu posición es ${result.position}. Número de postulante ${result.applicantNumber}.`,
+          'warning',
+          'Lista de espera',
+        );
+        return;
+      }
+      showAlert(
+        `Preinscripción confirmada. Tu número de postulante es ${result.applicantNumber}. Orden ${result.position}.`,
+        'success',
+        'Inscripto correctamente',
+      );
+    } catch (error) {
+      if (error.status === 403) {
+        navigate('/perfil', { state: { enrollmentNotice: error.message || ENROLLMENT_PROFILE_NOTICE } });
+        return;
+      }
+      const message = error.message || 'No se pudo completar la preinscripción';
+      const clash = /choque/i.test(message);
+      showAlert(message, 'error', clash ? 'Choque de cursos' : 'No se pudo inscribir');
+    }
   };
 
   return (
     <div className="flex flex-col">
 
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-20 right-4 z-50 animate-fadeIn">
-          <div className="p-4 rounded-2xl shadow-2xl border flex items-center gap-3 text-sm font-semibold max-w-md bg-[#166193] text-white border-[#37ACDE]">
-            <Download className="w-6 h-6 text-[#FDEA14] shrink-0" />
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      <EnrollmentAlert alert={alert} onClose={() => setAlert(null)} />
 
       {!embedded && <Hero />}
 
@@ -222,15 +281,19 @@ export default function Home({ embedded = false }) {
           </div>
         ) : (
           <div key={`grid-${selectedStage}-${selectedCategory}`} className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <CourseCard
-                key={`course-card-${course.id}`}
-                course={course}
-                onSelectCourse={(c) => setDetailCourse(c)}
-                onEnroll={handleEnroll}
-                enrollLabel={enrollAccess.label}
-              />
-            ))}
+            {filteredCourses.map((course) => {
+              const action = enrollAction(course);
+              return (
+                <CourseCard
+                  key={`course-card-${course.id}`}
+                  course={course}
+                  onSelectCourse={(c) => setDetailCourse(c)}
+                  onEnroll={handleEnroll}
+                  enrollLabel={action.label}
+                  enrollDisabled={action.disabled}
+                />
+              );
+            })}
           </div>
         )}
       </section>
@@ -244,7 +307,8 @@ export default function Home({ embedded = false }) {
           course={detailCourse}
           onClose={() => setDetailCourse(null)}
           onEnroll={handleEnroll}
-          enrollLabel={enrollAccess.label}
+          enrollLabel={enrollAction(detailCourse).label}
+          enrollDisabled={enrollAction(detailCourse).disabled}
         />
       )}
     </div>

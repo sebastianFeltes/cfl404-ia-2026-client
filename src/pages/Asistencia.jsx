@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import AttendanceGrid from '../components/asistencia/AttendanceGrid'
-import { GET } from '../services/api'
+import { GET, PATCH } from '../services/api'
 import { canonicalRole, canReadAttendance } from '../utils/roles'
 
 const API_COURSES = '/api/attendance/courses'
@@ -36,6 +36,7 @@ export default function Asistencia() {
   const { user, userRole } = useOutletContext() || {}
   const accessRole = canonicalRole(user?.rol || userRole)
   const hasAccess = canReadAttendance(accessRole)
+  const canMark = ['god', 'director', 'regente', 'secretaria', 'preceptoria'].includes(accessRole)
 
   const [courses, setCourses] = useState([])
   const [selectedCourseId, setSelectedCourseId] = useState('')
@@ -76,6 +77,20 @@ export default function Asistencia() {
       setLoadingGrid(false)
     }
   }, [hasAccess])
+
+  const handleMark = async (student, date, code) => {
+    if (!selectedCourseId || !student.user_course_id) return
+    try {
+      await PATCH(`/api/attendance/course/${selectedCourseId}/mark`, {
+        userCourseId: student.user_course_id,
+        date,
+        code,
+      })
+      await fetchGrid(selectedCourseId)
+    } catch (err) {
+      setError(err.message || 'No se pudo corregir la asistencia')
+    }
+  }
 
   useEffect(() => {
     if (!hasAccess) {
@@ -200,6 +215,7 @@ export default function Asistencia() {
         dates={gridData?.dates || []}
         students={gridData?.students || []}
         loading={loadingGrid || loadingCourses}
+        onMark={canMark ? handleMark : undefined}
       />
     </div>
   )

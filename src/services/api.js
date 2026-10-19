@@ -83,7 +83,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-const LOGIN_ENDPOINTS = ['/api/auth/google', '/api/auth/dev-login']
+const LOGIN_ENDPOINTS = ['/api/auth/google', '/api/auth/dev-login', '/api/auth/login']
 
 api.interceptors.response.use(
   (response) => response,
@@ -126,7 +126,10 @@ export async function POST(route, data) {
     const res = await api.post(route, data)
     return res.data
   } catch (error) {
-    throw Object.assign(new Error(extractError(error)), { status: error.response?.status })
+    throw Object.assign(new Error(extractError(error)), {
+      status: error.response?.status,
+      data: error.response?.data,
+    })
   }
 }
 

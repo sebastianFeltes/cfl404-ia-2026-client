@@ -14,7 +14,16 @@ function formatDateLabel(dateKey) {
   return `${day}/${month}/${year.slice(2)}`
 }
 
-export default function AttendanceGrid({ dates, students, loading }) {
+const MARKS = [
+  { code: 'P', name: 'presente' },
+  { code: 'T', name: 'tarde' },
+  { code: 'M', name: 'media falta' },
+  { code: 'A', name: 'ausente' },
+  { code: 'J', name: 'justificado' },
+  { code: 'F', name: 'feriado' },
+]
+
+export default function AttendanceGrid({ dates, students, loading, onMark }) {
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-custom-gris-claro/10 dark:border-slate-800 p-12 text-center">
@@ -74,7 +83,22 @@ export default function AttendanceGrid({ dates, students, loading }) {
                   const code = student.records?.[dateKey]
                   return (
                     <td key={`${student.id}-${dateKey}`} className="px-3 py-2.5 text-center">
-                      {code ? (
+                      {onMark ? (
+                        <select
+                          aria-label={`Asistencia de ${student.last_name} el ${dateKey}`}
+                          className={`h-7 rounded-md text-[11px] font-extrabold ${CODE_STYLES[code] || 'bg-slate-100 text-slate-700'}`}
+                          value={code || ''}
+                          onChange={(event) => {
+                            const next = MARKS.find((item) => item.code === event.target.value)
+                            if (next) onMark(student, dateKey, next.name)
+                          }}
+                        >
+                          <option value="">—</option>
+                          {MARKS.map((item) => (
+                            <option key={item.code} value={item.code}>{item.code}</option>
+                          ))}
+                        </select>
+                      ) : code ? (
                         <span
                           className={`inline-flex items-center justify-center h-7 w-7 rounded-md font-extrabold text-[11px] ${
                             CODE_STYLES[code] || 'bg-slate-100 text-slate-700'
