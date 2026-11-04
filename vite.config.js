@@ -7,8 +7,9 @@ function contentSecurityPolicy({ hmr }) {
     ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.gstatic.com"
     : "script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com"
   const connectSrc = hmr
-    ? "connect-src 'self' http://localhost:4000 ws://localhost:5173 wss://localhost:5173 http://localhost:5173 https://accounts.google.com"
-    : "connect-src 'self' http://localhost:4000 https://accounts.google.com"
+  /* cambie localhost por la IP donde ejecutamos la platform para el live test */
+    ? "connect-src 'self' http://192.168.33.104:4000 ws://192.168.33.104:5173 wss://192.168.33.104:5173 http://192.168.33.104:5173 https://accounts.google.com"
+    : "connect-src 'self' http://192.168.33.104:4000 https://accounts.google.com"
 
   return [
     "default-src 'self'",

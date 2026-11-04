@@ -4,7 +4,7 @@ if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
   throw new Error('VITE_API_URL es obligatorio en producción')
 }
 
-const DEV_URL = 'http://localhost:4000'
+const DEV_URL = 'http://192.168.33.104:4000'
 const BASE_URL = import.meta.env.VITE_API_URL || DEV_URL
 
 const USER_KEY = 'cfl404_user'
@@ -69,6 +69,7 @@ export function isRememberedSession() {
 
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 10_000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
