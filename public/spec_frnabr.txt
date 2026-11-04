@@ -1,0 +1,11 @@
+logo tipo del footer , concretamente el de wsp , esta desalineado.
+En las opciones de la modificacion de Perfil, al intentar cambiar el avatar, automaticamente
+pone otra foto sin pedirme ingresar un archivo
+
+verificar el formulario de informacion personal con validaciones debil, deja insertar cualquier
+respuesta
+
+validacion de los enrutamientos protegidos, al hacer cambios recientes en nuestro perfi, el time out cambia en
+el navegador y llega al punto que me cierra la sesion.
+
+doble validacion de informacion
