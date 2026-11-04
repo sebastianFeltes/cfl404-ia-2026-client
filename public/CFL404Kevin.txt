@@ -1,0 +1,18 @@
+1)En login, cambiar de lugar el boton aceptar y terminos y condiciones, tiene que estar abajo y simetrico y en modo mobilefirst. tambien el modo de aviso de seguridad, un poco mas abajo y tambien simetrico y en mobilefirst
+
+
+2)En el footer, el mapa de google esta muy apegado al boton de whatsapp, hay que ponerlo un poco mas a la derecha
+
+
+3)Poner un boton de ayuda de soporte por si el usuario se equivoca y pone mal algun dato, el limite es solo 1, ya despues de eso se reclama en el directorio. Cada boton tiene que tener un limite y poner cada letra o numero dependiendo la seccion de ese boton
+
+4)Al guardar datos en un momento te desloguea y te manda a iniciar sesion
+
+5)footer boton wsp pisa mapa
+
+6)login input DNI hacer tipo numerico y poner un limite
+
+7)perfil inputs verificar tipos
+
+8)perfil onsave b/logout
+
