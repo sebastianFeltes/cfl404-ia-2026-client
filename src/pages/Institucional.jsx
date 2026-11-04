@@ -249,7 +249,7 @@ function Institucional() {
 
                     {/* Modal Content */}
                     <div 
-                        className="relative w-full max-h-[85vh] bg-white rounded-t-3xl md:rounded-2xl shadow-2xl p-6 border border-gray-100 flex flex-col md:max-w-md md:max-h-[90vh] transition-all duration-300 transform translate-y-0 scale-100 overflow-y-auto animate-slide-up md:animate-scale-in"
+                        className="relative w-full max-h-[85vh] bg-white rounded-t-3xl md:rounded-2xl shadow-2xl p-6 border border-gray-100 flex flex-col md:max-w-md md:max-h-[90vh] transition-all duration-300 transform translate-y-0 scale-100 overflow-hidden animate-slide-up md:animate-scale-in"
                     >
                         {/* Close button */}
                         <button 
@@ -280,6 +280,7 @@ function Institucional() {
                             <span className="font-medium">{selectedComercio.direccion}, Berisso</span>
                         </div>
 
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                         {/* Description */}
                         <div className="mb-6">
                             <h4 className="font-nunito font-bold text-sm text-custom-gris-oscuro uppercase tracking-wider mb-2">
@@ -324,12 +325,13 @@ function Institucional() {
                                 ))}
                             </ul>
                         </div>
+                        </div>
 
                         {/* WhatsApp Contact CTA */}
                         <Tooltip text="Abre WhatsApp para contactar al comercio">
                             <button
                                 onClick={() => handleWhatsAppClick(selectedComercio)}
-                                className="w-full bg-[#25D366] text-white font-nunito font-extrabold text-base py-3.5 px-4 rounded-xl hover:bg-[#20ba59] active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full shrink-0 bg-[#25D366] text-white font-nunito font-extrabold text-base py-3.5 px-4 rounded-xl hover:bg-[#20ba59] active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Phone className="w-5 h-5 fill-current" />
                                 Contactar por WhatsApp

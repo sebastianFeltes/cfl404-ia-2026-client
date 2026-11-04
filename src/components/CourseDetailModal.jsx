@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Calendar, Award, ShieldCheck, ArrowRight, Building2 } from 'lucide-react';
 import { OFFICIAL_ENDORSEMENT } from '../data/coursesData';
 import { courseQuotaBadge } from '../utils/courseEnrollment';
 import CourseCover from './CourseCover';
 
 export default function CourseDetailModal({ course, onClose, onEnroll, enrollLabel = 'Inscribirme', enrollDisabled = false }) {
+  useEffect(() => {
+    if (!course) return undefined
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [course])
+
   if (!course) return null;
 
   const sponsors = Array.isArray(course.sponsors) && course.sponsors.length > 0
@@ -30,11 +39,11 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
       
       {/* Modal Container Card */}
       <div 
-        className="relative bg-white rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-gray-200 my-8 flex flex-col max-h-[90vh]"
+        className="relative bg-white rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         
@@ -64,7 +73,7 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="p-6 sm:p-8 overflow-y-auto space-y-8 font-['Nunito'] flex-1">
+        <div className="p-6 sm:p-8 overflow-y-auto overscroll-contain space-y-8 font-['Nunito'] flex-1 min-h-0">
           
           {/* Quick Info Grid (Sin Inasistencias y Sin Vacantes/Cupos) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">

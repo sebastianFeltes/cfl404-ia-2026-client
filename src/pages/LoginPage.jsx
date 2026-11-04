@@ -82,6 +82,10 @@ export default function LoginPage() {
       setErrorMsg('Debés aceptar los términos y condiciones antes de ingresar.');
       return;
     }
+    if (!/^\d{7,8}$/.test(dni)) {
+      setErrorMsg('El DNI debe tener 7 u 8 dígitos');
+      return;
+    }
     setErrorMsg('');
     setIsSubmitting(true);
     try {
@@ -162,8 +166,9 @@ export default function LoginPage() {
                     type="text"
                     inputMode="numeric"
                     autoComplete="username"
+                    maxLength={8}
                     value={dni}
-                    onChange={(event) => setDni(event.target.value)}
+                    onChange={(event) => setDni(event.target.value.replace(/\D/g, '').slice(0, 8))}
                     placeholder="Sin puntos"
                     className="mt-1 w-full h-11 rounded-xl border border-slate-200 px-3 text-sm text-custom-gris-oscuro outline-none focus:border-custom-celeste"
                   />

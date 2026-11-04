@@ -88,6 +88,7 @@ export default function DashboardQuickActions({ role = 'director' }) {
       case 'estudiantes':
       case 'alumno':
       case 'alumnos':
+      case 'postulante':
         return [
           {
             label: 'Mi Cursada Actual',
@@ -100,7 +101,7 @@ export default function DashboardQuickActions({ role = 'director' }) {
           {
             label: 'Oferta de Cursos',
             desc: 'Nuevas propuestas para la 2da etapa',
-            to: '/cursos',
+            to: '/inscripcion',
             icon: GraduationCap,
             color: 'from-sky-600 to-cyan-500',
             iconBg: 'bg-white/20 text-white',

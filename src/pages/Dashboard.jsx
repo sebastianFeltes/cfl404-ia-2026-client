@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 import { useAuth } from '../context/AuthContext'
-import { mapDbRoleToUi, roleLabel } from '../utils/roles'
+import { canonicalRole, mapDbRoleToUi, roleLabel } from '../utils/roles'
 import StatCard from '../components/StatCard'
 
 import ModuleSummaryCard from '../components/dashboard/ModuleSummaryCard'
@@ -493,6 +493,12 @@ export default function Dashboard() {
 
   const firstName = user?.nombres?.trim() || 'Directivo/a'
   const currentRoleLabel = roleLabel(user?.rol)
+  const learnerRole = canonicalRole(user?.rol)
+  const dashboardTitle = learnerRole === 'alumno'
+    ? 'Mi cursada'
+    : learnerRole === 'postulante'
+      ? 'Mi inscripción'
+      : 'Dashboard'
 
   return (
     <div className="max-w-[1400px] w-full mx-auto font-nunito space-y-5 sm:space-y-7 pb-10 sm:pb-14 animate-fade-in">
@@ -506,7 +512,7 @@ export default function Dashboard() {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-3xl font-bold text-custom-azul-oscuro dark:text-custom-celeste font-roboto tracking-tight leading-tight">
-                  Dashboard
+                  {dashboardTitle}
                 </h1>
                 <span className="text-[11px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-custom-azul-oscuro text-white shadow-xs">
                   {currentRoleLabel}

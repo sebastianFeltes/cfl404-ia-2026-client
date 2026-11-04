@@ -106,7 +106,7 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10">
 
             {/* ═══ Columna 1 — Logos (CFL + Sponsor) + Institución ═══ */}
-            <div className="md:col-span-6 lg:col-span-5 flex flex-col items-start">
+            <div className="md:col-span-5 flex flex-col items-start">
               {/* Logos estrictamente lado a lado */}
               <div className="flex items-center gap-4 sm:gap-5 flex-nowrap">
                 {/* Logo CFL */}
@@ -219,7 +219,7 @@ export default function Footer() {
                 >
                   Seguinos
                 </h4>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {socialLinks.map((social) => (
                     <div key={social.name} className="relative group/tooltip flex flex-col items-center">
                       <a
@@ -238,7 +238,7 @@ export default function Footer() {
             </div>
 
             {/* ═══ Columna 3 — Ubicación / Mapa ═══ */}
-            <div className="md:col-span-4 flex flex-col items-start gap-3.5 w-full">
+            <div className="md:col-span-4 flex flex-col items-start gap-3.5 w-full md:pl-6">
               <h3
                 className="text-white font-bold text-lg tracking-wide"
                 style={{ fontFamily: '"Roboto Flex", sans-serif' }}

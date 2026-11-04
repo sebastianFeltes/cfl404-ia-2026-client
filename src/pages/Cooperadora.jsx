@@ -4,7 +4,7 @@ import Tooltip from '../components/Tooltip'
 import { GET } from '../services/api'
 
 // ─── Componente Toast ─────────────────────────────────────────────────────────
-function Toast({ visible }) {
+function Toast({ visible, message, ok }) {
     return (
         <div
             role="status"
@@ -15,26 +15,46 @@ function Toast({ visible }) {
                     : 'opacity-0 translate-y-4 pointer-events-none'
             }`}
         >
-            <Check className="w-4 h-4 text-custom-celeste flex-shrink-0" />
-            ¡Copiado al portapapeles!
+            <Check className={`w-4 h-4 flex-shrink-0 ${ok ? 'text-custom-celeste' : 'text-red-300'}`} />
+            {message}
         </div>
     )
 }
 
+async function copyText(value) {
+    const text = String(value ?? '').trim()
+    if (!text) throw new Error('No hay un dato para copiar')
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text)
+        return
+    }
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.left = '-9999px'
+    document.body.appendChild(area)
+    area.select()
+    const copied = document.execCommand('copy')
+    document.body.removeChild(area)
+    if (!copied) throw new Error('No se pudo copiar')
+}
+
 // ─── Fila de Dato Bancario Copiable ──────────────────────────────────────────
-function CopyRow({ label, value, onCopy }) {
+function CopyRow({ label, value, onCopy, onError }) {
     const [copied, setCopied] = useState(false)
 
     const handleCopy = useCallback(async () => {
         try {
-            await navigator.clipboard.writeText(value)
+            await copyText(value)
             setCopied(true)
             onCopy()
             setTimeout(() => setCopied(false), 2000)
-        } catch {
-            // fallback silencioso
+        } catch (error) {
+            setCopied(false)
+            onError(error.message || 'No se pudo copiar')
         }
-    }, [value, onCopy])
+    }, [value, onCopy, onError])
 
     return (
         <div className="flex items-center justify-between gap-3 py-3 border-b border-gray-100 last:border-0">
@@ -63,7 +83,7 @@ function CopyRow({ label, value, onCopy }) {
 
 // ─── Página Principal Cooperadora ─────────────────────────────────────────────
 function Cooperadora() {
-    const [toastVisible, setToastVisible] = useState(false)
+    const [toast, setToast] = useState({ visible: false, message: '', ok: true })
     const [toastTimer, setToastTimer] = useState(null)
     const [bank, setBank] = useState(null)
     const [monthlyAmount, setMonthlyAmount] = useState(null)
@@ -78,12 +98,20 @@ function Cooperadora() {
             .catch((err) => setError(err.message || 'No se pudieron cargar los datos bancarios'))
     }, [])
 
-    const handleCopy = useCallback(() => {
+    const showToast = useCallback((message, ok) => {
         if (toastTimer) clearTimeout(toastTimer)
-        setToastVisible(true)
-        const timer = setTimeout(() => setToastVisible(false), 2000)
+        setToast({ visible: true, message, ok })
+        const timer = setTimeout(() => setToast((current) => ({ ...current, visible: false })), 2000)
         setToastTimer(timer)
     }, [toastTimer])
+
+    const handleCopy = useCallback(() => {
+        showToast('¡Copiado al portapapeles!', true)
+    }, [showToast])
+
+    const handleCopyError = useCallback((message) => {
+        showToast(message, false)
+    }, [showToast])
 
     const handleWhatsApp = () => {
         const texto = encodeURIComponent(bank?.whatsappMessage || '')
@@ -158,9 +186,9 @@ function Cooperadora() {
 
                     {/* Filas copiables */}
                     <div className="flex flex-col">
-                        <CopyRow label="ALIAS" value={bank?.alias || ''} onCopy={handleCopy} />
-                        <CopyRow label="CBU"   value={bank?.cbu || ''}   onCopy={handleCopy} />
-                        <CopyRow label="CUIT" value={bank?.cuit || ''} onCopy={handleCopy} />
+                        <CopyRow label="ALIAS" value={bank?.alias || ''} onCopy={handleCopy} onError={handleCopyError} />
+                        <CopyRow label="CBU"   value={bank?.cbu || ''}   onCopy={handleCopy} onError={handleCopyError} />
+                        <CopyRow label="CUIT" value={bank?.cuit || ''} onCopy={handleCopy} onError={handleCopyError} />
                         {monthlyAmount != null && (
                             <p className="pt-3 text-sm text-custom-gris-claro">Cuota sugerida: ${Number(monthlyAmount).toLocaleString('es-AR')}</p>
                         )}
@@ -209,7 +237,7 @@ function Cooperadora() {
             </div>
 
             {/* ── Toast Global ──────────────────────────────────────────── */}
-            <Toast visible={toastVisible} />
+            <Toast visible={toast.visible} message={toast.message} ok={toast.ok} />
         </div>
     )
 }

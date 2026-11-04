@@ -129,13 +129,17 @@ export default function IncompleteProfileNotice() {
         aria-modal="true"
         aria-labelledby="incomplete-profile-title"
         tabIndex={-1}
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl outline-none animate-fadeIn"
+        onClick={goToProfile}
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl outline-none animate-fadeIn cursor-pointer"
       >
         <div className="h-1.5 bg-custom-amarillo" />
 
         <button
           type="button"
-          onClick={dismiss}
+          onClick={(event) => {
+            event.stopPropagation()
+            dismiss()
+          }}
           className="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
           aria-label="Cerrar aviso"
         >
@@ -175,14 +179,20 @@ export default function IncompleteProfileNotice() {
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={dismiss}
+              onClick={(event) => {
+                event.stopPropagation()
+                dismiss()
+              }}
               className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-custom-gris-claro transition-colors hover:bg-slate-50 cursor-pointer"
             >
               Ahora no
             </button>
             <button
               type="button"
-              onClick={goToProfile}
+              onClick={(event) => {
+                event.stopPropagation()
+                goToProfile()
+              }}
               className="rounded-xl bg-custom-azul-oscuro px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#124e76] cursor-pointer"
             >
               {onProfile ? 'Entendido' : 'Completar mis datos'}

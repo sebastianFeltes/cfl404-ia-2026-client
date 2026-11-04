@@ -30,6 +30,12 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/uploads': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
     headers: {
       'Content-Security-Policy': contentSecurityPolicy({ hmr: true }),
       'X-Frame-Options': 'DENY',
@@ -39,6 +45,12 @@ export default defineConfig({
   preview: {
     host: true,
     port: 5173,
+    proxy: {
+      '/uploads': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
     headers: {
       'Content-Security-Policy': contentSecurityPolicy({ hmr: false }),
       'X-Frame-Options': 'DENY',

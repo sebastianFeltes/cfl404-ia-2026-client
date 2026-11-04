@@ -92,7 +92,8 @@ api.interceptors.response.use(
     const url = error.config?.url || ''
     const isLoginRequest = LOGIN_ENDPOINTS.some((endpoint) => url.includes(endpoint))
 
-    const sessionExpired = error.response?.status === 401 && url.includes('/api/auth/me')
+    const method = String(error.config?.method || '').toLowerCase()
+    const sessionExpired = error.response?.status === 401 && method === 'get' && url.includes('/api/auth/me')
     if (sessionExpired && !isLoginRequest) {
       clearAuthToken()
       onUnauthorized?.()

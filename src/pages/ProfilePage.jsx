@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import NotificationToast from '../components/NotificationToast';
 import { GET } from '../services/api';
 import { canonicalRole } from '../utils/roles';
+import { profileFormError, todayYmd } from '../utils/profileForm';
 import { Camera, Shield, Lock, Info, ExternalLink, CheckCircle, User } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   const [inscripciones, setInscripciones] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
+  const photoInputRef = useRef(null);
   const [toast, setToast] = useState({
     message: location.state?.enrollmentNotice || '',
     type: location.state?.enrollmentNotice ? 'error' : 'success',
@@ -137,6 +139,22 @@ export default function ProfilePage() {
   const handleSaveChanges = (e) => {
     if (e) e.preventDefault();
     if (formDisabled || !hasUnsavedChanges) return;
+    const validationError = profileFormError({
+      nombres,
+      apellidos,
+      dni,
+      telefono,
+      telefonoSecundario,
+      direccion,
+      fechaNacimiento,
+      nombresLocked: isNombresLocked,
+      apellidosLocked: isApellidosLocked,
+      dniLocked: isDniLocked,
+    }, { isPostulante });
+    if (validationError) {
+      triggerToast(validationError, 'error');
+      return;
+    }
     if (!aceptaTerminos) {
       triggerToast('Debes aceptar los términos y condiciones y declarar la veracidad de los datos.', 'error');
       return;
@@ -166,15 +184,22 @@ export default function ProfilePage() {
     triggerToast('Se cancelaron las modificaciones.', 'error');
   };
 
-  const handlePhotoChange = () => {
-    if (formDisabled) return;
-    const newPhotos = [
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-    ];
-    const nextPhoto = newPhotos[(newPhotos.indexOf(fotoUrl) + 1) % newPhotos.length];
-    setFotoUrl(nextPhoto);
+  const handlePhotoPick = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || formDisabled) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      triggerToast('La foto tiene que ser JPG, PNG o WebP.', 'error');
+      return;
+    }
+    if (file.size > 1_200_000) {
+      triggerToast('La foto supera 1,2 MB.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setFotoUrl(String(reader.result || ''));
+    reader.readAsDataURL(file);
   };
 
   const initialPhone = user?.telefono || user?.detail?.phone || '';
@@ -263,13 +288,20 @@ export default function ProfilePage() {
             )}
             <button
               type="button"
-              onClick={handlePhotoChange}
+              onClick={() => photoInputRef.current?.click()}
               disabled={isSaving || formDisabled}
               className="absolute bottom-1 right-1 bg-custom-celeste hover:bg-custom-azul-oscuro text-white p-2.5 rounded-full shadow-lg transition-transform transform hover:scale-110 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-              title={formDisabled ? 'La foto no se puede cambiar como alumno' : 'Cambiar foto de perfil'}
+              title={formDisabled ? 'La foto no se puede cambiar como alumno' : 'Elegir foto de perfil'}
             >
               <Camera className="w-5 h-5" />
             </button>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handlePhotoPick}
+            />
           </div>
           <div className="text-center sm:text-left">
             <h3 className="font-bold text-base sm:text-lg text-custom-gris-oscuro font-roboto break-words">
@@ -338,9 +370,9 @@ export default function ProfilePage() {
             <FormControl id="perfil-nombres" label="Nombres" value={nombres} onChange={setNombres} disabled={isNombresLocked} placeholder="Ingresar nombres" />
             <FormControl id="perfil-apellidos" label="Apellidos" value={apellidos} onChange={setApellidos} disabled={isApellidosLocked} placeholder="Ingresar apellidos" />
             <FormControl id="perfil-correo" label="Correo electrónico" value={correo} disabled hint="Vinculado a tu cuenta de Google." />
-            <FormControl id="perfil-dni" label="DNI" value={dni} onChange={setDni} disabled={isDniLocked} placeholder="Completar DNI" />
-            <FormControl id="perfil-telefono" label="Teléfono" value={telefono} onChange={setTelefono} disabled={formDisabled} placeholder="Ej: 221 123-4567" />
-            <FormControl id="perfil-telefono-2" label="Teléfono alternativo" value={telefonoSecundario} onChange={setTelefonoSecundario} disabled={formDisabled} placeholder="Ej: 221 987-6543" />
+            <FormControl id="perfil-dni" label="DNI" value={dni} onChange={(value) => setDni(value.replace(/\D/g, '').slice(0, 8))} disabled={isDniLocked} placeholder="Completar DNI" inputMode="numeric" maxLength={8} />
+            <FormControl id="perfil-telefono" label="Teléfono" value={telefono} onChange={setTelefono} disabled={formDisabled} placeholder="Ej: 2211234567" inputMode="numeric" />
+            <FormControl id="perfil-telefono-2" label="Teléfono alternativo" value={telefonoSecundario} onChange={setTelefonoSecundario} disabled={formDisabled} placeholder="Ej: 2219876543" inputMode="numeric" />
             <FormControl id="perfil-direccion" label="Dirección" value={direccion} onChange={setDireccion} disabled={formDisabled} placeholder="Ej: Calle 123 N° 456, Berisso" />
             <FormControl id="perfil-nacionalidad" label="Nacionalidad" value={nacionalidad} onChange={setNacionalidad} disabled={formDisabled} placeholder="Ej: Argentina" />
             <FormControl
@@ -359,7 +391,7 @@ export default function ProfilePage() {
               disabled={formDisabled}
               options={['Primario incompleto', 'Primario completo', 'Secundario incompleto', 'Secundario', 'Secundario completo', 'Terciario en curso', 'Terciario', 'Terciario graduado', 'Universitario en curso', 'Universitario graduado']}
             />
-            <FormControl id="perfil-nacimiento" label="Fecha de nacimiento" type="date" value={fechaNacimiento} onChange={setFechaNacimiento} disabled={formDisabled} />
+            <FormControl id="perfil-nacimiento" label="Fecha de nacimiento" type="date" value={fechaNacimiento} onChange={setFechaNacimiento} disabled={formDisabled} max={todayYmd()} />
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <p className="text-xs font-bold text-custom-gris-oscuro mb-1">Estado</p>
               <div className="flex items-center gap-2 font-medium text-sm text-custom-gris-oscuro">
@@ -443,7 +475,7 @@ export default function ProfilePage() {
   );
 }
 
-function FormControl({ id, label, value, onChange, disabled = false, placeholder, options, type = 'text', hint }) {
+function FormControl({ id, label, value, onChange, disabled = false, placeholder, options, type = 'text', hint, inputMode, maxLength, max }) {
   const inputClass = `w-full px-3 py-2.5 sm:py-2 rounded-lg text-base sm:text-sm font-medium border focus:outline-none ${
     disabled
       ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
@@ -472,6 +504,9 @@ function FormControl({ id, label, value, onChange, disabled = false, placeholder
         <input
           id={id}
           type={type}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          max={max}
           value={value || ''}
           disabled={disabled}
           placeholder={placeholder}
