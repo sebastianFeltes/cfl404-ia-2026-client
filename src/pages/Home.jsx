@@ -10,7 +10,7 @@ import { GET, POST } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { canonicalRole } from '../utils/roles';
 import { ENROLLMENT_PROFILE_NOTICE, hasBasicEnrollmentData } from '../utils/enrollmentProfile';
-import { compareCoursesByStart, enrollActionFor } from '../utils/courseEnrollment';
+import { compareCoursesByStart, enrollActionFor, ordinalPlace } from '../utils/courseEnrollment';
 import EnrollmentAlert from '../components/EnrollmentAlert';
 import { AlertCircle } from 'lucide-react';
 
@@ -73,9 +73,11 @@ export default function Home({ embedded = false }) {
   const [alert, setAlert] = useState(null);
   const [turnos, setTurnos] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
+  const [enrollmentReceipt, setEnrollmentReceipt] = useState(null);
 
   const refreshTurnos = async () => {
-    if (!isAuthenticated || canonicalRole(user?.rol) !== 'postulante') {
+    const role = canonicalRole(user?.rol)
+    if (!isAuthenticated || (role !== 'postulante' && role !== 'alumno')) {
       setTurnos([]);
       setEnrollments([]);
       return;
@@ -101,6 +103,15 @@ export default function Home({ embedded = false }) {
 
   useEffect(() => {
     refreshTurnos();
+  }, [isAuthenticated, user?.id, user?.rol]);
+
+  useEffect(() => {
+    const refresh = () => {
+      refreshTurnos();
+      reloadCourses();
+    }
+    window.addEventListener('cfl404:refresh-route', refresh)
+    return () => window.removeEventListener('cfl404:refresh-route', refresh)
   }, [isAuthenticated, user?.id, user?.rol]);
 
   const enrollAction = (course) => enrollActionFor(course, {
@@ -187,16 +198,25 @@ export default function Home({ embedded = false }) {
     try {
       const result = await POST('/api/v1/preinscripciones', { courseId: course.id });
       await Promise.all([refreshTurnos(), reloadCourses()]);
+      const receipt = {
+        courseId: course.id,
+        position: result.position,
+        applicantNumber: result.applicantNumber,
+        status: result.status,
+      }
+      setEnrollmentReceipt(receipt)
+      setDetailCourse(course)
+      const place = ordinalPlace(result.position) || result.position
       if (result.status === 'esperando') {
         showAlert(
-          `Estás en espera. Tu posición es ${result.position}. Número de postulante ${result.applicantNumber}.`,
+          `Estás en espera. Sos el ${place}. Número de postulante ${result.applicantNumber}.`,
           'warning',
           'Lista de espera',
         );
         return;
       }
       showAlert(
-        `Preinscripción confirmada. Tu número de postulante es ${result.applicantNumber}. Orden ${result.position}.`,
+        `Preinscripción confirmada. Tu número de postulante es ${result.applicantNumber}. Orden ${place}.`,
         'success',
         'Inscripto correctamente',
       );
@@ -309,6 +329,7 @@ export default function Home({ embedded = false }) {
           onEnroll={handleEnroll}
           enrollLabel={enrollAction(detailCourse).label}
           enrollDisabled={enrollAction(detailCourse).disabled}
+          receipt={enrollmentReceipt?.courseId === detailCourse.id ? enrollmentReceipt : null}
         />
       )}
     </div>

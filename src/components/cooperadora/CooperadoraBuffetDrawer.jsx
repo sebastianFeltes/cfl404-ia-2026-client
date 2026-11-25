@@ -204,7 +204,7 @@ export default function CooperadoraBuffetDrawer({
                     id="buffet-monto"
                     name="monto"
                     min="1"
-                    step="100"
+                    step="1"
                     required
                     value={formData.monto}
                     onChange={handleChange}

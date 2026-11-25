@@ -197,7 +197,7 @@ export default function StudentCardView({
                     {/* Curso con Hipervínculo para ver Ficha del Curso */}
                     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 min-w-0">
                       <BookOpen size={14} className="text-custom-azul-oscuro dark:text-custom-celeste shrink-0" />
-                      {student.course_name && student.course_name !== 'Sin curso asignado' ? (
+                      {student.course_name && student.course_name !== 'Sin curso asignado' && student.course_name !== 'Sin curso' ? (
                         <button
                           type="button"
                           onClick={(e) => {

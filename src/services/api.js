@@ -107,6 +107,9 @@ function extractError(error) {
   if (typeof data?.message === 'string') return data.message
   if (typeof data?.error === 'string') return data.error
   if (typeof data?.error?.message === 'string') return data.error.message
+  if (error.code === 'ECONNABORTED' || /timeout/i.test(String(error.message || ''))) {
+    return 'No pudimos conectar con el servidor. Intentá de nuevo.'
+  }
   return error.message || 'Error de red'
 }
 

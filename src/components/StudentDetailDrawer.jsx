@@ -1,5 +1,6 @@
 // Archivo: src/components/StudentDetailDrawer.jsx
 import React, { useEffect, useState } from 'react'
+import { copyText } from '../utils/copyText'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { 
@@ -106,11 +107,15 @@ export default function StudentDetailDrawer({
     window.print()
   }
 
-  const handleCopyToken = () => {
+  const handleCopyToken = async () => {
     if (!attendanceToken) return
-    navigator.clipboard?.writeText(attendanceToken)
-    setCopiedToken(true)
-    setTimeout(() => setCopiedToken(false), 2000)
+    try {
+      await copyText(attendanceToken)
+      setCopiedToken(true)
+      setTimeout(() => setCopiedToken(false), 2000)
+    } catch {
+      setCopiedToken(false)
+    }
   }
 
   const details = student ? {
@@ -480,10 +485,11 @@ export default function StudentDetailDrawer({
                     <button
                       type="button"
                       onClick={handleCopyToken}
-                      className="text-slate-400 hover:text-custom-azul-oscuro dark:hover:text-custom-celeste shrink-0 p-1 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-custom-azul-oscuro dark:text-custom-celeste shrink-0 px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                       title="Copiar token"
                     >
                       {copiedToken ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                      {copiedToken ? 'Copiado' : 'Copiar'}
                     </button>
                   </div>
                 </div>

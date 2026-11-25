@@ -37,6 +37,13 @@ function AppLayout() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            window.dispatchEvent(new Event('cfl404:refresh-route'))
+        }, 15000)
+        return () => window.clearTimeout(timer)
+    }, [location.pathname])
+
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
     const closeMenu = () => setIsMenuOpen(false)
 
@@ -188,10 +195,10 @@ function AppLayout() {
                             <button
                                 onClick={toggleMenu}
                                 className="md:hidden p-2 rounded-lg hover:bg-white/15 focus:outline-none transition-colors active:scale-90"
-                                aria-label="Abrir menú de navegación"
+                                aria-label={isMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
                                 aria-expanded={isMenuOpen}
                             >
-                                <Menu className="w-6 h-6 text-white" />
+                                {isMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
                             </button>
                         </div>
                     </header>
@@ -210,10 +217,8 @@ function AppLayout() {
 
                         {/* Drawer panel */}
                         <div
-                            className={`absolute right-4 top-4 w-72 max-w-[85vw] bg-custom-azul-oscuro text-white rounded-2xl shadow-2xl p-6 border border-white/10 flex flex-col transition-all duration-300 transform ${
-                                isMenuOpen
-                                    ? 'translate-x-0 translate-y-0 scale-100 opacity-100'
-                                    : 'translate-x-10 -translate-y-10 scale-90 opacity-0'
+                            className={`absolute inset-y-0 right-0 w-80 max-w-[86vw] bg-custom-azul-oscuro text-white shadow-2xl p-6 border-l border-white/10 flex flex-col transition-transform duration-300 ${
+                                isMenuOpen ? 'translate-x-0' : 'translate-x-full'
                             }`}
                         >
                             {/* Close */}

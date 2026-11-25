@@ -164,6 +164,12 @@ export default function Dashboard() {
     loadDashboardData()
   }, [loadDashboardData])
 
+  useEffect(() => {
+    const refresh = () => { loadDashboardData() }
+    window.addEventListener('cfl404:refresh-route', refresh)
+    return () => window.removeEventListener('cfl404:refresh-route', refresh)
+  }, [loadDashboardData])
+
   // Cálculos consolidados para los resúmenes y KPIs
   const metrics = useMemo(() => {
     // Alumnos

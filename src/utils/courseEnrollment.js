@@ -1,4 +1,11 @@
 const FINISHED = new Set(['curso_finalizado', 'egresado', 'finalizado'])
+const ORDINALS = ['', 'primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'séptimo', 'octavo', 'noveno', 'décimo']
+
+export function ordinalPlace(position) {
+  const value = Number(position)
+  if (!Number.isInteger(value) || value < 1) return ''
+  return ORDINALS[value] || `${value}°`
+}
 
 export function compareCoursesByStart(a, b) {
   const da = String(a?.start_date || a?.startDate || '')
@@ -17,7 +24,7 @@ export function enrollActionFor(course, { isAuthenticated, role, tickets = [], e
     return { disabled: false, label: 'Confirmar preinscripción', mode: 'ready' }
   }
   if (ticket?.status === 'esperando') {
-    return { disabled: true, label: `En espera · ${ticket.position}`, mode: 'waiting' }
+    return { disabled: true, label: `En espera · ${ordinalPlace(ticket.position) || ticket.position}`, mode: 'waiting' }
   }
   if (enrollments.some((item) => item.courseId === course?.id)) {
     return { disabled: true, label: 'Ya inscripto', mode: 'enrolled' }

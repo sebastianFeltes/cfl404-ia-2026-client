@@ -72,7 +72,9 @@ export default function Alumnos() {
             form_copy: item.studentDetail?.formCopy ?? true,
             title_copy: item.studentDetail?.titleCopy ?? (!isAsp),
             academic_level: item.studentDetail?.academicLevel ?? 'Secundario',
-            course_name: item.course || 'Sin curso',
+            course_name: item.course_name && item.course_name !== 'Sin curso'
+              ? item.course_name
+              : 'Sin curso asignado',
           }
         })
         setStudents(apiStudents)
@@ -95,6 +97,12 @@ export default function Alumnos() {
 
   useEffect(() => {
     fetchStudents()
+  }, [fetchStudents])
+
+  useEffect(() => {
+    const refresh = () => { fetchStudents() }
+    window.addEventListener('cfl404:refresh-route', refresh)
+    return () => window.removeEventListener('cfl404:refresh-route', refresh)
   }, [fetchStudents])
 
   // Modo de visualización: 'table' (Tabla) | 'grid' (Tarjetas)
@@ -176,6 +184,17 @@ export default function Alumnos() {
       return matchesSearch && matchesEstado
     })
 
+    if (activeTab === 'postulantes') {
+      return filtered.sort((a, b) => {
+        const left = Number(a.queue_position)
+        const right = Number(b.queue_position)
+        const safeLeft = Number.isFinite(left) && left > 0 ? left : Number.MAX_SAFE_INTEGER
+        const safeRight = Number.isFinite(right) && right > 0 ? right : Number.MAX_SAFE_INTEGER
+        if (safeLeft !== safeRight) return safeLeft - safeRight
+        return String(a.last_name || '').localeCompare(String(b.last_name || ''), 'es')
+      })
+    }
+
     // Ordenar: Activos/Presentes (1) → Pendientes (3) → Inactivos (2) siempre al final
     const STATUS_SORT_ORDER = { 1: 0, 3: 1, 4: 2, 2: 3 }
     return filtered.sort((a, b) => (STATUS_SORT_ORDER[a.status_id] ?? 0) - (STATUS_SORT_ORDER[b.status_id] ?? 0))
@@ -241,7 +260,7 @@ export default function Alumnos() {
 
   // Visualizar Ficha / Card del Curso con todos sus detalles directamente
   const handleViewCourse = useCallback(async (courseNameOrId, studentSource = null) => {
-    if (!courseNameOrId || courseNameOrId === 'Sin curso asignado') return
+    if (!courseNameOrId || courseNameOrId === 'Sin curso asignado' || courseNameOrId === 'Sin curso') return
 
     const studentCourse = studentSource?.studentCourses?.[0]?.course
 
@@ -653,7 +672,7 @@ export default function Alumnos() {
 
       {/* Navigation Tabs — Estilo Cooperadora */}
       <div className="border-b border-slate-200 dark:border-slate-800 flex items-center justify-between no-print">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => {

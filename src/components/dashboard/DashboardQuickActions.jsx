@@ -9,6 +9,7 @@ import {
   Receipt,
   FileCheck2,
   ArrowUpRight,
+  Smartphone,
 } from 'lucide-react'
 
 export default function DashboardQuickActions({ role = 'director' }) {
@@ -92,10 +93,18 @@ export default function DashboardQuickActions({ role = 'director' }) {
         return [
           {
             label: 'Mi Cursada Actual',
-            desc: 'Horarios, materias y estado regular',
-            to: '/perfil',
+            desc: 'Horarios, vacantes y estado de la inscripción',
+            to: '/inscripcion',
             icon: BookOpen,
             color: 'from-[#166193] to-[#37A6DE]',
+            iconBg: 'bg-white/20 text-white',
+          },
+          {
+            label: 'Aplicación',
+            desc: 'Abrí la app del CFL 404',
+            to: import.meta.env.VITE_MOBILE_APP_URL || '/contactos',
+            icon: Smartphone,
+            color: 'from-indigo-600 to-sky-500',
             iconBg: 'bg-white/20 text-white',
           },
           {
@@ -168,14 +177,10 @@ export default function DashboardQuickActions({ role = 'director' }) {
       <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-nunito">
         {actions.map((action) => {
           const Icon = action.icon
-
-          return (
-            <Link
-              key={action.label}
-              to={action.to}
-              className="group relative overflow-hidden rounded-2xl p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between"
-            >
-              {/* Background gradient accent indicator */}
+          const external = /^https?:/i.test(action.to)
+          const className = 'group relative overflow-hidden rounded-2xl p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex flex-col justify-between'
+          const body = (
+            <>
               <div
                 className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${action.color}`}
               />
@@ -199,6 +204,30 @@ export default function DashboardQuickActions({ role = 'director' }) {
                   {action.desc}
                 </p>
               </div>
+            </>
+          )
+
+          if (external) {
+            return (
+              <a
+                key={action.label}
+                href={action.to}
+                target="_blank"
+                rel="noreferrer"
+                className={className}
+              >
+                {body}
+              </a>
+            )
+          }
+
+          return (
+            <Link
+              key={action.label}
+              to={action.to}
+              className={className}
+            >
+              {body}
             </Link>
           )
         })}

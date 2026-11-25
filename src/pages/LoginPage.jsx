@@ -199,7 +199,7 @@ export default function LoginPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !acceptedTerms}
                   className="w-full h-11 rounded-full bg-custom-azul-oscuro text-white text-sm font-bold disabled:opacity-60"
                 >
                   {isSubmitting ? 'Ingresando…' : 'Ingresar'}
@@ -213,7 +213,7 @@ export default function LoginPage() {
               </div>
 
               {/* Botón oficial de Google Identity Services */}
-              <div className="flex justify-center min-h-[44px]">
+              <div className={`flex justify-center min-h-[44px] ${acceptedTerms ? '' : 'pointer-events-none opacity-50'}`}>
                 {isSubmitting ? (
                   <div className="flex items-center gap-3 text-sm font-semibold text-custom-gris-claro">
                     <div className="w-5 h-5 border-2 border-custom-celeste border-t-transparent rounded-full animate-spin" />

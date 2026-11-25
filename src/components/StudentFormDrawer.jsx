@@ -15,6 +15,23 @@ import {
   CheckCircle2,
   ArrowRight
 } from 'lucide-react'
+import { fetchCourses } from '../services/coursesService'
+
+function toDateInput(value) {
+  const text = String(value || '').trim()
+  if (/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10)
+  const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!match) return ''
+  const [, day, month, year] = match
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
+function todayYmd() {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${now.getFullYear()}-${month}-${day}`
+}
 
 const INITIAL_FORM_STATE = {
   first_name: '',
@@ -38,7 +55,24 @@ const INITIAL_FORM_STATE = {
 function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userRole, initialRole = 'alumno' }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE)
   const [showEmailChangeConfirm, setShowEmailChangeConfirm] = useState(false)
+  const [courseOptions, setCourseOptions] = useState([])
   const isReadOnly = userRole !== 'director' && userRole !== 'secretaria'
+
+  useEffect(() => {
+    let cancelled = false
+    fetchCourses()
+      .then((list) => {
+        if (cancelled) return
+        const names = (Array.isArray(list) ? list : [])
+          .map((course) => course?.name)
+          .filter(Boolean)
+        setCourseOptions([...new Set(names)])
+      })
+      .catch(() => {
+        if (!cancelled) setCourseOptions([])
+      })
+    return () => { cancelled = true }
+  }, [])
 
   // Update form data when student prop changes (Edit vs Add)
   useEffect(() => {
@@ -55,7 +89,7 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
         phone: student.phone || student.studentDetail?.phone || '',
         extra_phone: student.extra_phone || student.studentDetail?.extraPhone || student.extraPhone || '',
         address: student.address || student.studentDetail?.address || '',
-        dob: student.dob || student.studentDetail?.dob || '',
+        dob: toDateInput(student.dob || student.studentDetail?.dob || ''),
         gender: student.gender || student.studentDetail?.gender || 'Masculino',
         nacionality: student.nacionality || student.studentDetail?.nacionality || 'Argentina',
         academic_level: student.academic_level || student.studentDetail?.academicLevel || 'Secundario',
@@ -241,13 +275,13 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-custom-gris-claro dark:text-slate-400 uppercase tracking-wider font-nunito">Fecha de Nacimiento</label>
                 <input 
-                  type="text" 
+                  type="date" 
                   name="dob"
                   value={formData.dob}
+                  max={todayYmd()}
                   onChange={handleChange}
                   disabled={isReadOnly}
                   className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste transition-colors"
-                  placeholder="Ej: 14/05/2002"
                 />
               </div>
               <div className="space-y-1">
@@ -412,19 +446,15 @@ function StudentFormDrawer({ student, isOpen, onClose, onSubmit, onDelete, userR
                 value={formData.course_name}
                 onChange={handleChange}
                 disabled={isReadOnly}
-                required
                 className="w-full p-2 border border-custom-gris-claro/20 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-950 text-custom-gris-oscuro dark:text-slate-100 font-semibold focus:outline-none focus:border-custom-azul-oscuro dark:focus:border-custom-celeste transition-colors cursor-pointer"
               >
                 <option value="">-- Seleccionar Curso --</option>
-                <option value="Operador de PC">Operador de PC</option>
-                <option value="Programador Web">Programador Web</option>
-                <option value="Electricista Matriculado">Electricista Matriculado</option>
-                <option value="Diseño Gráfico Digital">Diseño Gráfico Digital</option>
-                <option value="Soldador">Soldador</option>
-                <option value="Operador de Marketing Digital">Operador de Marketing Digital</option>
-                <option value="Logística Portuaria">Logística Portuaria</option>
-                <option value="Limpieza Institucional">Limpieza Institucional</option>
-                <option value="Impresión 3D">Impresión 3D</option>
+                {formData.course_name && !courseOptions.includes(formData.course_name) && (
+                  <option value={formData.course_name}>{formData.course_name}</option>
+                )}
+                {courseOptions.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
               </select>
             </div>
 

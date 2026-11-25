@@ -236,7 +236,7 @@ function DataTable({
                     {/* Curso Asignado / Solicitado */}
                     <td className="py-3 px-4">
                       <div>
-                        {student.course_name && student.course_name !== 'Sin curso asignado' ? (
+                        {student.course_name && student.course_name !== 'Sin curso asignado' && student.course_name !== 'Sin curso' ? (
                           <button
                             type="button"
                             onClick={(e) => {

@@ -67,13 +67,13 @@ export default function StudentAppHeader() {
 
         <button
           type="button"
-          onClick={() => setMenuOpen(true)}
+          onClick={() => setMenuOpen((open) => !open)}
           className="p-2 rounded-lg hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 transition-colors active:scale-95"
-          aria-label="Abrir menú de navegación"
+          aria-label={menuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
           aria-expanded={menuOpen}
           aria-controls="menu-alumno"
         >
-          <Menu className="w-6 h-6 text-white" />
+          {menuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
         </button>
       </header>
 
@@ -95,8 +95,8 @@ export default function StudentAppHeader() {
           role="dialog"
           aria-modal={menuOpen}
           aria-label="Menú de navegación"
-          className={`absolute right-3 top-3 w-72 max-w-[calc(100vw-1.5rem)] max-h-[calc(100dvh-1.5rem)] overflow-y-auto bg-custom-azul-oscuro text-white rounded-2xl shadow-2xl p-5 border border-white/10 flex flex-col transition-transform duration-200 ${
-            menuOpen ? 'translate-x-0' : 'translate-x-[120%]'
+          className={`absolute inset-y-0 right-0 w-80 max-w-[86vw] overflow-y-auto bg-custom-azul-oscuro text-white shadow-2xl p-5 border-l border-white/10 flex flex-col transition-transform duration-300 ${
+            menuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
           <div className="flex items-start justify-between gap-3 mb-5">

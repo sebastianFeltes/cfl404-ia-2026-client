@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import packageJson from '../../package.json'
 
 const legalLinks = [
   { to: '/terminos-condiciones', label: 'Términos y condiciones' },
@@ -310,7 +311,7 @@ export default function Footer() {
               className="text-white/40 text-xs font-medium tracking-wide"
               style={{ fontFamily: '"Nunito", sans-serif' }}
             >
-              © {new Date().getFullYear()} CFL 404 — Todos los derechos reservados.
+              © {new Date().getFullYear()} CFL 404 — v{packageJson.version} — Todos los derechos reservados.
             </p>
             <nav
               aria-label="Información legal"

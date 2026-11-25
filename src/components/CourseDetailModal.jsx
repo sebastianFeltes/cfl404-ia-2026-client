@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { Calendar, Award, ShieldCheck, ArrowRight, Building2 } from 'lucide-react';
 import { OFFICIAL_ENDORSEMENT } from '../data/coursesData';
-import { courseQuotaBadge } from '../utils/courseEnrollment';
+import { courseQuotaBadge, ordinalPlace } from '../utils/courseEnrollment';
 import CourseCover from './CourseCover';
 
-export default function CourseDetailModal({ course, onClose, onEnroll, enrollLabel = 'Inscribirme', enrollDisabled = false }) {
+export default function CourseDetailModal({ course, onClose, onEnroll, enrollLabel = 'Inscribirme', enrollDisabled = false, receipt = null }) {
   useEffect(() => {
     if (!course) return undefined
     const previous = document.body.style.overflow
@@ -189,6 +189,17 @@ export default function CourseDetailModal({ course, onClose, onEnroll, enrollLab
         </div>
 
         {/* Modal Footer CTA Row (Un solo botón de cierre de texto "Cerrar" + Botón "Iniciar sesión") */}
+        {receipt && (
+          <div className="mx-6 mb-2 rounded-2xl border border-[#166193]/20 bg-[#166193]/5 px-4 py-3 text-sm text-[#1D1E1C]">
+            <p className="font-bold">
+              {receipt.status === 'esperando' ? 'Estás en lista de espera' : 'Cupo confirmado'}
+            </p>
+            <p className="text-xs mt-1">
+              Orden {ordinalPlace(receipt.position) || receipt.position || '—'}. Número de postulante {receipt.applicantNumber ?? '—'}.
+            </p>
+          </div>
+        )}
+
         <div className="p-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 font-['Nunito']">
           <div>
             <span className="text-xs text-[#585856] block">Costo de Formación:</span>
